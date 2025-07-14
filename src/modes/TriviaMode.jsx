@@ -1,5 +1,5 @@
 // src/modes/TriviaMode.jsx
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "../components/ui/button";
 import RightAnswerModal from "../components/ui/RightAnswerModal";
 import WrongAnswerModal from "../components/ui/WrongAnswerModal";
@@ -18,7 +18,6 @@ export default function TriviaMode({ onComplete, onBack }) {
 
   const {
     timeLeft,
-    isRunning,
     setIsRunning,
     reset
   } = useTimer(30, () => {

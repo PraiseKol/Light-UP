@@ -1,5 +1,5 @@
 // src/modes/ScriptureMatchMode.jsx
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useTimer } from "../hooks/useTimer";
 import RightAnswerModal from "../components/ui/RightAnswerModal";
 import WrongAnswerModal from "../components/ui/WrongAnswerModal";

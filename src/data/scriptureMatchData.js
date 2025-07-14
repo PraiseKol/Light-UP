@@ -8,6 +8,10 @@ export const scripturePairs = [
     {
       verse: "I can do all things through Christ who strengthens me.",
       reference: "Philippians 4:13",
+    },
+    {
+      verse: "In the beginning, God created the heaven and the earth.",
+      reference: "Genesis 1:1",
     }
   ];
   // src/data/scriptureMatchData.js

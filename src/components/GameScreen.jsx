@@ -1,9 +1,7 @@
 // src/components/GameScreen.jsx
 import { useState } from "react";
-import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import ProgressBar from "../components/ui/progress";
-import { Tooltip } from "../components/ui/tooltip";
 import { toast } from "react-hot-toast";
 
 import TriviaMode from "../modes/TriviaMode";
@@ -50,14 +48,7 @@ export default function GameScreen({ level, onBack, onComplete }) {
 
   return (
     <div className="relative animate-fadeInUp">
-      <Tooltip content="Return to level map">
-        <Button
-          onClick={onBack}
-          className="absolute top-2 left-2 bg-charcoal text-white hover:bg-black"
-        >
-          ← Back
-        </Button>
-      </Tooltip>
+      
 
       <div className="pt-12 pb-4 text-center">
         <h2 className="text-2xl font-bold text-charcoal">
