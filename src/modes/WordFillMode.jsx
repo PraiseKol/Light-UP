@@ -70,6 +70,9 @@ export default function WordFillMode({ question, answer, level, onCorrect }) {
     return () => clearInterval(timerRef.current);
   }, [userInput]);
 
+
+  
+
   // Background image
   const backgroundUrl =
     "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//WordFillBackground.jpg";
@@ -151,8 +154,8 @@ export default function WordFillMode({ question, answer, level, onCorrect }) {
 
       <TimeUpModal
         isOpen={showTimeUpModal}
-        onTryAgain={() => {
-          setShowTimeUpModal(false);
+        onRetry={() => {
+          setShowWrongModal(false);
           setUserInput("");
           setStatus("idle");
           setTimeLeft(30);

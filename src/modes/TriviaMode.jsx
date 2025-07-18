@@ -131,12 +131,12 @@ export default function TriviaMode({ question, answer, options, level, onCorrect
       <WrongAnswerModal
         isOpen={showWrongModal}
         onRetry={resetLevel}
-        onBack={resetLevel}
+        onBack={() => window.location.reload()}
       />
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={resetLevel}
-        onGoToMap={resetLevel}
+        onGoToMap={() => window.location.reload()}
       />
     </div>
   );
