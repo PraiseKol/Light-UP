@@ -1,5 +1,5 @@
-// src/components/LevelMap.jsx
-import LevelButton from './LevelButton';
+// ✅ Updated: src/components/LevelMap.jsx
+import LevelButton from "./LevelButton";
 
 export default function LevelMap({ phase, onSelectLevel }) {
   return (
@@ -18,7 +18,7 @@ export default function LevelMap({ phase, onSelectLevel }) {
               key={level.id}
               level={level}
               isUnlocked={isUnlocked}
-              onClick={onSelectLevel}
+              onClick={() => onSelectLevel(level, i)}
             />
           );
         })}

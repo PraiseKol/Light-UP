@@ -3,59 +3,51 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { CheckCircle2 } from "lucide-react";
 
-export default function RightAnswerModal({ isOpen, onClose, onNext }) {
+// RightAnswerModal.jsx
+export default function RightAnswerModal({
+  isOpen,
+  onClose,
+  onNext,
+  onBackToMap,
+}) {
   return (
-    <Transition show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={() => {}}>
-        {/* BACKDROP */}
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog onClose={onClose} className="relative z-10">
         <Transition.Child
-          as={Fragment}
           enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
+          enterFrom="opacity-0 scale-95"
+          enterTo="opacity-100 scale-100"
           leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-95"
         >
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
         </Transition.Child>
 
-        {/* MODAL CONTENT */}
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0 scale-95"
-            enterTo="opacity-100 scale-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100 scale-100"
-            leaveTo="opacity-0 scale-95"
-          >
-            <Dialog.Panel className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full space-y-6">
-              <CheckCircle2 className="w-16 h-16 text-gold mx-auto" />
-              <Dialog.Title className="text-2xl font-bold text-charcoal">
-                Level Complete!
-              </Dialog.Title>
-              <Dialog.Description className="text-gray-600">
-                Well done! You're one step closer to Bible mastery!
-              </Dialog.Description>
+          <Dialog.Panel className="w-full max-w-sm rounded-lg bg-white p-6 shadow-lg text-center space-y-4">
+            <Dialog.Title className="text-2xl font-semibold text-green-600">
+              Correct! 🎉
+            </Dialog.Title>
+            <p className="text-gray-600">
+              Great job. Ready for the next challenge?
+            </p>
 
-              <div className="flex justify-center gap-4 mt-4">
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-lg bg-charcoal text-white hover:bg-black transition"
-                >
-                  Back to Map
-                </button>
-                <button
-                  onClick={onNext}
-                  className="px-4 py-2 rounded-lg bg-gold text-black hover:bg-yellow-400 transition"
-                >
-                  Next Level
-                </button>
-              </div>
-            </Dialog.Panel>
-          </Transition.Child>
+            <div className="space-y-2">
+              <button
+                onClick={onNext}
+                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+              >
+                Next Level
+              </button>
+              <button
+                onClick={onBackToMap}
+                className="w-full bg-gray-200 text-gray-800 py-2 rounded hover:bg-gray-300 transition"
+              >
+                Back to Map
+              </button>
+            </div>
+          </Dialog.Panel>
         </div>
       </Dialog>
     </Transition>

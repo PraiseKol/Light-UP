@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes glowRing {
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 223, 0, 0.6);
+    }
+    70% {
+      box-shadow: 0 0 0 15px rgba(255, 223, 0, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 223, 0, 0);
+    }
+  }
+  
+  .glow-ring {
+    animation: glowRing 2s infinite;
+  }
+

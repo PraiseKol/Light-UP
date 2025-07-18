@@ -1,38 +1,39 @@
-// src/modes/FourPicsMode.jsx
 import { useState, useEffect, useCallback } from "react";
-import { fourPicsData } from "../data/fourPicsData";
 import { useTimer } from "../hooks/useTimer";
 import RightAnswerModal from "../components/ui/RightAnswerModal";
 import WrongAnswerModal from "../components/ui/WrongAnswerModal";
 import TimeUpModal from "../components/ui/TimeUpModal";
 import { Button } from "../components/ui/button";
+import getQuestion from "../lib/getQuestion";
 
-export default function FourPicsMode({ onComplete, onBack }) {
+export default function FourPicsMode({ onComplete, onBack, levelKey }) {
   const [input, setInput] = useState("");
   const [usedIndexes, setUsedIndexes] = useState([]);
   const [shuffledLetters, setShuffledLetters] = useState([]);
+  const [question, setQuestion] = useState(null);
   const [showRight, setShowRight] = useState(false);
   const [showWrong, setShowWrong] = useState(false);
   const [showTimeUp, setShowTimeUp] = useState(false);
   const [hasChecked, setHasChecked] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const puzzle = fourPicsData[0]; // Static for now
+  const { timeLeft, setIsRunning, reset } = useTimer(60, () => {
+    if (hasChecked) return;
+    input.length > 0 ? handleCheck() : setShowTimeUp(true);
+  });
 
   useEffect(() => {
-    if (puzzle.letters) {
-      const shuffled = puzzle.letters.split("").sort(() => 0.5 - Math.random());
-      setShuffledLetters(shuffled);
-    }
-  }, [puzzle]);
-
-  const { timeLeft, setIsRunning, reset } = useTimer(30, () => {
-    if (hasChecked) return;
-    if (input.length > 0) {
-      handleCheck();
-    } else {
-      setShowTimeUp(true);
-    }
-  });
+    const load = async () => {
+      const data = await getQuestion(levelKey.phase || 1, levelKey.level, "four-pics");
+      setQuestion(data);
+      if (data?.letters) {
+        const shuffled = data.letters.split("").sort(() => Math.random() - 0.5);
+        setShuffledLetters(shuffled);
+      }
+      setLoading(false);
+    };
+    load();
+  }, [levelKey]);
 
   const handleLetterClick = useCallback(
     (letter, index) => {
@@ -46,34 +47,29 @@ export default function FourPicsMode({ onComplete, onBack }) {
   const handleBackspace = useCallback(() => {
     if (hasChecked || input.length === 0) return;
     const lastLetter = input[input.length - 1];
-    const indexToRemove = usedIndexes.findLastIndex(
+    const indexToRemove = [...usedIndexes].reverse().find(
       (i) => shuffledLetters[i] === lastLetter
     );
-
     setInput((prev) => prev.slice(0, -1));
-    setUsedIndexes((prev) => prev.filter((_, i) => i !== indexToRemove));
-  }, [input, hasChecked, shuffledLetters, usedIndexes]);
+    setUsedIndexes((prev) => prev.filter((i) => i !== indexToRemove));
+  }, [input, usedIndexes, shuffledLetters, hasChecked]);
 
   const handleKeyDown = useCallback(
     (e) => {
       if (hasChecked) return;
+      if (e.key === "Backspace") {
+        handleBackspace();
+        return;
+      }
       const key = e.key.toUpperCase();
       const index = shuffledLetters.findIndex(
         (ltr, idx) => ltr === key && !usedIndexes.includes(idx)
       );
       if (index !== -1) {
         handleLetterClick(key, index);
-      } else if (e.key === "Backspace") {
-        handleBackspace();
       }
     },
-    [
-      shuffledLetters,
-      usedIndexes,
-      hasChecked,
-      handleBackspace,
-      handleLetterClick,
-    ]
+    [shuffledLetters, usedIndexes, handleLetterClick, handleBackspace, hasChecked]
   );
 
   useEffect(() => {
@@ -82,43 +78,45 @@ export default function FourPicsMode({ onComplete, onBack }) {
   }, [handleKeyDown]);
 
   const handleCheck = () => {
+    if (!question?.answer) return;
     setHasChecked(true);
     setIsRunning(false);
-
-    if (input.toLowerCase() === puzzle.answer.toLowerCase()) {
-      setShowRight(true);
-    } else {
-      setShowWrong(true);
-    }
+    const correct = input.toLowerCase() === question.answer.toLowerCase();
+    correct ? setShowRight(true) : setShowWrong(true);
   };
 
   const resetLevel = () => {
     setInput("");
     setUsedIndexes([]);
+    setHasChecked(false);
     setShowRight(false);
     setShowWrong(false);
     setShowTimeUp(false);
-    setHasChecked(false);
     reset();
-    if (puzzle.letters) {
-      const reshuffled = puzzle.letters
-        .split("")
-        .sort(() => 0.5 - Math.random());
+    if (question?.letters) {
+      const reshuffled = question.letters.split("").sort(() => Math.random() - 0.5);
       setShuffledLetters(reshuffled);
     }
+    setIsRunning(true);
   };
+
+  if (loading) return <div className="p-6 text-center">Loading question...</div>;
+  if (!question?.answer || !question?.image_urls) {
+    return <div className="p-6 text-center text-red-600">❌ Invalid question data.</div>;
+  }
+
+  const images = question.image_urls.split(",").map((url) => url.trim());
+  const answerLength = question.answer.length;
 
   return (
     <div className="p-6 bg-white rounded-xl shadow-lg max-w-2xl mx-auto animate-fadeInUp">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-charcoal">
-          Four Pics One Word
-        </h2>
+        <h2 className="text-xl font-semibold text-charcoal">Four Pics One Word</h2>
         <span className="text-sm text-red-500 font-bold">{timeLeft}s</span>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6">
-        {puzzle.images.map((src, idx) => (
+        {images.map((src, idx) => (
           <img
             key={idx}
             src={src}
@@ -129,8 +127,11 @@ export default function FourPicsMode({ onComplete, onBack }) {
       </div>
 
       <div className="flex justify-center gap-2 text-2xl font-bold mb-4">
-        {Array.from({ length: puzzle.answer.length }).map((_, i) => (
-          <div key={i} className="w-10 h-10 border-b-4 border-gold text-center">
+        {Array.from({ length: answerLength }).map((_, i) => (
+          <div
+            key={i}
+            className="w-10 h-10 border-b-4 border-gold text-center"
+          >
             {input[i] || ""}
           </div>
         ))}
@@ -142,12 +143,11 @@ export default function FourPicsMode({ onComplete, onBack }) {
             key={idx}
             onClick={() => handleLetterClick(letter, idx)}
             disabled={usedIndexes.includes(idx) || hasChecked}
-            className={`w-10 h-10 text-lg font-bold rounded-lg transition-all shadow
-              ${
-                usedIndexes.includes(idx)
-                  ? "bg-gray-300 text-gray-500"
-                  : "bg-gold text-black hover:bg-yellow-400"
-              }`}
+            className={`w-10 h-10 text-lg font-bold rounded-lg transition shadow ${
+              usedIndexes.includes(idx)
+                ? "bg-gray-300 text-gray-500"
+                : "bg-gold text-black hover:bg-yellow-400"
+            }`}
           >
             {letter}
           </button>
@@ -164,13 +164,12 @@ export default function FourPicsMode({ onComplete, onBack }) {
         </Button>
         <Button
           onClick={handleCheck}
-          disabled={hasChecked || input.length !== puzzle.answer.length}
+          disabled={hasChecked || input.length !== answerLength}
         >
           ✅ Submit
         </Button>
       </div>
 
-      {/* Modals */}
       <RightAnswerModal
         isOpen={showRight}
         onClose={() => {

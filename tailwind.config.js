@@ -14,6 +14,13 @@ module.exports = {
         popIn: 'popIn 0.4s ease-out',
       },
       keyframes: {
+        flicker: {
+          '0%, 100%': { opacity: 1 },
+          '50%': { opacity: 0.85 },
+        },
+        animation: {
+          flicker: 'flicker 1.2s infinite',
+        },
         gradientBlur: {
           '0%, 100%': { transform: 'scale(1)' },
           '50%': { transform: 'scale(1.05)' },

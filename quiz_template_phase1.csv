@@ -1,0 +1,9 @@
+phase_number,mode,question,options,answer,used
+1,word-fill,Blessed are the ___,,meek,False
+1,word-fill,Our Father who art in ___,,heaven,False
+1,trivia,Who was swallowed by a great fish?,"[""Jonah"", ""Moses"", ""David"", ""Paul""]",Jonah,False
+1,trivia,Which disciple walked on water with Jesus?,"[""Peter"", ""John"", ""James"", ""Thomas""]",Peter,False
+1,scripture-match,"[""For God so loved the world..."", ""The Lord is my shepherd..."", ""In the beginning God created...""]","[""John 3:16"", ""Genesis 1:1"", ""Psalm 23:1""]","[""John 3:16"", ""Psalm 23:1"", ""Genesis 1:1""]",False
+1,scripture-match,"[""I can do all things through Christ..."", ""Trust in the Lord with all your heart..."", ""Jesus wept.""]","[""Proverbs 3:5"", ""Philippians 4:13"", ""John 11:35""]","[""Philippians 4:13"", ""Proverbs 3:5"", ""John 11:35""]",False
+1,four-pics,"[""bread.jpg"", ""wine.jpg"", ""cross.jpg"", ""church.jpg""]",,communion,False
+1,four-pics,"[""lion.jpg"", ""crown.jpg"", ""throne.jpg"", ""robe.jpg""]",,king,False

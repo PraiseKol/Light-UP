@@ -1,66 +1,67 @@
-// src/components/GameScreen.jsx
-import { useState } from "react";
-import { Card, CardContent } from "../components/ui/card";
-import ProgressBar from "../components/ui/progress";
-import { toast } from "react-hot-toast";
-
-import TriviaMode from "../modes/TriviaMode";
-import WordFillMode from "../modes/WordFillMode";
-import ScriptureMatchMode from "../modes/ScriptureMatchMode";
-import FourPicsMode from "../modes/FourPicsMode";
+// src/pages/GameScreen.jsx
+import { useEffect, useState } from "react";
+import { getQuestion } from "lib/getQuestion";
+import WordFillMode from "modes/WordFillMode";
+import TriviaMode from "modes/TriviaMode"; // 👈 import TriviaMode
 
 export default function GameScreen({ level, onBack, onComplete }) {
-  const [progress, setProgress] = useState(0);
+  const [questionData, setQuestionData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleLevelComplete = () => {
-    setProgress(100);
-    toast.success("🎉 Level completed!");
-    onComplete(); // proceed immediately without modal
-  };
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      if (!level?.phaseNumber || !level?.number) {
+        console.warn("Invalid level:", level);
+        setLoading(false);
+        return;
+      }
 
-  const renderMode = () => {
-    const modeProps = {
-      onComplete: handleLevelComplete,
-      onBack,
+      const q = await getQuestion(level.phaseNumber, level.number);
+      if (q) {
+        setQuestionData(q);
+      } else {
+        console.error("No question found for this level.");
+      }
+      setLoading(false);
     };
 
-    switch (level.mode) {
-      case "trivia":
-        return <TriviaMode {...modeProps} />;
-      case "word-fill":
-        return <WordFillMode {...modeProps} />;
-      case "scripture-match":
-        return <ScriptureMatchMode {...modeProps} />;
-      case "four-pics":
-        return <FourPicsMode {...modeProps} />;
-      default:
-        return (
-          <Card className="w-full max-w-lg text-center">
-            <CardContent className="p-6">
-              <p className="text-lg">
-                Game mode <strong>{level.mode}</strong> is coming soon!
-              </p>
-            </CardContent>
-          </Card>
-        );
-    }
-  };
+    load();
+  }, [level]);
+
+  if (loading) return <div className="p-6">Loading game...</div>;
+  if (!questionData) return <div className="p-6">No question found.</div>;
+
+  const { mode } = questionData;
+
+  if (mode === "word-fill") {
+    return (
+      <WordFillMode
+        level={level}
+        question={questionData.question}
+        answer={questionData.answer}
+        onBack={onBack}
+        onCorrect={onComplete}
+      />
+    );
+  }
+
+  if (mode === "trivia") {
+    return (
+      <TriviaMode
+        level={level}
+        question={questionData.question}
+        answer={questionData.answer}
+        options={questionData.options}
+        onCorrect={onComplete}
+        onBackToMap={onBack}
+      />
+    );
+  }
 
   return (
-    <div className="relative animate-fadeInUp">
-      
-
-      <div className="pt-12 pb-4 text-center">
-        <h2 className="text-2xl font-bold text-charcoal">
-          Level {level.number} —{" "}
-          <span className="capitalize">{level.mode.replace("-", " ")}</span>
-        </h2>
-        <div className="mt-4 max-w-sm mx-auto">
-          <ProgressBar value={progress} className="h-2 bg-gray-200" />
-        </div>
-      </div>
-
-      <div className="flex justify-center px-4">{renderMode()}</div>
+    <div className="p-6">
+      Mode not supported yet: <strong>{mode}</strong>
     </div>
   );
 }

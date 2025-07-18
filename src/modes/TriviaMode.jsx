@@ -1,124 +1,142 @@
-// src/modes/TriviaMode.jsx
-import { useState, useCallback } from "react";
-import { Button } from "../components/ui/button";
-import RightAnswerModal from "../components/ui/RightAnswerModal";
-import WrongAnswerModal from "../components/ui/WrongAnswerModal";
-import TimeUpModal from "../components/ui/TimeUpModal";
-import { useTimer } from "../hooks/useTimer";
-import { triviaQuestions } from "../data/triviaModeData";
+import React, { useEffect, useState } from "react";
+import RightAnswerModal from "components/ui/RightAnswerModal";
+import WrongAnswerModal from "components/ui/WrongAnswerModal";
+import TimeUpModal from "components/ui/TimeUpModal";
+import { Button } from "components/ui/button";
+import ProgressBar from "components/ui/progress";
+import { Card } from "components/ui/card";
 
-export default function TriviaMode({ onComplete, onBack }) {
-  const [selected, setSelected] = useState(null);
-  const [showRight, setShowRight] = useState(false);
-  const [showWrong, setShowWrong] = useState(false);
-  const [showTimeUp, setShowTimeUp] = useState(false);
-  const [hasChecked, setHasChecked] = useState(false);
+export default function TriviaMode({ question, answer, options, level, onCorrect }) {
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [status, setStatus] = useState("idle");
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [timerActive, setTimerActive] = useState(true);
 
-  const question = triviaQuestions[0]; // static for now
+  const [showRightModal, setShowRightModal] = useState(false);
+  const [showWrongModal, setShowWrongModal] = useState(false);
+  const [showTimeUpModal, setShowTimeUpModal] = useState(false);
 
-  const {
-    timeLeft,
-    setIsRunning,
-    reset
-  } = useTimer(30, () => {
-    if (hasChecked) return;
+  useEffect(() => {
+    if (!timerActive || timeLeft <= 0) return;
 
-    if (selected) {
-      handleCheck(); // auto-check if player made a choice
-    } else {
-      setShowTimeUp(true); // no attempt
+    const timer = setTimeout(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [timeLeft, timerActive]);
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      setTimerActive(false);
+      if (selectedOption) {
+        handleSubmit(); // Auto-submit
+      } else {
+        setShowTimeUpModal(true);
+      }
     }
-  });
+  }, [timeLeft]);
 
-  const handleCheck = useCallback(() => {
-    if (!selected || hasChecked) return;
+  const handleSubmit = () => {
+    setTimerActive(false);
 
-    const isCorrect = selected === question.answer;
-    setHasChecked(true);
-    setIsRunning(false); // ✅ Stop timer when user clicks Submit
+    if (!selectedOption) return;
 
-    if (isCorrect) {
-      setShowRight(true);
+    if (selectedOption === answer) {
+      setStatus("correct");
+      setTimeout(() => {
+        setShowRightModal(true);
+      }, 300);
     } else {
-      setShowWrong(true);
+      setStatus("wrong");
+      setTimeout(() => {
+        setShowWrongModal(true);
+      }, 300);
     }
-  }, [selected, question.answer, hasChecked, setIsRunning]);
-
-  const resetLevel = () => {
-    setSelected(null);
-    setShowRight(false);
-    setShowWrong(false);
-    setShowTimeUp(false);
-    setHasChecked(false);
-    reset();            // 🔄 Reset timer to full
-    setIsRunning(true); // ▶️ Resume countdown
   };
 
+  const resetLevel = () => {
+    setSelectedOption(null);
+    setStatus("idle");
+    setTimeLeft(30);
+    setTimerActive(true);
+    setShowRightModal(false);
+    setShowWrongModal(false);
+    setShowTimeUpModal(false);
+  };
+
+  const handleNext = () => {
+    setShowRightModal(false);
+    onCorrect();
+  };
+
+  const backgroundUrl =
+    "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds/BG%202.png";
+
   return (
-    <div className="p-6 bg-white rounded-xl shadow-lg text-charcoal animate-fadeInUp max-w-xl mx-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Trivia Challenge</h2>
-        <span className="text-sm text-red-500 font-bold">{timeLeft}s</span>
-      </div>
+    <div
+      className="min-h-screen flex justify-center items-center bg-cover bg-center px-4"
+      style={{ backgroundImage: `url(${backgroundUrl})` }}
+    >
+      <div className="w-full max-w-xl animate-fade-in-up">
+        <Card className="p-8 backdrop-blur-md bg-white/90 border border-gray-200 shadow-xl space-y-6">
+          <div className="text-sm text-gray-500 font-medium">
+            Phase {level?.phaseNumber} • Level {level?.number}
+          </div>
 
-      <h3 className="mb-4 font-medium">{question.question}</h3>
+          <div className="text-xl font-bold text-gray-800">{question}</div>
 
-      <div className="grid gap-3">
-        {question.options.map((option) => (
-          <button
-            key={option}
-            onClick={() => setSelected(option)}
-            disabled={hasChecked}
-            className={`py-2 px-4 rounded-lg border font-semibold transition-all
-              ${
-                selected === option
-                  ? "bg-blue-100 border-blue-500"
-                  : "bg-gray-100 hover:bg-gray-200 border-gray-300"
-              }
-            `}
+          <div className="space-y-3">
+            {options?.map((opt, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setSelectedOption(opt);
+                  setStatus("idle");
+                }}
+                className={`w-full py-3 px-4 rounded-lg border transition text-left ${
+                  selectedOption === opt
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+
+          {status === "wrong" && (
+            <div className="text-sm text-red-500 mt-1">Incorrect. Try again.</div>
+          )}
+
+          <Button
+            onClick={handleSubmit}
+            disabled={!selectedOption}
+            className="w-full mt-4"
           >
-            {option}
-          </button>
-        ))}
+            Submit Answer
+          </Button>
+
+          <ProgressBar value={timeLeft} max={30} className="mt-6" />
+        </Card>
       </div>
 
-      <div className="mt-6 text-center">
-        <Button
-          onClick={handleCheck}
-          disabled={!selected || hasChecked}
-          className="px-6"
-        >
-          ✅ Submit
-        </Button>
-      </div>
-
-      {/* Modals */}
+      {/* MODALS */}
       <RightAnswerModal
-        isOpen={showRight}
-        onClose={() => {
-          setShowRight(false);
-          setTimeout(() => {
-            onBack(); // Return to map
-          }, 250);
-        }}
-        onNext={() => {
-          setShowRight(false);
-          setTimeout(() => {
-            onComplete(); // Go to next level
-          }, 250);
-        }}
+        isOpen={showRightModal}
+        onClose={() => onCorrect()}
+        onNext={() => onCorrect()} // stays as next level
+        onBackToMap={() => window.location.reload()} // or navigate to Map screen if using React Router
       />
-
       <WrongAnswerModal
-        isOpen={showWrong}
+        isOpen={showWrongModal}
         onRetry={resetLevel}
-        onBack={onBack}
+        onBack={resetLevel}
       />
-
       <TimeUpModal
-        isOpen={showTimeUp}
+        isOpen={showTimeUpModal}
         onTryAgain={resetLevel}
-        onGoToMap={onBack}
+        onGoToMap={resetLevel}
       />
     </div>
   );
