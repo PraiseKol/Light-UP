@@ -1,5 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 
+/**
+ * Custom hook for a countdown timer.
+ * @param {number} durationSeconds - Initial countdown duration.
+ * @param {Function} onExpire - Callback to run when time expires.
+ * @param {boolean} autoStart - Whether the timer starts immediately.
+ */
 export function useTimer(durationSeconds = 60, onExpire, autoStart = true) {
   const [timeLeft, setTimeLeft] = useState(durationSeconds);
   const [isRunning, setIsRunning] = useState(autoStart);
@@ -30,6 +36,7 @@ export function useTimer(durationSeconds = 60, onExpire, autoStart = true) {
 
   return {
     timeLeft,
+    setTimeLeft,      // ✅ Expose this for manual reset (fixes your error)
     isRunning,
     setIsRunning,
     reset,

@@ -1,8 +1,10 @@
-// src/pages/GameScreen.jsx
 import { useEffect, useState } from "react";
 import { getQuestion } from "lib/getQuestion";
 import WordFillMode from "modes/WordFillMode";
-import TriviaMode from "modes/TriviaMode"; // 👈 import TriviaMode
+import TriviaMode from "modes/TriviaMode";
+import FourPicsMode from "modes/FourPicsMode";
+import ScriptureMatchMode from "modes/ScriptureMatchMode";
+
 
 export default function GameScreen({ level, onBack, onComplete }) {
   const [questionData, setQuestionData] = useState(null);
@@ -51,10 +53,34 @@ export default function GameScreen({ level, onBack, onComplete }) {
       <TriviaMode
         level={level}
         question={questionData.question}
-        answer={questionData.answer}
         options={questionData.options}
+        answer={questionData.answer}
+        onBack={onBack}
         onCorrect={onComplete}
-        onBackToMap={onBack}
+      />
+    );
+  }
+
+  if (mode === "four-pics") {
+    return (
+      <FourPicsMode
+        level={level}
+        answer={questionData.answer}
+        imageUrls={questionData.image_urls}
+        letters={questionData.letters}
+        onBack={onBack}
+        onCorrect={onComplete}
+      />
+    );
+  }
+
+  if (mode === "scripture-match") {
+    return (
+      <ScriptureMatchMode
+        level={level}
+        question={questionData.question}
+        onBack={onBack}
+        onCorrect={onComplete}
       />
     );
   }

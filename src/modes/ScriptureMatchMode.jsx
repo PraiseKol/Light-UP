@@ -1,134 +1,109 @@
-import { useState, useEffect, useMemo } from "react";
-import { useTimer } from "../hooks/useTimer";
-import RightAnswerModal from "../components/ui/RightAnswerModal";
-import WrongAnswerModal from "../components/ui/WrongAnswerModal";
-import TimeUpModal from "../components/ui/TimeUpModal";
-import { Button } from "../components/ui/button";
-import getQuestion from "../lib/getQuestion";
+// src/modes/ScriptureMatchMode.jsx
+import { useEffect, useState, useRef } from "react";
+import { useTimer } from "hooks/useTimer";
+import RightAnswerModal from "components/ui/RightAnswerModal";
+import WrongAnswerModal from "components/ui/WrongAnswerModal";
+import TimeUpModal from "components/ui/TimeUpModal";
+import { Button } from "components/ui/button";
 
-export default function ScriptureMatchMode({ onComplete, onBack, levelKey }) {
-  const [scripturePairs, setScripturePairs] = useState([]);
-  const [matches, setMatches] = useState([]);
-  const [dragging, setDragging] = useState(null);
-  const [hasChecked, setHasChecked] = useState(false);
-  const [showRight, setShowRight] = useState(false);
-  const [showWrong, setShowWrong] = useState(false);
-  const [showTimeUp, setShowTimeUp] = useState(false);
-  const [loading, setLoading] = useState(true);
+export default function ScriptureMatchMode({ question, level, onBack, onCorrect }) {
+  const [pairs, setPairs] = useState([]);
+  const [shuffledVerses, setShuffledVerses] = useState([]);
+  const [matches, setMatches] = useState({});
+  const [draggedVerse, setDraggedVerse] = useState(null);
+  const [status, setStatus] = useState("idle"); // idle, correct, wrong, timeup
+  const hasAnswered = useRef(false);
 
   const { timeLeft, setIsRunning, reset } = useTimer(30, () => {
-    if (hasChecked) return;
-    matches.length === scripturePairs.length ? handleCheck() : setShowTimeUp(true);
+    if (hasAnswered.current) return;
+    const isAnyMatched = Object.keys(matches).length > 0;
+    if (isAnyMatched) {
+      checkAnswer();
+    } else {
+      setStatus("timeup");
+    }
   });
 
   useEffect(() => {
-    const load = async () => {
-      const data = await getQuestion(levelKey.phase, levelKey.level, "scripture-match");
-      if (data?.question) {
-        try {
-          const parsed = JSON.parse(data.question);
-          setScripturePairs(parsed);
-        } catch (e) {
-          console.error("❌ Failed to parse scripture pairs:", e);
-        }
-      }
-      setLoading(false);
-    };
-    load();
-  }, [levelKey]);
-
-  const leftItems = useMemo(() => scripturePairs.map((p) => p.reference), [scripturePairs]);
-  const rightItems = useMemo(() => {
-    const verses = scripturePairs.map((p) => p.verse);
-    for (let i = verses.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [verses[i], verses[j]] = [verses[j], verses[i]];
+    try {
+      const parsed = JSON.parse(question);
+      setPairs(parsed);
+      const shuffled = [...parsed].sort(() => Math.random() - 0.5);
+      setShuffledVerses(shuffled);
+    } catch (err) {
+      console.error("❌ Failed to parse question JSON:", err);
     }
-    return verses;
-  }, [scripturePairs]);
+  }, [question]);
 
   const handleDrop = (ref) => {
-    if (!dragging || matches.find((m) => m.left === ref)) return;
-    setMatches((prev) => [...prev, { left: ref, right: dragging }]);
-    setDragging(null);
+    if (draggedVerse) {
+      setMatches((prev) => ({
+        ...prev,
+        [ref]: draggedVerse.verse,
+      }));
+    }
   };
 
-  const handleRemoveMatch = (ref) => setMatches(matches.filter((m) => m.left !== ref));
-
-  const handleCheck = () => {
-    setHasChecked(true);
+  const checkAnswer = () => {
+    hasAnswered.current = true;
     setIsRunning(false);
-    const correct = scripturePairs.every((pair) =>
-      matches.find((m) => m.left === pair.reference && m.right === pair.verse)
+    const correct = pairs.every(
+      (pair) => matches[pair.reference] === pair.verse
     );
-    correct && matches.length === scripturePairs.length
-      ? setShowRight(true)
-      : setShowWrong(true);
+    setStatus(correct ? "correct" : "wrong");
   };
 
   const resetLevel = () => {
-    setMatches([]);
-    setDragging(null);
-    setHasChecked(false);
-    setShowRight(false);
-    setShowWrong(false);
-    setShowTimeUp(false);
+    setMatches({});
+    hasAnswered.current = false;
+    setStatus("idle");
     reset();
+    const reshuffled = [...pairs].sort(() => Math.random() - 0.5);
+    setShuffledVerses(reshuffled);
     setIsRunning(true);
   };
 
-  const isMatched = (verse) => matches.find((m) => m.right === verse);
-
-  if (loading) return <div className="p-6 text-center">Loading question...</div>;
+  const isMatched = (verse) =>
+    Object.values(matches).includes(verse);
 
   return (
-    <div className="p-6 bg-white rounded-xl shadow-lg max-w-5xl mx-auto animate-fadeInUp">
+    <div className="p-6 bg-white rounded-xl shadow-lg max-w-3xl mx-auto animate-fadeInUp">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-charcoal">Scripture Match</h2>
         <span className="text-sm text-red-500 font-bold">{timeLeft}s</span>
       </div>
+
       <div className="grid grid-cols-2 gap-6">
+        {/* References (Drop targets) */}
         <div>
-          <h3 className="text-lg font-medium mb-2">References</h3>
-          {leftItems.map((ref) => {
-            const matched = matches.find((m) => m.left === ref);
-            return (
-              <div
-                key={ref}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => !hasChecked && handleDrop(ref)}
-                className="p-3 rounded-lg border mb-2 bg-gray-100 hover:bg-gray-200 border-gray-300"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">{ref}</span>
-                  {matched && (
-                    <button
-                      className="ml-2 text-sm text-red-500 hover:underline"
-                      onClick={() => handleRemoveMatch(ref)}
-                      disabled={hasChecked}
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  {matched ? matched.right : <span className="italic text-gray-400">Drop verse here</span>}
-                </div>
-              </div>
-            );
-          })}
+          <h3 className="font-semibold mb-2">References</h3>
+          {pairs.map(({ reference }) => (
+            <div
+              key={reference}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleDrop(reference)}
+              className="border border-gray-300 rounded-lg p-3 min-h-[60px] mb-3 bg-gray-50 flex items-center justify-between"
+            >
+              <span>{reference}</span>
+              {matches[reference] && (
+                <span className="ml-2 text-sm text-blue-700 font-medium">{matches[reference]}</span>
+              )}
+            </div>
+          ))}
         </div>
+
+        {/* Draggable Verses */}
         <div>
-          <h3 className="text-lg font-medium mb-2">Verses</h3>
-          {rightItems.map((verse) => (
+          <h3 className="font-semibold mb-2">Verses</h3>
+          {shuffledVerses.map(({ verse }) => (
             <div
               key={verse}
-              draggable={!hasChecked && !isMatched(verse)}
-              onDragStart={() => setDragging(verse)}
-              className={`p-3 rounded-lg border mb-2 transition cursor-move ${
+              draggable={!isMatched(verse)}
+              onDragStart={() => setDraggedVerse({ verse })}
+              className={`cursor-move border p-3 rounded-lg mb-3 shadow-sm transition ${
                 isMatched(verse)
-                  ? "bg-green-100 border-green-500 cursor-not-allowed"
-                  : "bg-white hover:bg-blue-50 border-gray-300"
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : "bg-gold text-black hover:bg-yellow-300"
               }`}
             >
               {verse}
@@ -136,18 +111,34 @@ export default function ScriptureMatchMode({ onComplete, onBack, levelKey }) {
           ))}
         </div>
       </div>
-      <div className="mt-6 text-center">
+
+      <div className="flex justify-center mt-6">
         <Button
-          onClick={handleCheck}
-          disabled={hasChecked || matches.length < scripturePairs.length}
-          className="px-6"
+          disabled={hasAnswered.current || Object.keys(matches).length !== pairs.length}
+          onClick={checkAnswer}
         >
           ✅ Submit
         </Button>
       </div>
-      <RightAnswerModal isOpen={showRight} onClose={() => { setShowRight(false); onBack(); }} onNext={() => { setShowRight(false); onComplete(); }} />
-      <WrongAnswerModal isOpen={showWrong} onRetry={resetLevel} onBack={onBack} />
-      <TimeUpModal isOpen={showTimeUp} onTryAgain={resetLevel} onGoToMap={onBack} />
+
+      <RightAnswerModal
+        isOpen={status === "correct"}
+        onClose={() => onCorrect()}
+        onNext={() => onCorrect()}
+        onBackToMap={() => window.location.reload()}
+      />
+
+      <WrongAnswerModal
+        isOpen={status === "wrong"}
+        onRetry={resetLevel}
+        onBack={onBack}
+      />
+
+      <TimeUpModal
+        isOpen={status === "timeup"}
+        onTryAgain={resetLevel}
+        onGoToMap={onBack}
+      />
     </div>
   );
 }

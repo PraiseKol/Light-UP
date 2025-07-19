@@ -67,6 +67,8 @@ export default function WordFillMode({ question, answer, level, onCorrect }) {
       });
     }, 1000);
 
+   
+
     return () => clearInterval(timerRef.current);
   }, [userInput]);
 

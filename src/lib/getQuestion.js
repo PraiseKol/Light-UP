@@ -1,4 +1,3 @@
-// src/lib/getQuestion.js
 import { supabase } from "lib/supabaseClient";
 
 export async function getQuestion(phaseNumber, levelNumber) {
