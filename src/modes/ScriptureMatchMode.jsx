@@ -1,9 +1,9 @@
-// src/modes/ScriptureMatchMode.jsx
 import { useEffect, useState, useRef } from "react";
 import { useTimer } from "hooks/useTimer";
 import RightAnswerModal from "components/ui/RightAnswerModal";
 import WrongAnswerModal from "components/ui/WrongAnswerModal";
 import TimeUpModal from "components/ui/TimeUpModal";
+import ProgressBar from "components/ui/progress";
 import { Button } from "components/ui/button";
 
 export default function ScriptureMatchMode({ question, level, onBack, onCorrect }) {
@@ -11,7 +11,7 @@ export default function ScriptureMatchMode({ question, level, onBack, onCorrect 
   const [shuffledVerses, setShuffledVerses] = useState([]);
   const [matches, setMatches] = useState({});
   const [draggedVerse, setDraggedVerse] = useState(null);
-  const [status, setStatus] = useState("idle"); // idle, correct, wrong, timeup
+  const [status, setStatus] = useState("idle");
   const hasAnswered = useRef(false);
 
   const { timeLeft, setIsRunning, reset } = useTimer(30, () => {
@@ -66,61 +66,81 @@ export default function ScriptureMatchMode({ question, level, onBack, onCorrect 
   const isMatched = (verse) =>
     Object.values(matches).includes(verse);
 
+  const backgroundUrl =
+    "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds/BG%202.png";
+
   return (
-    <div className="p-6 bg-white rounded-xl shadow-lg max-w-3xl mx-auto animate-fadeInUp">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-charcoal">Scripture Match</h2>
-        <span className="text-sm text-red-500 font-bold">{timeLeft}s</span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        {/* References (Drop targets) */}
-        <div>
-          <h3 className="font-semibold mb-2">References</h3>
-          {pairs.map(({ reference }) => (
-            <div
-              key={reference}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => handleDrop(reference)}
-              className="border border-gray-300 rounded-lg p-3 min-h-[60px] mb-3 bg-gray-50 flex items-center justify-between"
-            >
-              <span>{reference}</span>
-              {matches[reference] && (
-                <span className="ml-2 text-sm text-blue-700 font-medium">{matches[reference]}</span>
-              )}
+    <div
+      className="min-h-screen flex justify-center items-center bg-cover bg-center px-4"
+      style={{ backgroundImage: `url(${backgroundUrl})` }}
+    >
+      <div className="w-full max-w-4xl animate-fade-in-up">
+        <div className="p-6 rounded-xl shadow-lg bg-white/90 border border-gray-200 space-y-6">
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-600 font-medium">
+                Phase {level?.phaseNumber} • Level {level?.number}
+              </div>
+              <div className="text-xs text-gray-500 font-semibold">{timeLeft}s</div>
             </div>
-          ))}
-        </div>
+            <ProgressBar value={timeLeft} max={30} />
+          </div>
 
-        {/* Draggable Verses */}
-        <div>
-          <h3 className="font-semibold mb-2">Verses</h3>
-          {shuffledVerses.map(({ verse }) => (
-            <div
-              key={verse}
-              draggable={!isMatched(verse)}
-              onDragStart={() => setDraggedVerse({ verse })}
-              className={`cursor-move border p-3 rounded-lg mb-3 shadow-sm transition ${
-                isMatched(verse)
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : "bg-gold text-black hover:bg-yellow-300"
-              }`}
-            >
-              {verse}
+          <div className="grid grid-cols-2 gap-6 mt-4">
+            {/* References (Drop targets) */}
+            <div>
+              <h3 className="font-semibold mb-2">References</h3>
+              {pairs.map(({ reference }) => (
+                <div
+                  key={reference}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleDrop(reference)}
+                  className="border border-gray-300 rounded-lg p-3 min-h-[60px] mb-3 bg-gray-50 flex items-center justify-between"
+                >
+                  <span>{reference}</span>
+                  {matches[reference] && (
+                    <span className="ml-2 text-sm text-blue-700 font-medium">
+                      {matches[reference]}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
+
+            {/* Draggable Verses */}
+            <div>
+              <h3 className="font-semibold mb-2">Verses</h3>
+              {shuffledVerses.map(({ verse }) => (
+                <div
+                  key={verse}
+                  draggable={!isMatched(verse)}
+                  onDragStart={() => setDraggedVerse({ verse })}
+                  className={`cursor-move border p-3 rounded-lg mb-3 shadow-sm transition ${
+                    isMatched(verse)
+                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      : "bg-gold text-black hover:bg-yellow-300"
+                  }`}
+                >
+                  {verse}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-center mt-6">
+            <Button
+              disabled={
+                hasAnswered.current || Object.keys(matches).length !== pairs.length
+              }
+              onClick={checkAnswer}
+            >
+              ✅ Submit
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-center mt-6">
-        <Button
-          disabled={hasAnswered.current || Object.keys(matches).length !== pairs.length}
-          onClick={checkAnswer}
-        >
-          ✅ Submit
-        </Button>
-      </div>
-
+      {/* Modals */}
       <RightAnswerModal
         isOpen={status === "correct"}
         onClose={() => onCorrect()}

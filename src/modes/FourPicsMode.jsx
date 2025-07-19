@@ -6,6 +6,8 @@ import RightAnswerModal from "components/ui/RightAnswerModal";
 import WrongAnswerModal from "components/ui/WrongAnswerModal";
 import TimeUpModal from "components/ui/TimeUpModal";
 import { Button } from "components/ui/button";
+import { useResetLevel } from "hooks/useResetLevel";
+import ProgressBar from "components/ui/progress";
 
 export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
   const INITIAL_TIME = 30;
@@ -22,11 +24,7 @@ export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
   const hasAnswered = useRef(false);
 
   // ✅ Use timer correctly
-  const {
-    timeLeft,
-    setTimeLeft,
-    setIsRunning,
-  } = useTimer(INITIAL_TIME, () => {
+  const { timeLeft, setTimeLeft, setIsRunning } = useTimer(INITIAL_TIME, () => {
     if (hasAnswered.current) return;
     if (input.trim()) {
       checkAnswer();
@@ -54,7 +52,8 @@ export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
     if (!question?.answer) return;
     hasAnswered.current = true;
     setIsRunning(false);
-    const correct = input.trim().toLowerCase() === question.answer.toLowerCase();
+    const correct =
+      input.trim().toLowerCase() === question.answer.toLowerCase();
     correct ? setShowRightModal(true) : setShowWrongModal(true);
   };
 
@@ -71,31 +70,44 @@ export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
     if (hasAnswered.current || input.length === 0) return;
     const lastChar = input[input.length - 1];
     const reverseUsed = [...usedIndexes].reverse();
-    const idxToRemove = reverseUsed.find((idx) => shuffledLetters[idx] === lastChar);
+    const idxToRemove = reverseUsed.find(
+      (idx) => shuffledLetters[idx] === lastChar
+    );
     if (idxToRemove !== undefined) {
       setInput((prev) => prev.slice(0, -1));
       setUsedIndexes((prev) => prev.filter((i) => i !== idxToRemove));
     }
   };
 
-  const resetLevel = () => {
-    setInput("");
-    setUsedIndexes([]);
-    setShowRightModal(false);
-    setShowWrongModal(false);
-    setShowTimeUpModal(false);
-    hasAnswered.current = false;
-    setTimeLeft(INITIAL_TIME);
-    setIsRunning(true);
-    if (question?.letters) {
-      const reshuffled = question.letters.split("").sort(() => Math.random() - 0.5);
-      setShuffledLetters(reshuffled);
-    }
-  };
+  const resetLevel = useResetLevel({
+    setModals: {
+      setShowRightModal,
+      setShowWrongModal,
+      setShowTimeUpModal,
+    },
+    setUserInput: setInput,
+    setTimeLeft,
+    setIsRunning,
+    hasAnsweredRef: hasAnswered,
+    reshuffleLetters: () => {
+      if (question?.letters) {
+        const reshuffled = question.letters
+          .split("")
+          .sort(() => Math.random() - 0.5);
+        setShuffledLetters(reshuffled);
+        setUsedIndexes([]);
+      }
+    },
+  });
 
-  if (loading) return <div className="p-6 text-center">Loading question...</div>;
+  if (loading)
+    return <div className="p-6 text-center">Loading question...</div>;
   if (!question?.answer || !question?.image_urls) {
-    return <div className="p-6 text-center text-red-600">❌ Invalid question data.</div>;
+    return (
+      <div className="p-6 text-center text-red-600">
+        ❌ Invalid question data.
+      </div>
+    );
   }
 
   const images = question.image_urls.split(",").map((url) => url.trim());
@@ -103,9 +115,16 @@ export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
 
   return (
     <div className="p-6 bg-gradient-to-br from-yellow-50 to-orange-100 rounded-xl shadow-lg max-w-2xl mx-auto animate-fadeInUp">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-charcoal">Four Pics One Word</h2>
-        <span className="text-sm text-red-600 font-semibold">{timeLeft}s</span>
+      <div className="space-y-1 mb-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-bold text-charcoal">
+            Four Pics One Word
+          </h2>
+          <span className="text-sm text-gray-600 font-semibold">
+            {timeLeft}s
+          </span>
+        </div>
+        <ProgressBar value={timeLeft} max={INITIAL_TIME} />
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6">
@@ -121,10 +140,7 @@ export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
 
       <div className="flex justify-center gap-2 mb-4 text-xl font-semibold tracking-wide">
         {Array.from({ length: answerLength }).map((_, i) => (
-          <div
-            key={i}
-            className="w-10 h-10 border-b-4 border-gold text-center"
-          >
+          <div key={i} className="w-10 h-10 border-b-4 border-gold text-center">
             {input[i] || ""}
           </div>
         ))}

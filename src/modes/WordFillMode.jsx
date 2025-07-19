@@ -1,40 +1,24 @@
-// Add at the top of your file (after imports):
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "components/ui/card";
 import { Input } from "components/ui/input";
 import RightAnswerModal from "components/ui/RightAnswerModal";
 import WrongAnswerModal from "components/ui/WrongAnswerModal";
 import TimeUpModal from "components/ui/TimeUpModal";
 import ProgressBar from "components/ui/progress";
-
-// Keyframes for fadeInUp animation (global CSS or Tailwind config if using custom utilities):
-// .animate-fadeInUp {
-//   animation: fadeInUp 0.6s ease-out;
-// }
-// @keyframes fadeInUp {
-//   from { opacity: 0; transform: translateY(20px); }
-//   to { opacity: 1; transform: translateY(0); }
-// }
+import { useResetLevel } from "hooks/useResetLevel";
+import { useTimer } from "hooks/useTimer";
 
 export default function WordFillMode({ question, answer, level, onCorrect }) {
   const [userInput, setUserInput] = useState("");
   const [status, setStatus] = useState("idle");
-  const [timeLeft, setTimeLeft] = useState(30);
   const [showRightModal, setShowRightModal] = useState(false);
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
-  const timerRef = useRef(null);
   const hasAnswered = useRef(false);
 
-  // Stop timer
-  const stopTimer = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-  };
-
-  const checkAnswer = () => {
+  const checkAnswer = useCallback(() => {
     stopTimer(); // stop timer on submit
     hasAnswered.current = true;
-
     const isCorrect =
       userInput.trim().toLowerCase() === answer.trim().toLowerCase();
 
@@ -47,35 +31,40 @@ export default function WordFillMode({ question, answer, level, onCorrect }) {
         setShowWrongModal(true);
       }
     }, 500);
+  }, [userInput, answer]);
+
+  const {
+    timeLeft,
+    setTimeLeft,
+    
+    setIsRunning,
+    
+  } = useTimer(30, () => {
+    if (hasAnswered.current) return;
+    if (userInput.trim()) {
+      checkAnswer();
+    } else {
+      setShowTimeUpModal(true);
+    }
+  });
+
+  const stopTimer = () => {
+    setIsRunning(false);
   };
 
-  // Timer countdown
-  useEffect(() => {
-    if (hasAnswered.current) return;
+  const resetLevel = useResetLevel({
+    setModals: {
+      setShowRightModal,
+      setShowWrongModal,
+      setShowTimeUpModal,
+    },
+    setUserInput,
+    setStatus,
+    setTimeLeft,
+    setIsRunning,
+    hasAnsweredRef: hasAnswered,
+  });
 
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev === 1) {
-          clearInterval(timerRef.current);
-          if (userInput.trim() === "") {
-            setShowTimeUpModal(true);
-          } else {
-            checkAnswer(); // auto-submit
-          }
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-   
-
-    return () => clearInterval(timerRef.current);
-  }, [userInput]);
-
-
-  
-
-  // Background image
   const backgroundUrl =
     "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//WordFillBackground.jpg";
 
@@ -134,35 +123,22 @@ export default function WordFillMode({ question, answer, level, onCorrect }) {
         </Card>
       </div>
 
-      {/* ✅ Modals */}
       <RightAnswerModal
         isOpen={showRightModal}
         onClose={() => onCorrect()}
-        onNext={() => onCorrect()} // stays as next level
-        onBackToMap={() => window.location.reload()} // or navigate to Map screen if using React Router
+        onNext={() => onCorrect()}
+        onBackToMap={() => window.location.reload()}
       />
 
       <WrongAnswerModal
         isOpen={showWrongModal}
-        onRetry={() => {
-          setShowWrongModal(false);
-          setUserInput("");
-          setStatus("idle");
-          setTimeLeft(30);
-          hasAnswered.current = false;
-        }}
+        onRetry={resetLevel}
         onBack={() => window.location.reload()}
       />
 
       <TimeUpModal
         isOpen={showTimeUpModal}
-        onRetry={() => {
-          setShowWrongModal(false);
-          setUserInput("");
-          setStatus("idle");
-          setTimeLeft(30);
-          hasAnswered.current = false;
-        }}
+        onTryAgain={resetLevel}
         onGoToMap={() => window.location.reload()}
       />
     </div>

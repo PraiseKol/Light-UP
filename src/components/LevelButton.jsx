@@ -8,7 +8,7 @@ export default function LevelButton({ level, isUnlocked, onClick }) {
     w-16 h-16 rounded-full font-bold shadow-xl transition-all duration-300 flex items-center justify-center
   `;
 
-  const completedStyle = "bg-black text-yellow-300 ";
+  const completedStyle = "bg-black text-yellow-300 ring-4 ring-blue-400 ";
   const unlockedStyle = "bg-black text-white glow-ring";
   const lockedStyle =
     "bg-black ring-4 ring-yellow-400 text-yellow-400 cursor-not-allowed";

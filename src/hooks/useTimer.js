@@ -23,7 +23,8 @@ export function useTimer(durationSeconds = 60, onExpire, autoStart = true) {
   }, [onExpire]);
 
   useEffect(() => {
-    if (!isRunning || timeLeft <= 0) return;
+    if (!isRunning) return;
+    if (timeLeft <= 0) return;
 
     intervalRef.current = setInterval(tick, 1000);
     return () => clearInterval(intervalRef.current);
@@ -36,7 +37,7 @@ export function useTimer(durationSeconds = 60, onExpire, autoStart = true) {
 
   return {
     timeLeft,
-    setTimeLeft,      // ✅ Expose this for manual reset (fixes your error)
+    setTimeLeft, // ✅ Expose this for manual reset (fixes your error)
     isRunning,
     setIsRunning,
     reset,
