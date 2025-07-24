@@ -9,6 +9,9 @@ import { Button } from "components/ui/button";
 import { useResetLevel } from "hooks/useResetLevel";
 import ProgressBar from "components/ui/progress";
 
+const fourPicsBackground =
+  "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//FourPicsBackground.png";
+
 export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
   const INITIAL_TIME = 30;
 
@@ -32,6 +35,8 @@ export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
       setShowTimeUpModal(true);
     }
   });
+
+  
 
   // ✅ Load question
   useEffect(() => {
@@ -100,6 +105,8 @@ export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
     },
   });
 
+  
+
   if (loading)
     return <div className="p-6 text-center">Loading question...</div>;
   if (!question?.answer || !question?.image_urls) {
@@ -113,10 +120,19 @@ export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
   const images = question.image_urls.split(",").map((url) => url.trim());
   const answerLength = question.answer.length;
 
+
+  
+
   return (
+    
     <div className="p-6 bg-gradient-to-br from-yellow-50 to-orange-100 rounded-xl shadow-lg max-w-2xl mx-auto animate-fadeInUp">
+      
+      
+
       <div className="space-y-1 mb-4">
+      
         <div className="flex justify-between items-center">
+        
           <h2 className="text-xl font-bold text-charcoal">
             Four Pics One Word
           </h2>

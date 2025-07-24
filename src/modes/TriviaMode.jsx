@@ -9,7 +9,7 @@ import { useTimer } from "hooks/useTimer";
 import { useResetLevel } from "hooks/useResetLevel";
 
 const triviaBackground =
-  "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds/TriviaBackground.jpg";
+  "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds/TriviaBackground.png";
 
 export default function TriviaMode({ level, question, answer, options, onBack, onCorrect }) {
   const [selected, setSelected] = useState(null);

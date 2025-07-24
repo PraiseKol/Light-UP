@@ -1,4 +1,5 @@
 // src/pages/MapAndGame.jsx
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { levelPhases } from "../data/levelData";
 import { useAuth } from "../auth/AuthProvider";
@@ -16,8 +17,15 @@ export default function MapAndGame() {
   const [completedLevels, setCompletedLevels] = useState([]);
   const [syncedPhase, setSyncedPhase] = useState(null);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const basePhase = levelPhases[currentPhaseIndex];
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
 
   const wrapLevelsWithNumberAndCompletion = (completedIds) => {
     return basePhase.levels.map((level, index) => ({
@@ -31,6 +39,7 @@ export default function MapAndGame() {
     const loadProgress = async () => {
       if (user) {
         const completed = await fetchProgress(user.id);
+        console.log("🔍 Updated completedLevels:", completed);
         setCompletedLevels(completed);
 
         const updatedLevels = wrapLevelsWithNumberAndCompletion(completed);
@@ -42,11 +51,21 @@ export default function MapAndGame() {
   }, [user]);
 
   const handleLevelComplete = async () => {
+    console.log("Saving progress for user:", user?.id);
+
     if (!user || !selectedLevel?.id) return;
 
-    await saveProgress(user.id, selectedLevel.id);
+    // ✅ Save full progress record
+    await saveProgress({
+      level_id: selectedLevel.id,
+      phase: selectedLevel.phaseNumber,
+      mode: selectedLevel.mode,
+      score: 0, // or actual score if available later
+    });
 
+    // ✅ Re-fetch updated progress list
     const updatedCompleted = await fetchProgress(user.id);
+    console.log("🔍 Updated completedLevels:", updatedCompleted);
     setCompletedLevels(updatedCompleted);
 
     const updatedLevels = wrapLevelsWithNumberAndCompletion(updatedCompleted);
@@ -62,7 +81,7 @@ export default function MapAndGame() {
         ...nextLevel,
         number: currentIdx + 2,
         completed: updatedCompleted.includes(nextLevel.id),
-        phaseNumber: basePhase.phaseNumber, // ✅ make sure it's included
+        phaseNumber: basePhase.phaseNumber,
       });
     } else {
       setSelectedLevel(null);
@@ -76,7 +95,6 @@ export default function MapAndGame() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <AnimatedBackground />
-
       <div className="relative z-10 max-w-4xl mx-auto p-4">
         {!selectedLevel ? (
           <LevelMap
@@ -85,7 +103,7 @@ export default function MapAndGame() {
               setSelectedLevel({
                 ...level,
                 number: index + 1,
-                phaseNumber: basePhase.phaseNumber, // ✅ Fix added here
+                phaseNumber: basePhase.phaseNumber,
               })
             }
           />
@@ -97,7 +115,6 @@ export default function MapAndGame() {
           />
         )}
       </div>
-
       <AppToaster />
     </div>
   );

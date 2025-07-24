@@ -25,7 +25,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/map" />} />
+          <Route path="*" element={<Navigate to="/map" replace />} />
         </Routes>
       </AuthProvider>
     </Router>

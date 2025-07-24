@@ -11,18 +11,31 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setAuthLoading(false);
-    });
+    const checkAuth = async () => {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
-    // Listen to login/logout events
+      const currentUser = session?.user ?? null;
+
+      setUser(currentUser);
+      setAuthLoading(false);
+
+      if (!currentUser) {
+        navigate("/login");
+      }
+    };
+
+    checkAuth();
+
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          navigate("/map"); // redirect after login
+        const newUser = session?.user ?? null;
+
+        setUser(newUser);
+        if (newUser) {
+          navigate("/map");
         } else {
           navigate("/login");
         }
@@ -34,7 +47,6 @@ export const AuthProvider = ({ children }) => {
     };
   }, [navigate]);
 
-  // ✅ Keep only ONE login function
   const login = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -47,11 +59,12 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    navigate("/login");
   };
 
   return (
     <AuthContext.Provider value={{ user, login, logout, authLoading }}>
-      {children}
+      {!authLoading && children}
     </AuthContext.Provider>
   );
 };
