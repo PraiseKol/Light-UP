@@ -75,11 +75,17 @@ export default function WordFillMode({ question, answer, level, onCorrect }) {
     >
       <div className="w-full max-w-xl animate-fadeInUp">
         <Card className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-xl p-6">
-          <div className="text-xs text-gray-500 mb-2">
-            Phase {level?.phaseNumber} • Level {level?.number}
-          </div>
-
-          <ProgressBar value={timeLeft} max={30} className="mb-4" />
+        <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-600 font-medium">
+                  Phase {level?.phaseNumber} • Level {level?.number} Word Fill
+                </div>
+                <div className="text-xs text-gray-500 font-semibold">
+                  {timeLeft}s
+                </div>
+              </div>
+              <ProgressBar value={timeLeft} max={30} />
+            </div>
 
           <CardHeader className="text-xl text-gray-800 leading-snug">
             {question}

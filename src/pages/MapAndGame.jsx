@@ -1,15 +1,17 @@
 // MapAndGame.jsx
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { levelPhases } from "../data/levelData";
-import { useAuth } from "../auth/AuthProvider";
-import { fetchProgress } from "../lib/fetchProgress";
-import { saveProgress } from "../lib/saveProgress";
+import { useState, useEffect, useRef } from "react";
+import { levelPhases } from "data/levelData";
+import { useAuth } from "auth/AuthProvider";
+import { fetchProgress } from "lib/fetchProgress";
+import { saveProgress } from "lib/saveProgress";
+import { fetchRandomScripture } from "lib/fetchRandomScripture"; // ✅ NEW
 
-import AnimatedBackground from "../components/AnimatedBackground";
-import LevelMap from "../components/LevelMap";
-import GameScreen from "../components/GameScreen";
-import AppToaster from "../components/ui/toaster";
+import AnimatedBackground from "components/AnimatedBackground";
+import LevelMap from "components/LevelMap";
+import GameScreen from "components/GameScreen";
+import AppToaster from "components/ui/toaster";
+import ScriptureModal from "components/ScriptureModal";
 
 export default function MapAndGame() {
   const [selectedLevel, setSelectedLevel] = useState(null);
@@ -17,9 +19,12 @@ export default function MapAndGame() {
   const [unlockedPhases, setUnlockedPhases] = useState([]);
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
   const [pendingNextLevel, setPendingNextLevel] = useState(null);
+  const [showScriptureModal, setShowScriptureModal] = useState(false);
+  const [scriptureText, setScriptureText] = useState("");
 
   const { user } = useAuth();
   const navigate = useNavigate();
+  const phaseRefs = useRef([]);
 
   const determineUnlockedPhases = (completedIds) => {
     const unlocked = [];
@@ -42,7 +47,9 @@ export default function MapAndGame() {
     }));
 
   const getCurrentLevelId = (phase) => {
-    const firstIncomplete = phase.levels.find((lvl) => !completedLevels.includes(lvl.id));
+    const firstIncomplete = phase.levels.find(
+      (lvl) => !completedLevels.includes(lvl.id)
+    );
     return firstIncomplete ? firstIncomplete.id : null;
   };
 
@@ -65,31 +72,33 @@ export default function MapAndGame() {
 
   const handleLevelComplete = async () => {
     if (!user || !selectedLevel?.id) return;
-
+  
     await saveProgress({
       level_id: selectedLevel.id,
       phase: selectedLevel.phaseNumber,
       mode: selectedLevel.mode,
       score: 0,
     });
-
+  
     const updatedCompleted = await fetchProgress(user.id);
     setCompletedLevels(updatedCompleted);
-
+  
     const unlocked = determineUnlockedPhases(updatedCompleted);
     setUnlockedPhases(unlocked);
-
+  
     const currentPhase = levelPhases.find(
       (p) => p.phaseNumber === selectedLevel.phaseNumber
     );
-
-    const currentIdx = currentPhase.levels.findIndex((l) => l.id === selectedLevel.id);
+  
+    const currentIdx = currentPhase.levels.findIndex(
+      (l) => l.id === selectedLevel.id
+    );
     const nextLevel = currentPhase.levels[currentIdx + 1];
-
+  
     setSelectedLevel(null);
-    setShowUnlockAnimation(true);
-
+  
     if (nextLevel) {
+      setShowUnlockAnimation(true);
       setPendingNextLevel({
         ...nextLevel,
         number: currentIdx + 2,
@@ -97,9 +106,13 @@ export default function MapAndGame() {
         phaseNumber: currentPhase.phaseNumber,
       });
     } else {
-      setPendingNextLevel(null);
+      // ✅ Phase completed
+      const fetchedScripture = await fetchRandomScripture();
+      setScriptureText(fetchedScripture || "“The Lord will fight for you; you need only to be still.” — Exodus 14:14");
+      setShowScriptureModal(true);
     }
   };
+  
 
   useEffect(() => {
     if (showUnlockAnimation) {
@@ -114,6 +127,22 @@ export default function MapAndGame() {
       return () => clearTimeout(timer);
     }
   }, [showUnlockAnimation, pendingNextLevel]);
+
+  const handleNextPhaseScroll = () => {
+    const currentPhaseNum = selectedLevel?.phaseNumber;
+    const nextIndex = levelPhases.findIndex(
+      (p) => p.phaseNumber === currentPhaseNum + 1
+    );
+
+    setShowScriptureModal(false);
+
+    if (nextIndex !== -1 && phaseRefs.current[nextIndex]) {
+      phaseRefs.current[nextIndex].scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
 
   if (!user || !completedLevels) {
     return <div className="text-center p-6">Loading map...</div>;
@@ -138,18 +167,22 @@ export default function MapAndGame() {
         {!selectedLevel ? (
           <div className="flex flex-col gap-8">
             {levelPhases.map((phase, index) => (
-              <LevelMap
+              <div
                 key={index}
-                phase={{
-                  ...phase,
-                  levels: wrapLevelsWithStatus(index, phase, completedLevels),
-                }}
-                phaseIndex={index}
-                completedLevels={completedLevels}
-                currentLevelId={getCurrentLevelId(phase)}
-                onSelectLevel={(level, i) => setSelectedLevel(level)}
-                isLocked={!unlockedPhases.includes(index)}
-              />
+                ref={(el) => (phaseRefs.current[index] = el)}
+              >
+                <LevelMap
+                  phase={{
+                    ...phase,
+                    levels: wrapLevelsWithStatus(index, phase, completedLevels),
+                  }}
+                  phaseIndex={index}
+                  completedLevels={completedLevels}
+                  currentLevelId={getCurrentLevelId(phase)}
+                  onSelectLevel={(level, i) => setSelectedLevel(level)}
+                  isLocked={!unlockedPhases.includes(index)}
+                />
+              </div>
             ))}
           </div>
         ) : (
@@ -160,6 +193,13 @@ export default function MapAndGame() {
           />
         )}
       </div>
+
+      {showScriptureModal && (
+        <ScriptureModal
+          text={scriptureText}
+          onNext={handleNextPhaseScroll}
+        />
+      )}
 
       <AppToaster />
     </div>

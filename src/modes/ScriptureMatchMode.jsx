@@ -85,7 +85,7 @@ export default function ScriptureMatchMode({ question, level, onBack, onCorrect 
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <div className="text-sm text-gray-600 font-medium">
-                  Phase {level?.phaseNumber} • Level {level?.number}
+                  Phase {level?.phaseNumber} • Level {level?.number} Scripture Match (Drag and Drop)
                 </div>
                 <div className="text-xs text-gray-500 font-semibold">
                   {timeLeft}s

@@ -133,9 +133,9 @@ export default function FourPicsMode({ level, onBack, onCorrect = () => {} }) {
       
         <div className="flex justify-between items-center">
         
-          <h2 className="text-xl font-bold text-charcoal">
-            Four Pics One Word
-          </h2>
+        <div className="text-xs text-gray-500 mb-2">
+            Phase {level?.phaseNumber} • Level {level?.number} Four Pics One Word
+          </div>
           <span className="text-sm text-gray-600 font-semibold">
             {timeLeft}s
           </span>
