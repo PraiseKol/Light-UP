@@ -12,14 +12,12 @@ module.exports = {
         floatParticles: 'floatParticles 30s linear infinite',
         fadeInUp: 'fadeInUp 0.8s ease-out',
         popIn: 'popIn 0.4s ease-out',
+        fadeScale: 'fadeScale 0.7s ease-out', // ✅ New animation
       },
       keyframes: {
         flicker: {
           '0%, 100%': { opacity: 1 },
           '50%': { opacity: 0.85 },
-        },
-        animation: {
-          flicker: 'flicker 1.2s infinite',
         },
         gradientBlur: {
           '0%, 100%': { transform: 'scale(1)' },
@@ -36,6 +34,10 @@ module.exports = {
         popIn: {
           '0%': { transform: 'scale(0.8)', opacity: 0 },
           '100%': { transform: 'scale(1)', opacity: 1 },
+        },
+        fadeScale: { // ✅ New keyframes
+          '0%': { opacity: 0, transform: 'scale(0.9)' },
+          '100%': { opacity: 1, transform: 'scale(1)' },
         },
       },
     },

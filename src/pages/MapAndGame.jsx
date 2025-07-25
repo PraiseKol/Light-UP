@@ -1,4 +1,4 @@
-// src/pages/MapAndGame.jsx
+// MapAndGame.jsx
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { levelPhases } from "../data/levelData";
@@ -12,101 +12,146 @@ import GameScreen from "../components/GameScreen";
 import AppToaster from "../components/ui/toaster";
 
 export default function MapAndGame() {
-  const [currentPhaseIndex] = useState(0);
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [completedLevels, setCompletedLevels] = useState([]);
-  const [syncedPhase, setSyncedPhase] = useState(null);
+  const [unlockedPhases, setUnlockedPhases] = useState([]);
+  const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
+  const [pendingNextLevel, setPendingNextLevel] = useState(null);
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const basePhase = levelPhases[currentPhaseIndex];
+  const determineUnlockedPhases = (completedIds) => {
+    const unlocked = [];
+    for (let i = 0; i < levelPhases.length; i++) {
+      const isFirst = i === 0;
+      const lastLevelId = !isFirst ? levelPhases[i - 1].levels.at(-1).id : null;
+      if (isFirst || completedIds.includes(lastLevelId)) {
+        unlocked.push(i);
+      }
+    }
+    return unlocked;
+  };
+
+  const wrapLevelsWithStatus = (phaseIndex, phase, completedIds) =>
+    phase.levels.map((level, index) => ({
+      ...level,
+      number: index + 1,
+      completed: completedIds.includes(level.id),
+      phaseNumber: levelPhases[phaseIndex].phaseNumber,
+    }));
+
+  const getCurrentLevelId = (phase) => {
+    const firstIncomplete = phase.levels.find((lvl) => !completedLevels.includes(lvl.id));
+    return firstIncomplete ? firstIncomplete.id : null;
+  };
 
   useEffect(() => {
     if (!user) {
       navigate("/login");
+      return;
     }
-  }, [user, navigate]);
 
-  const wrapLevelsWithNumberAndCompletion = (completedIds) => {
-    return basePhase.levels.map((level, index) => ({
-      ...level,
-      number: index + 1,
-      completed: completedIds.includes(level.id),
-    }));
-  };
-
-  useEffect(() => {
     const loadProgress = async () => {
-      if (user) {
-        const completed = await fetchProgress(user.id);
-        console.log("🔍 Updated completedLevels:", completed);
-        setCompletedLevels(completed);
+      const completed = await fetchProgress(user.id);
+      setCompletedLevels(completed);
 
-        const updatedLevels = wrapLevelsWithNumberAndCompletion(completed);
-        setSyncedPhase({ ...basePhase, levels: updatedLevels });
-      }
+      const unlocked = determineUnlockedPhases(completed);
+      setUnlockedPhases(unlocked);
     };
 
     loadProgress();
-  }, [user]);
+  }, [user, navigate]);
 
   const handleLevelComplete = async () => {
-    console.log("Saving progress for user:", user?.id);
-
     if (!user || !selectedLevel?.id) return;
 
-    // ✅ Save full progress record
     await saveProgress({
       level_id: selectedLevel.id,
       phase: selectedLevel.phaseNumber,
       mode: selectedLevel.mode,
-      score: 0, // or actual score if available later
+      score: 0,
     });
 
-    // ✅ Re-fetch updated progress list
     const updatedCompleted = await fetchProgress(user.id);
-    console.log("🔍 Updated completedLevels:", updatedCompleted);
     setCompletedLevels(updatedCompleted);
 
-    const updatedLevels = wrapLevelsWithNumberAndCompletion(updatedCompleted);
-    setSyncedPhase({ ...basePhase, levels: updatedLevels });
+    const unlocked = determineUnlockedPhases(updatedCompleted);
+    setUnlockedPhases(unlocked);
 
-    const currentIdx = basePhase.levels.findIndex(
-      (l) => l.id === selectedLevel.id
+    const currentPhase = levelPhases.find(
+      (p) => p.phaseNumber === selectedLevel.phaseNumber
     );
-    const nextLevel = basePhase.levels[currentIdx + 1];
+
+    const currentIdx = currentPhase.levels.findIndex((l) => l.id === selectedLevel.id);
+    const nextLevel = currentPhase.levels[currentIdx + 1];
+
+    setSelectedLevel(null);
+    setShowUnlockAnimation(true);
 
     if (nextLevel) {
-      setSelectedLevel({
+      setPendingNextLevel({
         ...nextLevel,
         number: currentIdx + 2,
         completed: updatedCompleted.includes(nextLevel.id),
-        phaseNumber: basePhase.phaseNumber,
+        phaseNumber: currentPhase.phaseNumber,
       });
     } else {
-      setSelectedLevel(null);
+      setPendingNextLevel(null);
     }
   };
 
-  if (!syncedPhase) {
+  useEffect(() => {
+    if (showUnlockAnimation) {
+      const timer = setTimeout(() => {
+        setShowUnlockAnimation(false);
+        if (pendingNextLevel) {
+          setSelectedLevel(pendingNextLevel);
+          setPendingNextLevel(null);
+        }
+      }, 2500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showUnlockAnimation, pendingNextLevel]);
+
+  if (!user || !completedLevels) {
     return <div className="text-center p-6">Loading map...</div>;
   }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
       <AnimatedBackground />
-      <div className="relative z-10 max-w-4xl mx-auto p-4">
+
+      {showUnlockAnimation && (
+        <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
+          <div className="flex flex-col items-center gap-4">
+            <div className="glow-path-animation w-64 h-2 bg-gradient-to-r from-gold to-yellow-400 animate-pulse rounded-full shadow-lg"></div>
+            <p className="text-xl font-semibold text-charcoal">
+              Next Level Unlocked!
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="relative z-10 max-w-3xl mx-auto p-4 overflow-y-auto max-h-[90vh] space-y-6">
         {!selectedLevel ? (
-          <LevelMap
-            phase={syncedPhase}
-            onSelectLevel={(level, index) =>
-              setSelectedLevel({
-                ...level,
-                number: index + 1,
-                phaseNumber: basePhase.phaseNumber,
-              })
-            }
-          />
+          <div className="flex flex-col gap-8">
+            {levelPhases.map((phase, index) => (
+              <LevelMap
+                key={index}
+                phase={{
+                  ...phase,
+                  levels: wrapLevelsWithStatus(index, phase, completedLevels),
+                }}
+                phaseIndex={index}
+                completedLevels={completedLevels}
+                currentLevelId={getCurrentLevelId(phase)}
+                onSelectLevel={(level, i) => setSelectedLevel(level)}
+                isLocked={!unlockedPhases.includes(index)}
+              />
+            ))}
+          </div>
         ) : (
           <GameScreen
             level={selectedLevel}
@@ -115,6 +160,7 @@ export default function MapAndGame() {
           />
         )}
       </div>
+
       <AppToaster />
     </div>
   );
