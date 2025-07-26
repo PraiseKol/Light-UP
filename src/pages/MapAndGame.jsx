@@ -1,11 +1,11 @@
-// MapAndGame.jsx
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { levelPhases } from "data/levelData";
 import { useAuth } from "auth/AuthProvider";
 import { fetchProgress } from "lib/fetchProgress";
 import { saveProgress } from "lib/saveProgress";
-import { fetchRandomScripture } from "lib/fetchRandomScripture"; // ✅ NEW
+import { fetchTotalScore } from "lib/fetchTotalScore";
+import { fetchRandomScripture } from "lib/fetchRandomScripture";
 
 import AnimatedBackground from "components/AnimatedBackground";
 import LevelMap from "components/LevelMap";
@@ -21,10 +21,29 @@ export default function MapAndGame() {
   const [pendingNextLevel, setPendingNextLevel] = useState(null);
   const [showScriptureModal, setShowScriptureModal] = useState(false);
   const [scriptureText, setScriptureText] = useState("");
+  const [userScore, setUserScore] = useState(0); // ✅ new state
 
   const { user } = useAuth();
   const navigate = useNavigate();
   const phaseRefs = useRef([]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    const loadProgressAndScore = async () => {
+      const completed = await fetchProgress(user.id);
+      setCompletedLevels(completed);
+      setUnlockedPhases(determineUnlockedPhases(completed));
+
+      const score = await fetchTotalScore(user.id); // ✅ fetch score
+      setUserScore(score);
+    };
+
+    loadProgressAndScore();
+  }, [user, navigate]);
 
   const determineUnlockedPhases = (completedIds) => {
     const unlocked = [];
@@ -53,50 +72,34 @@ export default function MapAndGame() {
     return firstIncomplete ? firstIncomplete.id : null;
   };
 
-  useEffect(() => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
-    const loadProgress = async () => {
-      const completed = await fetchProgress(user.id);
-      setCompletedLevels(completed);
-
-      const unlocked = determineUnlockedPhases(completed);
-      setUnlockedPhases(unlocked);
-    };
-
-    loadProgress();
-  }, [user, navigate]);
-
   const handleLevelComplete = async () => {
     if (!user || !selectedLevel?.id) return;
-  
+
     await saveProgress({
       level_id: selectedLevel.id,
       phase: selectedLevel.phaseNumber,
       mode: selectedLevel.mode,
-      score: 0,
+      score: 0, // fallback score
     });
-  
+
     const updatedCompleted = await fetchProgress(user.id);
     setCompletedLevels(updatedCompleted);
-  
+    setSelectedLevel(null);
+
     const unlocked = determineUnlockedPhases(updatedCompleted);
     setUnlockedPhases(unlocked);
-  
+
+    const updatedScore = await fetchTotalScore(user.id); // ✅ refresh score
+    setUserScore(updatedScore);
+
     const currentPhase = levelPhases.find(
       (p) => p.phaseNumber === selectedLevel.phaseNumber
     );
-  
     const currentIdx = currentPhase.levels.findIndex(
       (l) => l.id === selectedLevel.id
     );
     const nextLevel = currentPhase.levels[currentIdx + 1];
-  
-    setSelectedLevel(null);
-  
+
     if (nextLevel) {
       setShowUnlockAnimation(true);
       setPendingNextLevel({
@@ -106,13 +109,43 @@ export default function MapAndGame() {
         phaseNumber: currentPhase.phaseNumber,
       });
     } else {
-      // ✅ Phase completed
       const fetchedScripture = await fetchRandomScripture();
-      setScriptureText(fetchedScripture || "“The Lord will fight for you; you need only to be still.” — Exodus 14:14");
+      setScriptureText(
+        fetchedScripture ||
+          "“The Lord will fight for you; you need only to be still.” — Exodus 14:14"
+      );
       setShowScriptureModal(true);
     }
   };
-  
+
+  const handleScore = async (score) => {
+    if (!user || !selectedLevel?.id) return;
+
+    await saveProgress({
+      level_id: selectedLevel.id,
+      phase: selectedLevel.phaseNumber,
+      mode: selectedLevel.mode,
+      score,
+    });
+
+    const updatedScore = await fetchTotalScore(user.id); // ✅ refresh score
+    setUserScore(updatedScore);
+  };
+
+  const handleNextPhaseScroll = () => {
+    const currentPhaseNum = selectedLevel?.phaseNumber;
+    const nextIndex = levelPhases.findIndex(
+      (p) => p.phaseNumber === currentPhaseNum + 1
+    );
+
+    setShowScriptureModal(false);
+    if (nextIndex !== -1 && phaseRefs.current[nextIndex]) {
+      phaseRefs.current[nextIndex].scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
 
   useEffect(() => {
     if (showUnlockAnimation) {
@@ -123,26 +156,9 @@ export default function MapAndGame() {
           setPendingNextLevel(null);
         }
       }, 2500);
-
       return () => clearTimeout(timer);
     }
   }, [showUnlockAnimation, pendingNextLevel]);
-
-  const handleNextPhaseScroll = () => {
-    const currentPhaseNum = selectedLevel?.phaseNumber;
-    const nextIndex = levelPhases.findIndex(
-      (p) => p.phaseNumber === currentPhaseNum + 1
-    );
-
-    setShowScriptureModal(false);
-
-    if (nextIndex !== -1 && phaseRefs.current[nextIndex]) {
-      phaseRefs.current[nextIndex].scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-  };
 
   if (!user || !completedLevels) {
     return <div className="text-center p-6">Loading map...</div>;
@@ -166,11 +182,13 @@ export default function MapAndGame() {
       <div className="relative z-10 max-w-3xl mx-auto p-4 overflow-y-auto max-h-[90vh] space-y-6">
         {!selectedLevel ? (
           <div className="flex flex-col gap-8">
+            {/* ✅ Display score */}
+            <div className="text-right text-base font-semibold text-blue-700 pr-2">
+              Total Score: {userScore}
+            </div>
+
             {levelPhases.map((phase, index) => (
-              <div
-                key={index}
-                ref={(el) => (phaseRefs.current[index] = el)}
-              >
+              <div key={index} ref={(el) => (phaseRefs.current[index] = el)}>
                 <LevelMap
                   phase={{
                     ...phase,
@@ -179,7 +197,7 @@ export default function MapAndGame() {
                   phaseIndex={index}
                   completedLevels={completedLevels}
                   currentLevelId={getCurrentLevelId(phase)}
-                  onSelectLevel={(level, i) => setSelectedLevel(level)}
+                  onSelectLevel={(level) => setSelectedLevel(level)}
                   isLocked={!unlockedPhases.includes(index)}
                 />
               </div>
@@ -190,15 +208,14 @@ export default function MapAndGame() {
             level={selectedLevel}
             onBack={() => setSelectedLevel(null)}
             onComplete={handleLevelComplete}
+            onScore={handleScore}
+            userScore={userScore} // ✅ pass down to GameScreen
           />
         )}
       </div>
 
       {showScriptureModal && (
-        <ScriptureModal
-          text={scriptureText}
-          onNext={handleNextPhaseScroll}
-        />
+        <ScriptureModal text={scriptureText} onNext={handleNextPhaseScroll} />
       )}
 
       <AppToaster />

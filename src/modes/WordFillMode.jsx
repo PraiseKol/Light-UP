@@ -7,39 +7,35 @@ import TimeUpModal from "components/ui/TimeUpModal";
 import ProgressBar from "components/ui/progress";
 import { useResetLevel } from "hooks/useResetLevel";
 import { useTimer } from "hooks/useTimer";
+import { supabase } from "lib/supabaseClient";
+import { useUser } from "@supabase/auth-helpers-react";
 
-export default function WordFillMode({ question, answer, level, onCorrect }) {
+const getScoreFromTime = (timeLeft) => {
+  if (timeLeft > 20) return 100;
+  if (timeLeft > 10) return 75;
+  if (timeLeft > 0) return 50;
+  return 0;
+};
+
+export default function WordFillMode({
+  question,
+  answer,
+  level,
+  onCorrect,
+  onScore,
+}) {
+  const userContext = useUser();
+  const user = userContext?.id ? userContext : null;
+
   const [userInput, setUserInput] = useState("");
   const [status, setStatus] = useState("idle");
+  const [score, setScore] = useState(null);
   const [showRightModal, setShowRightModal] = useState(false);
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
   const hasAnswered = useRef(false);
 
-  const checkAnswer = useCallback(() => {
-    stopTimer(); // stop timer on submit
-    hasAnswered.current = true;
-    const isCorrect =
-      userInput.trim().toLowerCase() === answer.trim().toLowerCase();
-
-    setStatus(isCorrect ? "correct" : "wrong");
-
-    setTimeout(() => {
-      if (isCorrect) {
-        setShowRightModal(true);
-      } else {
-        setShowWrongModal(true);
-      }
-    }, 500);
-  }, [userInput, answer]);
-
-  const {
-    timeLeft,
-    setTimeLeft,
-    
-    setIsRunning,
-    
-  } = useTimer(30, () => {
+  const { timeLeft, setTimeLeft, setIsRunning } = useTimer(30, () => {
     if (hasAnswered.current) return;
     if (userInput.trim()) {
       checkAnswer();
@@ -48,9 +44,7 @@ export default function WordFillMode({ question, answer, level, onCorrect }) {
     }
   });
 
-  const stopTimer = () => {
-    setIsRunning(false);
-  };
+  const stopTimer = () => setIsRunning(false);
 
   const resetLevel = useResetLevel({
     setModals: {
@@ -65,6 +59,46 @@ export default function WordFillMode({ question, answer, level, onCorrect }) {
     hasAnsweredRef: hasAnswered,
   });
 
+  const saveScore = async (scoreToSave) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase.from("progress").upsert(
+        {
+          user_id: user.id,
+          level_id: level.id,
+          mode: "Word Fill",
+          score: scoreToSave,
+        },
+        { onConflict: ["user_id", "level_id"] }
+      );
+      if (error) console.error("Failed to save WordFill score:", error);
+    } catch (err) {
+      console.error("Unexpected error saving WordFill score:", err);
+    }
+  };
+
+  const checkAnswer = useCallback(() => {
+    stopTimer();
+    hasAnswered.current = true;
+
+    const isCorrect =
+      userInput.trim().toLowerCase() === answer.trim().toLowerCase();
+
+    setStatus(isCorrect ? "correct" : "wrong");
+
+    setTimeout(async () => {
+      if (isCorrect) {
+        const earned = getScoreFromTime(timeLeft);
+        setScore(earned);
+        await saveScore(earned);
+        if (onScore) onScore(earned);
+        setShowRightModal(true);
+      } else {
+        setShowWrongModal(true);
+      }
+    }, 500);
+  }, [userInput, answer, timeLeft]);
+
   const backgroundUrl =
     "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//WordFillBackground.jpg";
 
@@ -75,17 +109,17 @@ export default function WordFillMode({ question, answer, level, onCorrect }) {
     >
       <div className="w-full max-w-xl animate-fadeInUp">
         <Card className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-xl p-6">
-        <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600 font-medium">
-                  Phase {level?.phaseNumber} • Level {level?.number} Word Fill
-                </div>
-                <div className="text-xs text-gray-500 font-semibold">
-                  {timeLeft}s
-                </div>
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-600 font-medium">
+                Phase {level?.phaseNumber} • Level {level?.number} Word Fill
               </div>
-              <ProgressBar value={timeLeft} max={30} />
+              <div className="text-xs text-gray-500 font-semibold">
+                {timeLeft}s
+              </div>
             </div>
+            <ProgressBar value={timeLeft} max={30} />
+          </div>
 
           <CardHeader className="text-xl text-gray-800 leading-snug">
             {question}
@@ -131,6 +165,7 @@ export default function WordFillMode({ question, answer, level, onCorrect }) {
 
       <RightAnswerModal
         isOpen={showRightModal}
+        score={score} // ✅ Pass earned score
         onClose={() => onCorrect()}
         onNext={() => onCorrect()}
         onBackToMap={() => window.location.reload()}

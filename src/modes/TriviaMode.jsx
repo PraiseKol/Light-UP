@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader } from "components/ui/card";
 import ProgressBar from "components/ui/progress";
 import RightAnswerModal from "components/ui/RightAnswerModal";
@@ -7,13 +7,33 @@ import TimeUpModal from "components/ui/TimeUpModal";
 import { Button } from "components/ui/button";
 import { useTimer } from "hooks/useTimer";
 import { useResetLevel } from "hooks/useResetLevel";
+import { supabase } from "lib/supabaseClient";
+import { useUser } from "@supabase/auth-helpers-react";
 
 const triviaBackground =
   "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds/TriviaBackground.png";
 
-export default function TriviaMode({ level, question, answer, options, onBack, onCorrect }) {
+const getScoreFromTime = (timeLeft) => {
+  if (timeLeft > 20) return 100;
+  if (timeLeft > 10) return 75;
+  if (timeLeft > 0) return 50;
+  return 0;
+};
+
+export default function TriviaMode({
+  level,
+  question,
+  answer,
+  options,
+  onBack,
+  onCorrect,
+  onScore,
+}) {
+  const userContext = useUser();
+  const user = userContext?.id ? userContext : null;
   const [selected, setSelected] = useState(null);
-  const [status, setStatus] = useState("idle");
+  const [status, setStatus] = useState("idle"); // ✅ Fix: correct useState
+  const [score, setscore] = useState(0);
   const [showRightModal, setShowRightModal] = useState(false);
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
@@ -37,22 +57,64 @@ export default function TriviaMode({ level, question, answer, options, onBack, o
     },
     setUserInput: null,
     setStatus,
-    setTimeLeft: reset,        // ⬅️ key fix: reset timer back to 30
+    setTimeLeft: reset,
     setIsRunning,
     hasAnsweredRef: hasAnswered,
   });
-  
+
+  const saveScore = async (newScore) => {
+    if (!user) return;
+
+    const { data: existing, error: fetchError } = await supabase
+      .from("progress")
+      .select("score")
+      .eq("user_id", user.id)
+      .eq("level_id", level.id)
+      .eq("mode", "Trivia")
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error("Failed to check existing score:", fetchError);
+      return;
+    }
+
+    const oldScore = existing?.score ?? 0;
+
+    if (newScore > oldScore) {
+      const { error: updateError } = await supabase
+        .from("progress")
+        .upsert(
+          {
+            user_id: user.id,
+            level_id: level.id,
+            mode: "Trivia",
+            score: newScore,
+          },
+          { onConflict: ["user_id", "level_id"] }
+        );
+
+      if (updateError) {
+        console.error("Failed to update score:", updateError);
+      }
+    }
+  };
 
   const checkAnswer = () => {
     if (hasAnswered.current) return;
     hasAnswered.current = true;
     setIsRunning(false);
 
-    const isCorrect = selected?.trim().toLowerCase() === answer.trim().toLowerCase();
+    const isCorrect =
+      selected?.trim().toLowerCase() === answer.trim().toLowerCase();
+
     setStatus(isCorrect ? "correct" : "wrong");
 
     setTimeout(() => {
       if (isCorrect) {
+        const score = getScoreFromTime(timeLeft);
+        setscore(score);
+        saveScore(score);
+        if (onScore) onScore(score);
         setShowRightModal(true);
       } else {
         setShowWrongModal(true);
@@ -67,17 +129,17 @@ export default function TriviaMode({ level, question, answer, options, onBack, o
     >
       <div className="w-full max-w-xl animate-fadeInUp">
         <Card className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-xl p-6">
-        <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600 font-medium">
-                  Phase {level?.phaseNumber} • Level {level?.number} Trivia
-                </div>
-                <div className="text-xs text-gray-500 font-semibold">
-                  {timeLeft}s
-                </div>
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-600 font-medium">
+                Phase {level?.phaseNumber} • Level {level?.number} Trivia
               </div>
-              <ProgressBar value={timeLeft} max={30} />
+              <div className="text-xs text-gray-500 font-semibold">
+                {timeLeft}s
+              </div>
             </div>
+            <ProgressBar value={timeLeft} max={30} />
+          </div>
 
           <CardHeader className="text-xl text-gray-800 mb-4">{question}</CardHeader>
 
@@ -122,6 +184,7 @@ export default function TriviaMode({ level, question, answer, options, onBack, o
         onClose={() => onCorrect()}
         onNext={() => onCorrect()}
         onBackToMap={() => window.location.reload()}
+        score={score}
       />
 
       <WrongAnswerModal

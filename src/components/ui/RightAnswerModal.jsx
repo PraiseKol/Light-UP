@@ -1,14 +1,13 @@
 // src/components/ui/RightAnswerModal.jsx
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
-import { CheckCircle2 } from "lucide-react";
 
-// RightAnswerModal.jsx
 export default function RightAnswerModal({
   isOpen,
   onClose,
   onNext,
   onBackToMap,
+  score, // 👈 Accept score as a prop
 }) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -29,6 +28,13 @@ export default function RightAnswerModal({
             <Dialog.Title className="text-2xl font-semibold text-green-600">
               Correct! 🎉
             </Dialog.Title>
+
+            {score !== undefined && (
+              <div className="text-lg font-bold text-blue-700">
+                +{score} points
+              </div>
+            )}
+
             <p className="text-gray-600">
               Great job. Ready for the next challenge?
             </p>
