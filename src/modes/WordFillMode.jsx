@@ -23,6 +23,8 @@ export default function WordFillMode({
   level,
   onCorrect,
   onScore,
+  onIncorrect,
+  disableIfNoLives,
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
@@ -33,15 +35,21 @@ export default function WordFillMode({
   const [showRightModal, setShowRightModal] = useState(false);
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
-  const hasAnswered = useRef(false);
+
+  const hasAnsweredCorrectly = useRef(false);
+  const lifeLostRef = useRef(false); // ✅ NEW
 
   const { timeLeft, setTimeLeft, setIsRunning } = useTimer(30, () => {
-    if (hasAnswered.current) return;
-    if (userInput.trim()) {
-      checkAnswer();
-    } else {
+    if (!hasAnsweredCorrectly.current && !userInput.trim()) {
       setShowTimeUpModal(true);
+      if (onIncorrect && !lifeLostRef.current) {
+        onIncorrect();
+        lifeLostRef.current = true;
+      }
+    } else if (!hasAnsweredCorrectly.current) {
+      checkAnswer(); // Handle late submission
     }
+    setIsRunning(false);
   });
 
   const stopTimer = () => setIsRunning(false);
@@ -56,7 +64,10 @@ export default function WordFillMode({
     setStatus,
     setTimeLeft,
     setIsRunning,
-    hasAnsweredRef: hasAnswered,
+    hasAnsweredRef: hasAnsweredCorrectly,
+    onIncorrect,
+    forceIncorrectLifeLoss: true,
+    lifeLostRef,
   });
 
   const saveScore = async (scoreToSave) => {
@@ -78,8 +89,11 @@ export default function WordFillMode({
   };
 
   const checkAnswer = useCallback(() => {
+    if (hasAnsweredCorrectly.current || disableIfNoLives) return;
+
+    console.log("[checkAnswer] Checking answer:", userInput);
+
     stopTimer();
-    hasAnswered.current = true;
 
     const isCorrect =
       userInput.trim().toLowerCase() === answer.trim().toLowerCase();
@@ -88,16 +102,24 @@ export default function WordFillMode({
 
     setTimeout(async () => {
       if (isCorrect) {
+        console.log("[checkAnswer] Correct answer!");
+        hasAnsweredCorrectly.current = true;
         const earned = getScoreFromTime(timeLeft);
         setScore(earned);
         await saveScore(earned);
         if (onScore) onScore(earned);
         setShowRightModal(true);
       } else {
+        console.log("[checkAnswer] Incorrect answer.");
+        if (onIncorrect && !lifeLostRef.current) {
+          console.log("[checkAnswer] Calling onIncorrect()");
+          onIncorrect(); // ✅ Life should be lost here
+          lifeLostRef.current = true;
+        }
         setShowWrongModal(true);
       }
-    }, 500);
-  }, [userInput, answer, timeLeft]);
+    }, 300);
+  }, [userInput, answer, timeLeft, disableIfNoLives]);
 
   const backgroundUrl =
     "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//WordFillBackground.jpg";
@@ -132,8 +154,12 @@ export default function WordFillMode({
                 setUserInput(e.target.value);
                 setStatus("idle");
               }}
-              disabled={status === "correct"}
-              placeholder="Type your answer..."
+              disabled={hasAnsweredCorrectly.current || disableIfNoLives}
+              placeholder={
+                disableIfNoLives
+                  ? "Out of lives. Please wait..."
+                  : "Type your answer..."
+              }
               className={`mb-3 ${
                 status === "wrong"
                   ? "border-red-500"
@@ -143,7 +169,7 @@ export default function WordFillMode({
               }`}
             />
 
-            {status === "wrong" && (
+            {status === "wrong" && !disableIfNoLives && (
               <div className="text-sm text-red-500">Incorrect. Try again.</div>
             )}
             {status === "correct" && (
@@ -154,10 +180,14 @@ export default function WordFillMode({
 
             <button
               onClick={checkAnswer}
-              disabled={status === "correct"}
-              className="mt-6 w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
+              disabled={hasAnsweredCorrectly.current || disableIfNoLives}
+              className={`mt-6 w-full py-3 rounded-lg transition ${
+                disableIfNoLives
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
             >
-              Submit Answer
+              {disableIfNoLives ? "No Lives Left" : "Submit Answer"}
             </button>
           </CardContent>
         </Card>
@@ -165,7 +195,7 @@ export default function WordFillMode({
 
       <RightAnswerModal
         isOpen={showRightModal}
-        score={score} // ✅ Pass earned score
+        score={score}
         onClose={() => onCorrect()}
         onNext={() => onCorrect()}
         onBackToMap={() => window.location.reload()}
@@ -173,13 +203,19 @@ export default function WordFillMode({
 
       <WrongAnswerModal
         isOpen={showWrongModal}
-        onRetry={resetLevel}
+        onRetry={() => {
+          console.log("[Modal] Retrying after wrong answer");
+          resetLevel({ skipIncorrect: true }); // ✅ Prevents second life loss
+        }}
         onBack={() => window.location.reload()}
       />
 
       <TimeUpModal
         isOpen={showTimeUpModal}
-        onTryAgain={resetLevel}
+        onTryAgain={() => {
+          console.log("[Modal] Retrying after timeout");
+          resetLevel({ skipIncorrect: true }); // ✅ Prevents second life loss
+        }}
         onGoToMap={() => window.location.reload()}
       />
     </div>

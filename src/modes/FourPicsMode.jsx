@@ -1,4 +1,3 @@
-// ... (imports unchanged)
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getQuestion } from "lib/getQuestion";
 import { useTimer } from "hooks/useTimer";
@@ -10,6 +9,7 @@ import { useResetLevel } from "hooks/useResetLevel";
 import ProgressBar from "components/ui/progress";
 import { supabase } from "lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
+import { loseLife } from "utils/loseLife";
 
 export default function FourPicsMode({
   level,
@@ -30,37 +30,55 @@ export default function FourPicsMode({
   const [score, setscore] = useState(null);
 
   const hasAnswered = useRef(false);
-  const startTimeRef = useRef(Date.now());
-
-  
+  const lifeLostRef = useRef(false); // ✅ prevent double life deduction
   const [user, setUser] = useState(null);
 
-useEffect(() => {
-  const getUser = async () => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
-    if (error) {
-      console.error("❌ Failed to load user:", error.message);
-    } else {
-      console.log("✅ User loaded:", user);
-      setUser(user);
+      if (error) {
+        console.error("❌ Failed to load user:", error.message);
+      } else {
+        setUser(user);
+      }
+    };
+    getUser();
+  }, []);
+
+  const handleLifeLoss = async () => {
+    if (lifeLostRef.current || !user?.id) return;
+    lifeLostRef.current = true;
+
+    try {
+      const { data, error } = await supabase
+        .from("game_users")
+        .select("lives")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const currentLives = data?.lives;
+
+      if (currentLives > 0) {
+        await loseLife(user.id, currentLives);
+        console.log("💔 Life lost");
+      } else {
+        console.log("🚫 No lives left");
+      }
+    } catch (err) {
+      console.error("❌ Error reducing life:", err.message);
     }
   };
 
-  getUser();
-}, []);
-
-
-
   const { timeLeft, setTimeLeft, setIsRunning } = useTimer(INITIAL_TIME, () => {
-    if (hasAnswered.current) return;
-    if (input.trim()) {
-      checkAnswer();
-    } else {
+    if (!input.trim()) {
+      handleLifeLoss(); // ⏰ timeout with no input
       setShowTimeUpModal(true);
+    } else {
+      checkAnswer();
     }
   });
 
@@ -72,7 +90,6 @@ useEffect(() => {
         setQuestion(data);
         const letters = data.letters?.split("") || [];
         setShuffledLetters(letters.sort(() => Math.random() - 0.5));
-        startTimeRef.current = Date.now();
       }
       setLoading(false);
     };
@@ -84,43 +101,25 @@ useEffect(() => {
     const third = INITIAL_TIME / 3;
     if (elapsed <= third) return 100;
     if (elapsed <= 2 * third) return 75;
-    if (elapsed <= INITIAL_TIME) return 50;
-    return 0;
+    return 50;
   };
 
   const saveScore = async (newScore) => {
-    console.log("💾 Attempting to save score...");
-  
-    if (!user || !level) {
-      console.warn("❌ Missing user or level");
-      console.log("user:", user);
-      console.log("level:", level);
-      return;
-    }
-  
+    if (!user || !level) return;
+
     const levelId = level.id || `P${level.phaseNumber}-L${level.number}`;
-    console.log("🧩 levelId:", levelId);
-  
-    // STEP 1: Fetch existing score (if any)
+
     const { data: existingData, error: fetchError } = await supabase
       .from("progress")
       .select("id, score")
       .eq("user_id", user.id)
       .eq("level_id", levelId)
       .maybeSingle();
-  
-    console.log("📊 Existing score data:", existingData);
-    if (fetchError) console.error("⚠️ Fetch error:", fetchError.message);
-  
+
     const existingScore = existingData?.score;
-    console.log("📈 existingScore:", existingScore);
-    console.log("🆕 newScore:", newScore);
-  
-    // STEP 2: If no previous score, insert
+
     if (existingScore === undefined || existingScore === null) {
-      console.log("➕ No previous score found. Inserting new row...");
-  
-      const { error: insertError } = await supabase.from("progress").insert({
+      await supabase.from("progress").insert({
         user_id: user.id,
         level_id: levelId,
         phase: level.phaseNumber,
@@ -128,22 +127,13 @@ useEffect(() => {
         score: newScore,
         updated_at: new Date().toISOString(),
       });
-  
-      if (insertError) {
-        console.error("❌ Insert error:", insertError.message);
-      } else {
-        console.log("✅ New score inserted successfully");
-        setscore(newScore);
-        onScore(newScore);
-      }
+      setscore(newScore);
+      onScore(newScore);
       return;
     }
-  
-    // STEP 3: If existing score is lower, update it
+
     if (newScore > existingScore) {
-      console.log("🔁 Better score found. Updating...");
-  
-      const { error: updateError } = await supabase
+      await supabase
         .from("progress")
         .update({
           score: newScore,
@@ -151,34 +141,27 @@ useEffect(() => {
         })
         .eq("user_id", user.id)
         .eq("level_id", levelId);
-  
-      if (updateError) {
-        console.error("❌ Update error:", updateError.message);
-      } else {
-        console.log("✅ Score updated to:", newScore);
-        setscore(newScore);
-        onScore(newScore);
-      }
+      setscore(newScore);
+      onScore(newScore);
     } else {
-      console.log("⚠️ New score is not higher. Not saving.");
-      setscore(existingScore); // still show for modal
+      setscore(existingScore);
     }
   };
-  
-  
 
   const checkAnswer = () => {
-    if (!question?.answer) return;
+    if (!question?.answer || hasAnswered.current) return;
     hasAnswered.current = true;
     setIsRunning(false);
 
     const correct =
       input.trim().toLowerCase() === question.answer.toLowerCase();
+
     if (correct) {
       const score = calculateScore();
       saveScore(score);
       setShowRightModal(true);
     } else {
+      handleLifeLoss(); // ❌ wrong answer
       setShowWrongModal(true);
     }
   };
@@ -189,11 +172,11 @@ useEffect(() => {
       setInput((prev) => prev + letter);
       setUsedIndexes((prev) => [...prev, idx]);
     },
-    [hasAnswered, usedIndexes]
+    [usedIndexes]
   );
 
   const handleBackspace = () => {
-    if (hasAnswered.current || input.length === 0) return;
+    if (input.length === 0 || hasAnswered.current) return;
     const lastChar = input[input.length - 1];
     const reverseUsed = [...usedIndexes].reverse();
     const idxToRemove = reverseUsed.find(
@@ -215,6 +198,9 @@ useEffect(() => {
     setTimeLeft,
     setIsRunning,
     hasAnsweredRef: hasAnswered,
+    onReset: () => {
+      lifeLostRef.current = false; // ✅ reset life deduction guard
+    },
     reshuffleLetters: () => {
       if (question?.letters) {
         const reshuffled = question.letters
@@ -226,9 +212,7 @@ useEffect(() => {
     },
   });
 
-  if (loading)
-  
-    return <div className="p-6 text-center">Loading question...</div>;
+  if (loading) return <div className="p-6 text-center">Loading question...</div>;
   if (!question?.answer || !question?.image_urls) {
     return (
       <div className="p-6 text-center text-red-600">
@@ -246,12 +230,9 @@ useEffect(() => {
       <div className="space-y-1 mb-4">
         <div className="flex justify-between items-center">
           <div className="text-xs text-gray-500 mb-2">
-            Phase {level?.phaseNumber} • Level {level?.number} Four Pics One
-            Word
+            Phase {level?.phaseNumber} • Level {level?.number} Four Pics One Word
           </div>
-          <span className="text-sm text-gray-600 font-semibold">
-            {timeLeft}s
-          </span>
+          <span className="text-sm text-gray-600 font-semibold">{timeLeft}s</span>
         </div>
         <ProgressBar value={timeLeft} max={INITIAL_TIME} />
       </div>
@@ -313,20 +294,12 @@ useEffect(() => {
         onClose={onCorrect}
         onNext={onCorrect}
         onBackToMap={() => window.location.reload()}
-        score={score} // ✅ pass score
+        score={score}
       />
 
-      <WrongAnswerModal
-        isOpen={showWrongModal}
-        onRetry={resetLevel}
-        onBack={onBack}
-      />
+      <WrongAnswerModal isOpen={showWrongModal} onRetry={resetLevel} onBack={onBack} />
 
-      <TimeUpModal
-        isOpen={showTimeUpModal}
-        onTryAgain={resetLevel}
-        onGoToMap={onBack}
-      />
+      <TimeUpModal isOpen={showTimeUpModal} onTryAgain={resetLevel} onGoToMap={onBack} />
     </div>
   );
 }

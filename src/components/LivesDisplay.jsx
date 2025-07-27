@@ -1,0 +1,35 @@
+import { useEffect, useState } from 'react';
+
+export function LivesDisplay({ lives, lastLostAt }) {
+  const [nextLifeIn, setNextLifeIn] = useState(null);
+
+  useEffect(() => {
+    if (lives >= 5 || !lastLostAt) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const last = new Date(lastLostAt);
+      const nextLifeAt = new Date(last.getTime() + 15 * 60 * 1000);
+      const remaining = nextLifeAt - now;
+
+      if (remaining <= 0) {
+        setNextLifeIn(null);
+        clearInterval(interval);
+        return;
+      }
+
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      setNextLifeIn(`${mins}m ${secs}s`);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lives, lastLostAt]);
+
+  return (
+    <div className="text-black">
+      ❤️ Lives: {lives}/5
+      {nextLifeIn && <div className="text-sm">Next in: {nextLifeIn}</div>}
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
 // src/auth/AuthProvider.jsx
 import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
@@ -14,11 +14,9 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       const {
         data: { session },
-        error,
       } = await supabase.auth.getSession();
 
       const currentUser = session?.user ?? null;
-
       setUser(currentUser);
       setAuthLoading(false);
 
@@ -32,13 +30,10 @@ export const AuthProvider = ({ children }) => {
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         const newUser = session?.user ?? null;
-
         setUser(newUser);
-        if (newUser) {
-          navigate("/map");
-        } else {
-          navigate("/login");
-        }
+
+        if (newUser) navigate("/map");
+        else navigate("/login");
       }
     );
 

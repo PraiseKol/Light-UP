@@ -1,3 +1,5 @@
+// MapAndGame.jsx
+
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { levelPhases } from "data/levelData";
@@ -7,11 +9,15 @@ import { saveProgress } from "lib/saveProgress";
 import { fetchTotalScore } from "lib/fetchTotalScore";
 import { fetchRandomScripture } from "lib/fetchRandomScripture";
 
+import { useGameUser } from "hooks/useGameUser";
+import { LivesDisplay } from "components/LivesDisplay";
+
 import AnimatedBackground from "components/AnimatedBackground";
 import LevelMap from "components/LevelMap";
 import GameScreen from "components/GameScreen";
 import AppToaster from "components/ui/toaster";
 import ScriptureModal from "components/ScriptureModal";
+import { toast } from "sonner";
 
 export default function MapAndGame() {
   const [selectedLevel, setSelectedLevel] = useState(null);
@@ -21,9 +27,10 @@ export default function MapAndGame() {
   const [pendingNextLevel, setPendingNextLevel] = useState(null);
   const [showScriptureModal, setShowScriptureModal] = useState(false);
   const [scriptureText, setScriptureText] = useState("");
-  const [userScore, setUserScore] = useState(0); // ✅ new state
+  const [userScore, setUserScore] = useState(0);
 
   const { user } = useAuth();
+  const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
   const navigate = useNavigate();
   const phaseRefs = useRef([]);
 
@@ -38,7 +45,7 @@ export default function MapAndGame() {
       setCompletedLevels(completed);
       setUnlockedPhases(determineUnlockedPhases(completed));
 
-      const score = await fetchTotalScore(user.id); // ✅ fetch score
+      const score = await fetchTotalScore(user.id);
       setUserScore(score);
     };
 
@@ -79,7 +86,7 @@ export default function MapAndGame() {
       level_id: selectedLevel.id,
       phase: selectedLevel.phaseNumber,
       mode: selectedLevel.mode,
-      score: 0, // fallback score
+      score: 0,
     });
 
     const updatedCompleted = await fetchProgress(user.id);
@@ -89,7 +96,7 @@ export default function MapAndGame() {
     const unlocked = determineUnlockedPhases(updatedCompleted);
     setUnlockedPhases(unlocked);
 
-    const updatedScore = await fetchTotalScore(user.id); // ✅ refresh score
+    const updatedScore = await fetchTotalScore(user.id);
     setUserScore(updatedScore);
 
     const currentPhase = levelPhases.find(
@@ -116,6 +123,9 @@ export default function MapAndGame() {
       );
       setShowScriptureModal(true);
     }
+
+    // 🆕 Optional: update gameUser lives after level is completed
+    await refetch?.();
   };
 
   const handleScore = async (score) => {
@@ -128,7 +138,7 @@ export default function MapAndGame() {
       score,
     });
 
-    const updatedScore = await fetchTotalScore(user.id); // ✅ refresh score
+    const updatedScore = await fetchTotalScore(user.id);
     setUserScore(updatedScore);
   };
 
@@ -160,7 +170,7 @@ export default function MapAndGame() {
     }
   }, [showUnlockAnimation, pendingNextLevel]);
 
-  if (!user || !completedLevels) {
+  if (!user || gameUserLoading || !completedLevels) {
     return <div className="text-center p-6">Loading map...</div>;
   }
 
@@ -180,36 +190,69 @@ export default function MapAndGame() {
       )}
 
       <div className="relative z-10 max-w-3xl mx-auto p-4 overflow-y-auto max-h-[90vh] space-y-6">
-        {!selectedLevel ? (
-          <div className="flex flex-col gap-8">
-            {/* ✅ Display score */}
-            <div className="text-right text-base font-semibold text-blue-700 pr-2">
-              Total Score: {userScore}
-            </div>
+        <div className="flex justify-between items-center text-base font-semibold text-blue-700 px-2">
+          <div>Total Score: {userScore}</div>
+          <LivesDisplay
+            lives={gameUser.lives}
+            lastLostAt={gameUser.last_life_lost_at}
+          />
+        </div>
 
-            {levelPhases.map((phase, index) => (
-              <div key={index} ref={(el) => (phaseRefs.current[index] = el)}>
-                <LevelMap
-                  phase={{
-                    ...phase,
-                    levels: wrapLevelsWithStatus(index, phase, completedLevels),
-                  }}
-                  phaseIndex={index}
-                  completedLevels={completedLevels}
-                  currentLevelId={getCurrentLevelId(phase)}
-                  onSelectLevel={(level) => setSelectedLevel(level)}
-                  isLocked={!unlockedPhases.includes(index)}
-                />
-              </div>
-            ))}
+        {!selectedLevel ? (
+          <div className="flex flex-col gap-8 relative">
+            {levelPhases.map((phase, index) => {
+              const isUnlocked = unlockedPhases.includes(index);
+              const wrappedLevels = wrapLevelsWithStatus(index, phase, completedLevels);
+              const currentPhaseId = getCurrentLevelId(phase);
+
+              return (
+                <div key={index} ref={(el) => (phaseRefs.current[index] = el)} className="relative">
+                  {gameUser.lives <= 0 && isUnlocked && (
+                    <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 rounded-lg" />
+                  )}
+
+                  <LevelMap
+                    phase={{ ...phase, levels: wrappedLevels }}
+                    phaseIndex={index}
+                    completedLevels={completedLevels}
+                    currentLevelId={currentPhaseId}
+                    isLocked={!isUnlocked}
+                    onSelectLevel={(level) => {
+                      if (gameUser.lives > 0) {
+                        setSelectedLevel(level);
+                      } else {
+                        toast.error("You're out of lives! Please wait to get more.");
+                      }
+                    }}
+                  />
+
+                  {gameUser.lives <= 0 && isUnlocked && (
+                    <div className="absolute inset-0 z-20 flex items-center justify-center">
+                      <div className="text-center space-y-2 text-lg font-semibold text-red-600 bg-white bg-opacity-90 px-4 py-3 rounded-md shadow-md">
+                        <p>😢 You're out of lives</p>
+                        <LivesDisplay
+                          lives={gameUser.lives}
+                          lastLostAt={gameUser.last_life_lost_at}
+                        />
+                        <p className="text-sm text-gray-700">Wait for lives to regenerate.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <GameScreen
             level={selectedLevel}
-            onBack={() => setSelectedLevel(null)}
+            onBack={() => {
+              setSelectedLevel(null);
+              refetch?.(); // 🆕 Refresh gameUser lives when exiting level
+            }}
             onComplete={handleLevelComplete}
             onScore={handleScore}
-            userScore={userScore} // ✅ pass down to GameScreen
+            userScore={userScore}
+            refetchGameUser={refetch} // 🆕 Pass to GameScreen
           />
         )}
       </div>

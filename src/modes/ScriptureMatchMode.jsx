@@ -7,70 +7,94 @@ import ProgressBar from "components/ui/progress";
 import { Button } from "components/ui/button";
 import { supabase } from "lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
+import { loseLife } from "utils/loseLife";
+import { useResetLevel } from "hooks/useResetLevel";
 
-const scriptureMatchBackground = "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//ScriptureMatchBackground.png";
+const scriptureMatchBackground =
+  "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//ScriptureMatchBackground.png";
 
-export default function ScriptureMatchMode({ question, level, onBack, onCorrect, onScore }) {
+export default function ScriptureMatchMode({
+  question,
+  level,
+  onBack,
+  onCorrect,
+  onScore,
+  onIncorrect,
+}) {
   const [pairs, setPairs] = useState([]);
   const [shuffledVerses, setShuffledVerses] = useState([]);
   const [matches, setMatches] = useState({});
   const [draggedVerse, setDraggedVerse] = useState(null);
   const [status, setStatus] = useState("idle");
-  const [score, setScore] = useState(null); // ✅ added
-
+  const [score, setScore] = useState(null);
   const hasAnswered = useRef(false);
-  const { timeLeft, setIsRunning, reset } = useTimer(30, () => {
-    if (hasAnswered.current) return;
-    if (Object.keys(matches).length > 0) {
-      checkAnswer();
-    } else {
-      setStatus("timeup");
-    }
-  });
+  const lifeLostRef = useRef(false); // 🛡 Prevent multiple life loss
 
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
+
+  const { timeLeft, setIsRunning, reset } = useTimer(30, () => {
+    if (!hasAnswered.current) {
+      checkAnswer(); // ✅ Handles all cases: full, partial, or empty
+    }
+  });
+
+  const resetLevel = useResetLevel({
+    setModals: {
+      setShowRightModal: (open) => {
+        if (!open) setStatus("idle");
+      },
+      setShowWrongModal: (open) => {
+        if (!open) setStatus("idle");
+      },
+      setShowTimeUpModal: (open) => {
+        if (!open) setStatus("idle");
+      },
+    },
+    setUserInput: () => setMatches({}),
+    setStatus,
+    setTimeLeft: reset,
+    setIsRunning,
+    hasAnsweredRef: hasAnswered,
+    reshuffleLetters: () => {
+      const reshuffled = [...pairs].sort(() => Math.random() - 0.5);
+      setShuffledVerses(reshuffled);
+    },
+  });
 
   useEffect(() => {
     try {
       const parsed = JSON.parse(question);
       setPairs(parsed);
-      const shuffled = [...parsed].sort(() => Math.random() - 0.5);
-      setShuffledVerses(shuffled);
+      setShuffledVerses([...parsed].sort(() => Math.random() - 0.5));
     } catch (err) {
       console.error("❌ Failed to parse question JSON:", err);
     }
   }, [question]);
 
-  const handleDrop = (ref) => {
-    if (draggedVerse) {
-      setMatches((prev) => ({
-        ...prev,
-        [ref]: draggedVerse.verse,
-      }));
-    }
-  };
+  const handleLifeLoss = async () => {
+    if (lifeLostRef.current) return; // 🛡 only once
+    lifeLostRef.current = true;
 
-  const calculateScore = () => {
-    if (timeLeft > 20) return 100;
-    if (timeLeft > 10) return 75;
-    if (timeLeft > 0) return 50;
-    return 0;
-  };
+    if (!user?.id) return;
 
-  const saveScore = async (score) => {
-    if (!user) return;
-    const levelId = level?.id;
     try {
-      const { error } = await supabase.from("progress").upsert({
-        user_id: user.id,
-        level_id: levelId,
-        mode: "ScriptureMatch",
-        score,
-      }, { onConflict: ['user_id', 'level_id'] });
-      if (error) console.error("❌ Failed to save score:", error);
+      const { data, error } = await supabase
+        .from("game_users")
+        .select("lives")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const currentLives = data?.lives;
+
+      if (currentLives > 0) {
+        await loseLife(user.id, currentLives);
+        console.log("💔 Life lost");
+      } else {
+        console.log("🚫 No lives left");
+      }
     } catch (err) {
-      console.error("❌ Unexpected error saving score:", err);
+      console.error("❌ Error reducing life:", err.message);
     }
   };
 
@@ -82,22 +106,48 @@ export default function ScriptureMatchMode({ question, level, onBack, onCorrect,
     const isCorrect = pairs.every((pair) => matches[pair.reference] === pair.verse);
     if (isCorrect) {
       const calculated = calculateScore();
-      setScore(calculated); // ✅ store score in state
+      setScore(calculated);
       await saveScore(calculated);
       if (onScore) onScore(calculated);
+      setStatus("correct");
+    } else {
+      await handleLifeLoss(); // ❌ wrong or partial match
+      if (onIncorrect) onIncorrect();
+      setStatus("timeup"); // Covers both manual submit or timeout
     }
-    setStatus(isCorrect ? "correct" : "wrong");
   };
 
-  const resetLevel = () => {
-    setMatches({});
-    hasAnswered.current = false;
-    setStatus("idle");
-    setScore(null); // ✅ reset score
-    reset();
-    const reshuffled = [...pairs].sort(() => Math.random() - 0.5);
-    setShuffledVerses(reshuffled);
-    setIsRunning(true);
+  const calculateScore = () => {
+    if (timeLeft > 20) return 100;
+    if (timeLeft > 10) return 75;
+    return 50;
+  };
+
+  const saveScore = async (score) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase.from("progress").upsert(
+        {
+          user_id: user.id,
+          level_id: level.id,
+          mode: "ScriptureMatch",
+          score,
+        },
+        { onConflict: ["user_id", "level_id"] }
+      );
+      if (error) console.error("❌ Failed to save score:", error);
+    } catch (err) {
+      console.error("❌ Unexpected error saving score:", err);
+    }
+  };
+
+  const handleDrop = (ref) => {
+    if (draggedVerse) {
+      setMatches((prev) => ({
+        ...prev,
+        [ref]: draggedVerse.verse,
+      }));
+    }
   };
 
   const isMatched = (verse) => Object.values(matches).includes(verse);
@@ -116,9 +166,7 @@ export default function ScriptureMatchMode({ question, level, onBack, onCorrect,
                 <div className="text-sm text-gray-600 font-medium">
                   Phase {level?.phaseNumber} • Level {level?.number} Scripture Match
                 </div>
-                <div className="text-xs text-gray-500 font-semibold">
-                  {timeLeft}s
-                </div>
+                <div className="text-xs text-gray-500 font-semibold">{timeLeft}s</div>
               </div>
               <ProgressBar value={timeLeft} max={30} />
             </div>
@@ -164,7 +212,10 @@ export default function ScriptureMatchMode({ question, level, onBack, onCorrect,
 
             <div className="flex justify-center mt-6">
               <Button
-                disabled={hasAnswered.current || Object.keys(matches).length !== pairs.length}
+                disabled={
+                  hasAnswered.current ||
+                  Object.keys(matches).length !== pairs.length
+                }
                 onClick={checkAnswer}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
@@ -177,7 +228,7 @@ export default function ScriptureMatchMode({ question, level, onBack, onCorrect,
 
       <RightAnswerModal
         isOpen={status === "correct"}
-        score={score} // ✅ show this in the modal
+        score={score}
         onClose={onCorrect}
         onNext={onCorrect}
         onBackToMap={() => window.location.reload()}

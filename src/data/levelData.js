@@ -4,7 +4,8 @@ const gameModes = ['word-fill', 'scripture-match', 'four-pics', 'trivia'];
 
 const defaultPhaseTitles = [
   'Foundations', 'Beginnings', 'Growth', 'Challenge',
-  'Insight', 'Wisdom', 'Mastery', 'Ascension'
+  'Insight', 'Wisdom', 'Mastery', 'Ascension',
+  'Elevation', 'Glory'
 ];
 
 /**
@@ -38,4 +39,4 @@ function generateLevels(phaseCount = 8, levelsPerPhase = 10) {
   return phases;
 }
 
-export const levelPhases = generateLevels(8); // Update to desired phase count
+export const levelPhases = generateLevels(50); // Update to desired phase count

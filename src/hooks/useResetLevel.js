@@ -1,26 +1,38 @@
 // src/hooks/useResetLevel.js
-export function useResetLevel({ 
-    setModals,       // object: { setShowRightModal, setShowWrongModal, setShowTimeUpModal }
-    setUserInput,    // function or null
-    setStatus,       // function or null
-    setTimeLeft,     // function or null
-    setIsRunning,    // function or null
-    hasAnsweredRef,  // ref or null
-    reshuffleLetters // optional function to reshuffle
-  }) {
-    return function resetLevel() {
-      if (setModals) {
-        setModals.setShowRightModal?.(false);
-        setModals.setShowWrongModal?.(false);
-        setModals.setShowTimeUpModal?.(false);
-      }
-  
-      setUserInput?.("");
-      setStatus?.("idle");
-      setTimeLeft?.(30);
-      setIsRunning?.(true);
-      if (hasAnsweredRef) hasAnsweredRef.current = false;
-      reshuffleLetters?.();
-    };
-  }
-  
+export function useResetLevel({
+  setModals,
+  setUserInput,
+  setStatus,
+  setTimeLeft,
+  setIsRunning,
+  hasAnsweredRef,
+  reshuffleLetters,
+  onIncorrect,
+  forceIncorrectLifeLoss = false,
+  lifeLostRef, // ✅ NEW
+}) {
+  return function resetLevel({ skipIncorrect = false } = {}) {
+    if (setModals) {
+      setModals.setShowRightModal?.(false);
+      setModals.setShowWrongModal?.(false);
+      setModals.setShowTimeUpModal?.(false);
+    }
+
+    console.log("[useResetLevel] Resetting level");
+
+    // Prevent double life loss
+    if (!skipIncorrect && forceIncorrectLifeLoss && onIncorrect && !lifeLostRef?.current) {
+      console.log("[useResetLevel] Forcing incorrect life loss on retry");
+      onIncorrect();
+      lifeLostRef.current = true;
+    }
+
+    setUserInput?.("");
+    setStatus?.("idle");
+    setTimeLeft?.(30);
+    setIsRunning?.(true);
+    if (hasAnsweredRef) hasAnsweredRef.current = false;
+    if (lifeLostRef) lifeLostRef.current = false; // Reset ref
+    reshuffleLetters?.();
+  };
+}

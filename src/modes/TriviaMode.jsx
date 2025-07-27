@@ -28,24 +28,34 @@ export default function TriviaMode({
   onBack,
   onCorrect,
   onScore,
+  onIncorrect,
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
+
   const [selected, setSelected] = useState(null);
-  const [status, setStatus] = useState("idle"); // ✅ Fix: correct useState
+  const [status, setStatus] = useState("idle");
   const [score, setscore] = useState(0);
   const [showRightModal, setShowRightModal] = useState(false);
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
+
   const hasAnswered = useRef(false);
+  const lifeLostRef = useRef(false); // ✅
 
   const { timeLeft, reset, setIsRunning } = useTimer(30, () => {
     if (hasAnswered.current) return;
+
     if (selected) {
       checkAnswer();
     } else {
+      hasAnswered.current = true;
       setStatus("timeup");
       setShowTimeUpModal(true);
+      if (!lifeLostRef.current && onIncorrect) {
+        lifeLostRef.current = true;
+        onIncorrect(); // ✅ life lost on timeout
+      }
     }
   });
 
@@ -55,11 +65,14 @@ export default function TriviaMode({
       setShowWrongModal,
       setShowTimeUpModal,
     },
-    setUserInput: null,
+    setUserInput: () => setSelected(null),
     setStatus,
     setTimeLeft: reset,
     setIsRunning,
     hasAnsweredRef: hasAnswered,
+    onIncorrect,
+    forceIncorrectLifeLoss: true,
+    lifeLostRef, // ✅
   });
 
   const saveScore = async (newScore) => {
@@ -117,6 +130,10 @@ export default function TriviaMode({
         if (onScore) onScore(score);
         setShowRightModal(true);
       } else {
+        if (!lifeLostRef.current && onIncorrect) {
+          lifeLostRef.current = true;
+          onIncorrect(); // ✅ life lost on wrong answer
+        }
         setShowWrongModal(true);
       }
     }, 400);
@@ -141,7 +158,9 @@ export default function TriviaMode({
             <ProgressBar value={timeLeft} max={30} />
           </div>
 
-          <CardHeader className="text-xl text-gray-800 mb-4">{question}</CardHeader>
+          <CardHeader className="text-xl text-gray-800 mb-4">
+            {question}
+          </CardHeader>
 
           <CardContent>
             <div className="space-y-3 mb-6">
@@ -181,8 +200,8 @@ export default function TriviaMode({
 
       <RightAnswerModal
         isOpen={showRightModal}
-        onClose={() => onCorrect()}
-        onNext={() => onCorrect()}
+        onClose={onCorrect}
+        onNext={onCorrect}
         onBackToMap={() => window.location.reload()}
         score={score}
       />
