@@ -32,15 +32,23 @@ export const AuthProvider = ({ children }) => {
         const newUser = session?.user ?? null;
         setUser(newUser);
 
-        if (newUser) navigate("/map");
-        else navigate("/login");
+       
+      // ✅ Only redirect if the user just signed in
+      if (newUser) {
+        const currentPath = window.location.pathname;
+        if (currentPath === "/login") {
+          navigate("/map"); // only redirect after login
+        }
+      } else {
+        navigate("/login");
       }
-    );
+    }
+  );
 
-    return () => {
-      listener?.subscription.unsubscribe();
-    };
-  }, [navigate]);
+  return () => {
+    listener?.subscription.unsubscribe();
+  };
+}, [navigate]);
 
   const login = async () => {
     await supabase.auth.signInWithOAuth({

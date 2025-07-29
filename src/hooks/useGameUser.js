@@ -32,6 +32,7 @@ export function useGameUser(userId) {
             user_id: userId,
             lives: 5,
             last_life_lost_at: null,
+            player_name: null,
           })
           .select()
           .single();
@@ -49,10 +50,11 @@ export function useGameUser(userId) {
         return;
       }
 
-      // Recalculate lives
+      // 🧠 Recalculate lives using time logic
       const { lives, last_life_lost_at } = userData;
       const { lives: newLives, newLastLostAt } = calculateUpdatedLives(lives, last_life_lost_at);
 
+      // 🛠️ Update lives only if changed
       if (newLives !== lives) {
         const updates = {
           lives: newLives,
@@ -79,18 +81,18 @@ export function useGameUser(userId) {
     }
   }, [userId]);
 
-  // Initial fetch
+  // 🔃 Initial fetch
   useEffect(() => {
     fetchGameUser();
   }, [fetchGameUser]);
 
-  // Poll every 60 seconds
+  // ⏱️ Poll every 60 seconds to auto-refresh lives
   useEffect(() => {
     if (!userId) return;
 
     intervalRef.current = setInterval(() => {
       fetchGameUser();
-    }, 60000); // 60 seconds
+    }, 60000); // every 60s
 
     return () => {
       clearInterval(intervalRef.current);
@@ -100,6 +102,6 @@ export function useGameUser(userId) {
   return {
     gameUser,
     loading,
-    refetch: fetchGameUser,
+    refetch: fetchGameUser, // 👈 Can be used to trigger manual refresh
   };
 }
