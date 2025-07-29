@@ -7,8 +7,8 @@ import { saveProgress } from "lib/saveProgress";
 import { fetchTotalScore } from "lib/fetchTotalScore";
 import { fetchRandomScripture } from "lib/fetchRandomScripture";
 import { fetchLeaderboard } from "lib/fetchLeaderboard";
+import { fetchMainLeaderboard } from "lib/api/leaderboard";
 import { supabase } from 'lib/supabaseClient';
-
 
 import { useGameUser } from "hooks/useGameUser";
 import { LivesDisplay } from "components/LivesDisplay";
@@ -39,7 +39,9 @@ export default function MapAndGame() {
   const [challengeAllowed, setChallengeAllowed] = useState(false);
   const [challengePlayed, setChallengePlayed] = useState(false);
   const [countdownText, setCountdownText] = useState("");
-  const [leaderboard, setLeaderboard] = useState([]);
+  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState([]);
+  const [totalLeaderboard, setTotalLeaderboard] = useState([]);
+  const [showTotalLeaderboard, setShowTotalLeaderboard] = useState(false);
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
@@ -47,23 +49,25 @@ export default function MapAndGame() {
   const phaseRefs = useRef([]);
 
   useEffect(() => {
-    const loadLeaderboard = async () => {
-      const topPlayers = await fetchLeaderboard();
-      setLeaderboard(topPlayers);
+    const loadLeaderboards = async () => {
+      const weekly = await fetchLeaderboard();
+      const total = await fetchMainLeaderboard();
+      setWeeklyLeaderboard(weekly);
+      setTotalLeaderboard(total);
     };
 
-     // Load leaderboard once weekly challenge is over
-  const { allowed } = getWeeklyChallengeStatus();
-  if (!allowed) {
-    loadLeaderboard();
-  }
+    const { allowed } = getWeeklyChallengeStatus();
+    if (!allowed) {
+      loadLeaderboards();
+    }
 
-  const interval = setInterval(() => {
-    const { allowed: newAllowed } = getWeeklyChallengeStatus();
-    if (!newAllowed) loadLeaderboard();
-  }, 60 * 1000);
-  return () => clearInterval(interval);
-}, []);
+    const interval = setInterval(() => {
+      const { allowed: newAllowed } = getWeeklyChallengeStatus();
+      if (!newAllowed) loadLeaderboards();
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -106,22 +110,14 @@ export default function MapAndGame() {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  
-
   const handleWeeklyChallengeClick = () => {
-    console.log("🟡 Weekly Challenge button clicked");
-    console.log("✅ challengeAllowed:", challengeAllowed);
-    console.log("✅ challengePlayed:", challengePlayed);
-  
     if (challengeAllowed && !challengePlayed) {
       const confirmed = window.confirm("You only get one attempt this week. Proceed?");
-      console.log("🟢 User confirmed:", confirmed);
       if (confirmed) {
         navigate("/weekly-challenge");
       }
     }
   };
-  
 
   const determineUnlockedPhases = (completedIds) => {
     const unlocked = [];
@@ -190,7 +186,7 @@ export default function MapAndGame() {
       const fetchedScripture = await fetchRandomScripture();
       setScriptureText(
         fetchedScripture ||
-          "“The Lord will fight for you; you need only to be still.” — Exodus 14:14"
+        "“The Lord will fight for you; you need only to be still.” — Exodus 14:14"
       );
       setShowScriptureModal(true);
     }
@@ -262,37 +258,56 @@ export default function MapAndGame() {
         Settings
       </button>
 
+      {/* Total Score Leaderboard Toggle */}
+      <button
+        onClick={() => setShowTotalLeaderboard(!showTotalLeaderboard)}
+        className="fixed top-16 left-4 z-50 bg-gray-700 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-gray-600"
+      >
+        {showTotalLeaderboard ? "Hide Leaderboard" : "Total Leaderboard"}
+      </button>
+
       {/* Weekly Challenge Button */}
       <button
-  onClick={handleWeeklyChallengeClick}
-  className="fixed top-4 right-4 z-50 bg-yellow-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-600"
-  disabled={!challengeAllowed}
->
-  {challengeAllowed && !challengePlayed
-    ? "Weekly Challenge"
-    : challengePlayed
-    ? "Already Played"
-    : `Weekly Quiz: ${countdownText}`}
-</button>
+        onClick={handleWeeklyChallengeClick}
+        className="fixed top-4 right-4 z-50 bg-yellow-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-600"
+        disabled={!challengeAllowed}
+      >
+        {challengeAllowed && !challengePlayed
+          ? "Weekly Challenge"
+          : challengePlayed
+          ? "Already Played"
+          : `Weekly Quiz: ${countdownText}`}
+      </button>
 
+      {/* Weekly Leaderboard */}
+      {weeklyLeaderboard.length > 0 && (
+        <div className="fixed top-20 right-4 z-40 w-64 bg-white border border-yellow-400 rounded-lg shadow-lg p-4">
+          <h2 className="text-lg font-bold text-yellow-600 mb-2">🏆 Weekly Top 10</h2>
+          <ol className="space-y-1 text-sm">
+            {weeklyLeaderboard.map((entry, index) => (
+              <li key={index} className="flex justify-between">
+                <span>{index + 1}. {entry.player_name || "Unnamed"}</span>
+                <span>{entry.score} pts</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
-{leaderboard.length > 0 && (
-  <div className="fixed top-20 right-4 z-40 w-64 bg-white border border-yellow-400 rounded-lg shadow-lg p-4">
-    <h2 className="text-lg font-bold text-yellow-600 mb-2">🏆 Weekly Top 10</h2>
-    <ol className="space-y-1 text-sm">
-      {leaderboard.map((entry, index) => (
-        <li key={index} className="flex justify-between">
-          <span>
-            {index + 1}. {entry.player_name || "Unnamed"}
-          </span>
-          <span>{entry.score} pts</span>
-        </li>
-      ))}
-    </ol>
-  </div>
-)}
-
-
+      {/* Total Leaderboard (Collapsible Panel) */}
+      {showTotalLeaderboard && totalLeaderboard.length > 0 && (
+        <div className="fixed top-28 left-4 z-40 w-64 bg-white border border-blue-400 rounded-lg shadow-lg p-4">
+          <h2 className="text-lg font-bold text-blue-700 mb-2">🌟 Top Players</h2>
+          <ol className="space-y-1 text-sm">
+            {totalLeaderboard.map((entry, index) => (
+              <li key={index} className="flex justify-between">
+                <span>{index + 1}. {entry.player_name || "Unnamed"}</span>
+                <span>{entry.total_score} pts</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {showUnlockAnimation && (
         <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
@@ -305,8 +320,8 @@ export default function MapAndGame() {
         </div>
       )}
 
+      {/* Sticky Header with Player Info */}
       <div className="relative z-10 max-w-3xl mx-auto overflow-y-auto max-h-[90vh]">
-        {/* Sticky Header */}
         <div className="sticky top-0 z-40 bg-white py-2 px-4 shadow-sm flex justify-between items-center text-sm md:text-base font-semibold text-blue-700 gap-3">
           <div className="truncate max-w-[30%]">
             {gameUser.player_name || "Unnamed"}
@@ -320,7 +335,7 @@ export default function MapAndGame() {
           />
         </div>
 
-        {/* Main Content */}
+        {/* Main Game Content */}
         <div className="p-4 space-y-6">
           {!selectedLevel ? (
             <div className="flex flex-col gap-8 relative">
