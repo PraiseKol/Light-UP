@@ -47,45 +47,67 @@ export default function MultiplayerLobby() {
     loadLobbyData();
   }, [gameId, setGame, setPlayers]);
 
-  // Realtime subscription — always fetch fresh list
+  // Realtime subscription for players
   useEffect(() => {
     if (!gameId) return;
 
-    const channel = supabase
-      .channel(`lobby-${gameId}`)
+    const playerChannel = supabase
+      .channel(`lobby-players-${gameId}`)
       .on(
         "postgres_changes",
         {
-          event: "*", // INSERT, UPDATE, DELETE
+          event: "*",
           schema: "public",
           table: "multiplayer_players",
           filter: `game_id=eq.${gameId}`
         },
-        async (payload) => {
-          console.log("📢 Realtime payload:", payload);
-
+        async () => {
           const { data: updatedPlayers, error } = await supabase
             .from("multiplayer_players")
             .select("*")
             .eq("game_id", gameId);
 
-          if (error) {
-            console.error("❌ Failed to fetch updated players:", error);
-          } else {
+          if (!error) {
             setPlayers(Array.isArray(updatedPlayers) ? updatedPlayers : []);
           }
         }
       )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          console.log(`✅ Live updates active for lobby-${gameId}`);
-        }
-      });
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(playerChannel);
     };
   }, [gameId, setPlayers]);
+
+  // Realtime subscription for game status
+  useEffect(() => {
+    if (!gameId) return;
+
+    const gameChannel = supabase
+      .channel(`lobby-game-${gameId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "multiplayer_games",
+          filter: `id=eq.${gameId}`
+        },
+        (payload) => {
+          const updatedGame = payload.new;
+          setGame(updatedGame);
+
+          if (updatedGame.status === "in_progress") {
+            navigate(`/multiplayer/game/${gameId}`);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(gameChannel);
+    };
+  }, [gameId, setGame, navigate]);
 
   const handleJoinSlot = async (slot) => {
     const existing = Array.isArray(players)
@@ -127,8 +149,6 @@ export default function MultiplayerLobby() {
       .from("multiplayer_games")
       .update({ status: "in_progress" })
       .eq("id", gameId);
-
-    navigate(`/multiplayer/game/${gameId}`);
   };
 
   if (!game) return <div>Loading lobby...</div>;
