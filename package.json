@@ -26,7 +26,8 @@
     "sonner": "^2.0.6",
     "tailwind-variants": "^1.0.0",
     "tailwindcss-animate": "^1.0.7",
-    "web-vitals": "^2.1.0"
+    "web-vitals": "^2.1.0",
+    "zustand": "^5.0.7"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -8,7 +8,7 @@ import { fetchTotalScore } from "lib/fetchTotalScore";
 import { fetchRandomScripture } from "lib/fetchRandomScripture";
 import { fetchLeaderboard } from "lib/fetchLeaderboard";
 import { fetchMainLeaderboard } from "lib/api/leaderboard";
-import { supabase } from 'lib/supabaseClient';
+import { supabase } from "lib/supabaseClient";
 
 import { useGameUser } from "hooks/useGameUser";
 import { LivesDisplay } from "components/LivesDisplay";
@@ -50,24 +50,24 @@ export default function MapAndGame() {
 
   useEffect(() => {
     let leaderboardTimeout;
-  
+
     const loadLeaderboards = async () => {
       const weekly = await fetchLeaderboard();
       const total = await fetchMainLeaderboard();
       setWeeklyLeaderboard(weekly);
       setTotalLeaderboard(total);
     };
-  
+
     const loadLeaderboardsDebounced = () => {
       clearTimeout(leaderboardTimeout);
       leaderboardTimeout = setTimeout(() => {
         loadLeaderboards();
       }, 200);
     };
-  
+
     // Load immediately
     loadLeaderboards();
-  
+
     // 🔹 Subscribe to weekly challenge results table
     const weeklyChannel = supabase
       .channel("weekly_leaderboard_updates")
@@ -80,7 +80,7 @@ export default function MapAndGame() {
         }
       )
       .subscribe();
-  
+
     // 🔹 Conditionally subscribe to total leaderboard only if panel is open
     let totalChannel;
     if (showTotalLeaderboard) {
@@ -96,7 +96,7 @@ export default function MapAndGame() {
         )
         .subscribe();
     }
-  
+
     return () => {
       supabase.removeChannel(weeklyChannel);
       if (totalChannel) {
@@ -105,7 +105,7 @@ export default function MapAndGame() {
       clearTimeout(leaderboardTimeout);
     };
   }, [showTotalLeaderboard]); // ✅ Rerun effect if panel visibility changes
-  
+
   useEffect(() => {
     if (!user) {
       navigate("/login");
@@ -149,7 +149,9 @@ export default function MapAndGame() {
 
   const handleWeeklyChallengeClick = () => {
     if (challengeAllowed && !challengePlayed) {
-      const confirmed = window.confirm("You only get one attempt this week. Proceed?");
+      const confirmed = window.confirm(
+        "You only get one attempt this week. Proceed?"
+      );
       if (confirmed) {
         navigate("/weekly-challenge");
       }
@@ -223,7 +225,7 @@ export default function MapAndGame() {
       const fetchedScripture = await fetchRandomScripture();
       setScriptureText(
         fetchedScripture ||
-        "“The Lord will fight for you; you need only to be still.” — Exodus 14:14"
+          "“The Lord will fight for you; you need only to be still.” — Exodus 14:14"
       );
       setShowScriptureModal(true);
     }
@@ -312,18 +314,30 @@ export default function MapAndGame() {
         {challengeAllowed && !challengePlayed
           ? "Weekly Challenge"
           : challengePlayed
-          ? "Already Played"
+          ? "Weekly Challenge: Already Played"
           : `Weekly Quiz: ${countdownText}`}
+      </button>
+
+      {/* Multiplayer Button */}
+      <button
+        onClick={() => navigate("/multiplayer/create")}
+        className="fixed top-28 right-4 z-50 bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600"
+      >
+        Create Multiplayer Game
       </button>
 
       {/* Weekly Leaderboard */}
       {weeklyLeaderboard.length > 0 && (
         <div className="fixed top-20 right-4 z-40 w-64 bg-white border border-yellow-400 rounded-lg shadow-lg p-4">
-          <h2 className="text-lg font-bold text-yellow-600 mb-2">🏆 Weekly Top 10</h2>
+          <h2 className="text-lg font-bold text-yellow-600 mb-2">
+            🏆 Weekly Top 10
+          </h2>
           <ol className="space-y-1 text-sm">
             {weeklyLeaderboard.map((entry, index) => (
               <li key={index} className="flex justify-between">
-                <span>{index + 1}. {entry.player_name || "Unnamed"}</span>
+                <span>
+                  {index + 1}. {entry.player_name || "Unnamed"}
+                </span>
                 <span>{entry.score} pts</span>
               </li>
             ))}
@@ -334,11 +348,15 @@ export default function MapAndGame() {
       {/* Total Leaderboard (Collapsible Panel) */}
       {showTotalLeaderboard && totalLeaderboard.length > 0 && (
         <div className="fixed top-28 left-4 z-40 w-64 bg-white border border-blue-400 rounded-lg shadow-lg p-4">
-          <h2 className="text-lg font-bold text-blue-700 mb-2">🌟 Top Players</h2>
+          <h2 className="text-lg font-bold text-blue-700 mb-2">
+            🌟 Top Players
+          </h2>
           <ol className="space-y-1 text-sm">
             {totalLeaderboard.map((entry, index) => (
               <li key={index} className="flex justify-between">
-                <span>{index + 1}. {entry.player_name || "Unnamed"}</span>
+                <span>
+                  {index + 1}. {entry.player_name || "Unnamed"}
+                </span>
                 <span>{entry.total_score} pts</span>
               </li>
             ))}
