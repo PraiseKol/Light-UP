@@ -52,20 +52,15 @@ export default function MapAndGame() {
     const loadLeaderboards = async () => {
       const weekly = await fetchLeaderboard();
       const total = await fetchMainLeaderboard();
-      setWeeklyLeaderboard(weekly);
-      setTotalLeaderboard(total);
+      setWeeklyLeaderboard(weekly || []);
+      setTotalLeaderboard(total || []);
     };
-
-    const { allowed } = getWeeklyChallengeStatus();
-    if (!allowed) {
-      loadLeaderboards();
-    }
+    loadLeaderboards(); // ✅ Always load on mount
 
     const interval = setInterval(() => {
-      const { allowed: newAllowed } = getWeeklyChallengeStatus();
-      if (!newAllowed) loadLeaderboards();
+      loadLeaderboards();
     }, 60 * 1000);
-
+  
     return () => clearInterval(interval);
   }, []);
 
