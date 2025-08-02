@@ -49,21 +49,63 @@ export default function MapAndGame() {
   const phaseRefs = useRef([]);
 
   useEffect(() => {
+    let leaderboardTimeout;
+  
     const loadLeaderboards = async () => {
       const weekly = await fetchLeaderboard();
       const total = await fetchMainLeaderboard();
-      setWeeklyLeaderboard(weekly || []);
-      setTotalLeaderboard(total || []);
+      setWeeklyLeaderboard(weekly);
+      setTotalLeaderboard(total);
     };
-    loadLeaderboards(); // ✅ Always load on mount
-
-    const interval = setInterval(() => {
-      loadLeaderboards();
-    }, 60 * 1000);
   
-    return () => clearInterval(interval);
-  }, []);
-
+    const loadLeaderboardsDebounced = () => {
+      clearTimeout(leaderboardTimeout);
+      leaderboardTimeout = setTimeout(() => {
+        loadLeaderboards();
+      }, 200);
+    };
+  
+    // Load immediately
+    loadLeaderboards();
+  
+    // 🔹 Subscribe to weekly challenge results table
+    const weeklyChannel = supabase
+      .channel("weekly_leaderboard_updates")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "weekly_challenge_results" },
+        () => {
+          console.log("🔄 Weekly leaderboard change detected");
+          loadLeaderboardsDebounced();
+        }
+      )
+      .subscribe();
+  
+    // 🔹 Conditionally subscribe to total leaderboard only if panel is open
+    let totalChannel;
+    if (showTotalLeaderboard) {
+      totalChannel = supabase
+        .channel("total_score_updates")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "progress" }, // adjust to your score table
+          () => {
+            console.log("🔄 Total leaderboard change detected");
+            loadLeaderboardsDebounced();
+          }
+        )
+        .subscribe();
+    }
+  
+    return () => {
+      supabase.removeChannel(weeklyChannel);
+      if (totalChannel) {
+        supabase.removeChannel(totalChannel);
+      }
+      clearTimeout(leaderboardTimeout);
+    };
+  }, [showTotalLeaderboard]); // ✅ Rerun effect if panel visibility changes
+  
   useEffect(() => {
     if (!user) {
       navigate("/login");
