@@ -36,38 +36,55 @@ export default function MultiplayerGame() {
         .eq("id", gameId)
         .single();
       if (gameError) console.error("[DEBUG] Game fetch error:", gameError);
-      console.log("[DEBUG] Game data:", gameData);
       if (!gameData) return;
       setGame(gameData);
 
+      // If game has started, calculate remaining time using end_at
+      if (gameData.status === "in_progress" && gameData.end_at) {
+        const remaining = Math.max(
+          0,
+          Math.ceil((new Date(gameData.end_at) - new Date()) / 1000)
+        );
+        setGameTimer(remaining);
+        startGameTimer(new Date(gameData.end_at));
+      }
+
+      // If not started but is in starting state, trigger pre-countdown
       if (gameData.status === "starting") {
-        console.log("[DEBUG] Game already in 'starting' state — triggering countdown.");
         setPreCountdown(5);
       }
 
+      // Fetch players
       const { data: playerData, error: playerError } = await supabase
         .from("multiplayer_players")
         .select("*")
         .eq("game_id", gameId);
       if (playerError) console.error("[DEBUG] Players fetch error:", playerError);
-      console.log("[DEBUG] Players:", playerData);
       setPlayers(playerData || []);
 
+      // Get my playerId
       const myPlayer = playerData?.find((p) => p.user_id === user.id);
       if (myPlayer) {
         setPlayerId(myPlayer.id);
+        // Fetch answered questions from DB
         const { data: answers, error: answersError } = await supabase
           .from("multiplayer_answers")
           .select("question_id")
           .eq("game_id", gameId)
           .eq("player_id", myPlayer.id);
         if (answersError) console.error("[DEBUG] Answers fetch error:", answersError);
-        console.log("[DEBUG] Existing answered questions:", answers);
-        setAnsweredQIds(answers?.map((a) => a.question_id) || []);
+        const answeredIds = answers?.map((a) => a.question_id) || [];
+        setAnsweredQIds(answeredIds);
+
+        // If already in progress, pick the next question after answered ones
+        if (gameData.status === "in_progress" && questions.length > 0) {
+          pickNextQuestion(answeredIds);
+        }
       }
     };
     fetchGameData();
 
+    // Subscribe to game status changes
     const statusChannel = supabase
       .channel(`game-${gameId}`)
       .on(
@@ -79,16 +96,22 @@ export default function MultiplayerGame() {
           filter: `id=eq.${gameId}`,
         },
         (payload) => {
-          console.log("[DEBUG] Game status update detected:", payload.new);
           if (payload.new) {
             setGame(payload.new);
+
+            // Handle starting state
             if (payload.new.status === "starting") {
-              console.log("[DEBUG] Pre-start countdown triggered.");
-              setPreCountdown(5); // start 5s countdown
+              setPreCountdown(5);
             }
+
+            // Handle in-progress with server end_at
+            if (payload.new.status === "in_progress" && payload.new.end_at) {
+              startGameTimer(new Date(payload.new.end_at));
+              pickNextQuestion(answeredQIds);
+            }
+
             if (payload.new.status === "finished") {
               clearInterval(gameTimerRef.current);
-              navigate(`/multiplayer/game/${gameId}`);
             }
           }
         }
@@ -96,7 +119,18 @@ export default function MultiplayerGame() {
       .subscribe();
 
     return () => supabase.removeChannel(statusChannel);
-  }, [gameId, setGame, setPlayers, user.id, navigate]);
+  }, [gameId, setGame, setPlayers, user.id, questions]);
+
+  const startGameTimer = (endTime) => {
+    clearInterval(gameTimerRef.current);
+    const updateTimer = () => {
+      const timeLeft = Math.max(0, Math.ceil((endTime - new Date()) / 1000));
+      setGameTimer(timeLeft);
+      if (timeLeft <= 0) finishGame();
+    };
+    updateTimer();
+    gameTimerRef.current = setInterval(updateTimer, 1000);
+  };
 
   // Leaderboard subscription
   useEffect(() => {
@@ -107,7 +141,6 @@ export default function MultiplayerGame() {
         .eq("game_id", gameId)
         .order("score", { ascending: false });
       if (error) console.error("[DEBUG] Leaderboard fetch error:", error);
-      console.log("[DEBUG] Leaderboard:", data);
       setLeaderboard(data || []);
     };
     fetchLeaderboard();
@@ -132,13 +165,11 @@ export default function MultiplayerGame() {
   // Fetch questions once
   useEffect(() => {
     const fetchQuestions = async () => {
-      console.log("[DEBUG] Fetching questions...");
       const { data, error } = await supabase
         .from("multiplayer_quiz")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) console.error("[DEBUG] Questions fetch error:", error);
-      console.log("[DEBUG] Questions fetched:", data);
       setQuestions(data || []);
     };
     fetchQuestions();
@@ -148,61 +179,38 @@ export default function MultiplayerGame() {
   useEffect(() => {
     if (preCountdown === null) return;
     if (preCountdown > 0) {
-      countdownRef.current = setTimeout(
-        () => setPreCountdown((c) => c - 1),
-        1000
-      );
+      countdownRef.current = setTimeout(() => setPreCountdown((c) => c - 1), 1000);
     } else if (preCountdown === 0) {
       clearTimeout(countdownRef.current);
-      // Immediately mark game as in_progress locally
-      setGame((prev) => ({ ...prev, status: "in_progress" }));
       startGame();
     }
     return () => clearTimeout(countdownRef.current);
-  }, [preCountdown, setGame]);
-
-  // Game timer logic
-  useEffect(() => {
-    if (!game || game.status !== "in_progress") return;
-    const endTime = Date.now() + (game.duration_seconds || 60) * 1000;
-    const updateTimer = () => {
-      const timeLeft = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-      setGameTimer(timeLeft);
-      if (timeLeft <= 0) finishGame();
-    };
-    updateTimer();
-    gameTimerRef.current = setInterval(updateTimer, 1000);
-    return () => clearInterval(gameTimerRef.current);
-  }, [game]);
+  }, [preCountdown]);
 
   const startGame = async () => {
-    console.log("[DEBUG] Starting game...");
+    const endAt = new Date(Date.now() + (game.duration_seconds || 60) * 1000).toISOString();
     await supabase
       .from("multiplayer_games")
-      .update({ status: "in_progress" })
+      .update({ status: "in_progress", end_at: endAt })
       .eq("id", gameId);
-    pickNextQuestion();
+    startGameTimer(new Date(endAt));
+    pickNextQuestion(answeredQIds);
   };
 
   const finishGame = async () => {
-    console.log("[DEBUG] Finishing game...");
     await supabase
       .from("multiplayer_games")
       .update({ status: "finished" })
       .eq("id", gameId);
   };
 
-  const pickNextQuestion = () => {
-    console.log("[DEBUG] Picking next question. Answered IDs:", answeredQIds);
-    const available = questions.filter((q) => !answeredQIds.includes(q.id));
-    console.log("[DEBUG] Available questions:", available);
+  const pickNextQuestion = (answered = answeredQIds) => {
+    const available = questions.filter((q) => !answered.includes(q.id));
     if (available.length === 0) {
-      console.log("[DEBUG] No more questions available.");
       setCurrentQ(null);
       return;
     }
     const randomQ = available[Math.floor(Math.random() * available.length)];
-    console.log("[DEBUG] Selected question:", randomQ);
     setCurrentQ(randomQ);
     setQuestionStartTime(Date.now());
     setTextAnswer("");
@@ -225,19 +233,19 @@ export default function MultiplayerGame() {
     if (answer.toLowerCase().trim() === currentQ.answer.toLowerCase().trim()) {
       earned = getScoreForAnswerTime(elapsed);
     }
-    console.log("[DEBUG] Answer submitted:", answer, "Earned:", earned);
     await supabase.from("multiplayer_answers").insert({
       game_id: gameId,
       player_id: playerId,
       question_id: currentQ.id,
     });
-    setAnsweredQIds((prev) => [...prev, currentQ.id]);
+    const updatedAnswered = [...answeredQIds, currentQ.id];
+    setAnsweredQIds(updatedAnswered);
     await supabase.rpc("increment_multiplayer_score", {
       p_game_id: gameId,
       p_user_id: user.id,
       p_points: earned,
     });
-    pickNextQuestion();
+    pickNextQuestion(updatedAnswered);
   };
 
   const handleShare = async () => {
@@ -272,7 +280,7 @@ export default function MultiplayerGame() {
     }
   };
 
-  // Pre-start countdown screen
+  // Render pre-countdown
   if (preCountdown !== null && preCountdown > 0) {
     return (
       <div className="flex items-center justify-center h-screen bg-black text-white">
@@ -296,7 +304,7 @@ export default function MultiplayerGame() {
     );
   }
 
-  // Final results screen
+  // Render finished state
   if (game?.status === "finished") {
     const matchCode = game?.token || "N/A";
     const finishedAt = new Date().toLocaleString();
@@ -341,7 +349,7 @@ export default function MultiplayerGame() {
     );
   }
 
-  // In-game screen
+  // Render in-progress state
   if (game?.status === "in_progress") {
     return (
       <div className="flex flex-col md:flex-row h-screen">
@@ -420,10 +428,11 @@ export default function MultiplayerGame() {
     );
   }
 
-  // Waiting screen
+  // Render waiting state
   return (
     <div className="flex items-center justify-center h-screen text-center">
       <p className="text-xl font-semibold">⏳ Waiting for game to start...</p>
     </div>
   );
 }
+
