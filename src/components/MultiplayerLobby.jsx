@@ -159,6 +159,19 @@ export default function MultiplayerLobby() {
       .eq("id", gameId);
   };
 
+  const handleBack = async () => {
+    // If creator, delete the game + players before leaving
+    if (user?.id === game?.creator_id) {
+      try {
+        await supabase.from("multiplayer_players").delete().eq("game_id", gameId);
+        await supabase.from("multiplayer_games").delete().eq("id", gameId);
+      } catch (err) {
+        console.error("❌ Error deleting game:", err);
+      }
+    }
+    navigate(-1);
+  };
+
   if (!game) return <div className="text-center mt-20">Preparing your lobby...</div>;
 
   const renderSlots = () => {
@@ -229,11 +242,18 @@ export default function MultiplayerLobby() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
       <div className="max-w-xl w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20">
+        
+        {/* Back Button */}
+        <button
+          onClick={handleBack}
+          className="mb-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition"
+        >
+          ← Back
+        </button>
+
         {/* Lobby Header */}
         <h2 className="text-2xl font-bold text-center mb-1">
-          {game.mode} Lobby  •{" "}
-          {game.duration_seconds / 60} min
-
+          {game.mode} Lobby • {game.duration_seconds / 60} min
         </h2>
         <p className="text-center text-sm text-gray-300 mb-4">
           Match Code: <span className="font-mono">{game.token}</span> 
