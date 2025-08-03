@@ -21,25 +21,23 @@ export default function MultiplayerGame() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [textAnswer, setTextAnswer] = useState("");
   const [playerId, setPlayerId] = useState(null);
+  const [lastAnswerStatus, setLastAnswerStatus] = useState(null); // NEW for bounce/shake
 
   const countdownRef = useRef(null);
   const gameTimerRef = useRef(null);
   const leaderboardRef = useRef(null);
 
-  // Fetch initial game + players
+  // --- Fetch initial game + players ---
   useEffect(() => {
     const fetchGameData = async () => {
-      console.log("[DEBUG] Fetching initial game data...");
-      const { data: gameData, error: gameError } = await supabase
+      const { data: gameData } = await supabase
         .from("multiplayer_games")
         .select("*")
         .eq("id", gameId)
         .single();
-      if (gameError) console.error("[DEBUG] Game fetch error:", gameError);
       if (!gameData) return;
       setGame(gameData);
 
-      // If game has started, calculate remaining time using end_at
       if (gameData.status === "in_progress" && gameData.end_at) {
         const remaining = Math.max(
           0,
@@ -48,35 +46,26 @@ export default function MultiplayerGame() {
         setGameTimer(remaining);
         startGameTimer(new Date(gameData.end_at));
       }
-
-      // If not started but is in starting state, trigger pre-countdown
       if (gameData.status === "starting") {
         setPreCountdown(5);
       }
 
-      // Fetch players
-      const { data: playerData, error: playerError } = await supabase
+      const { data: playerData } = await supabase
         .from("multiplayer_players")
         .select("*")
         .eq("game_id", gameId);
-      if (playerError) console.error("[DEBUG] Players fetch error:", playerError);
       setPlayers(playerData || []);
 
-      // Get my playerId
       const myPlayer = playerData?.find((p) => p.user_id === user.id);
       if (myPlayer) {
         setPlayerId(myPlayer.id);
-        // Fetch answered questions from DB
-        const { data: answers, error: answersError } = await supabase
+        const { data: answers } = await supabase
           .from("multiplayer_answers")
           .select("question_id")
           .eq("game_id", gameId)
           .eq("player_id", myPlayer.id);
-        if (answersError) console.error("[DEBUG] Answers fetch error:", answersError);
         const answeredIds = answers?.map((a) => a.question_id) || [];
         setAnsweredQIds(answeredIds);
-
-        // If already in progress, pick the next question after answered ones
         if (gameData.status === "in_progress" && questions.length > 0) {
           pickNextQuestion(answeredIds);
         }
@@ -84,7 +73,6 @@ export default function MultiplayerGame() {
     };
     fetchGameData();
 
-    // Subscribe to game status changes
     const statusChannel = supabase
       .channel(`game-${gameId}`)
       .on(
@@ -98,18 +86,11 @@ export default function MultiplayerGame() {
         (payload) => {
           if (payload.new) {
             setGame(payload.new);
-
-            // Handle starting state
-            if (payload.new.status === "starting") {
-              setPreCountdown(5);
-            }
-
-            // Handle in-progress with server end_at
+            if (payload.new.status === "starting") setPreCountdown(5);
             if (payload.new.status === "in_progress" && payload.new.end_at) {
               startGameTimer(new Date(payload.new.end_at));
               pickNextQuestion(answeredQIds);
             }
-
             if (payload.new.status === "finished") {
               clearInterval(gameTimerRef.current);
             }
@@ -132,15 +113,14 @@ export default function MultiplayerGame() {
     gameTimerRef.current = setInterval(updateTimer, 1000);
   };
 
-  // Leaderboard subscription
+  // --- Leaderboard subscription ---
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("multiplayer_players")
         .select("*")
         .eq("game_id", gameId)
         .order("score", { ascending: false });
-      if (error) console.error("[DEBUG] Leaderboard fetch error:", error);
       setLeaderboard(data || []);
     };
     fetchLeaderboard();
@@ -162,24 +142,26 @@ export default function MultiplayerGame() {
     return () => supabase.removeChannel(channel);
   }, [gameId]);
 
-  // Fetch questions once
+  // --- Fetch questions ---
   useEffect(() => {
     const fetchQuestions = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("multiplayer_quiz")
         .select("*")
         .order("created_at", { ascending: false });
-      if (error) console.error("[DEBUG] Questions fetch error:", error);
       setQuestions(data || []);
     };
     fetchQuestions();
   }, []);
 
-  // Countdown before game starts
+  // --- Pre-game countdown ---
   useEffect(() => {
     if (preCountdown === null) return;
     if (preCountdown > 0) {
-      countdownRef.current = setTimeout(() => setPreCountdown((c) => c - 1), 1000);
+      countdownRef.current = setTimeout(
+        () => setPreCountdown((c) => c - 1),
+        1000
+      );
     } else if (preCountdown === 0) {
       clearTimeout(countdownRef.current);
       startGame();
@@ -188,7 +170,9 @@ export default function MultiplayerGame() {
   }, [preCountdown]);
 
   const startGame = async () => {
-    const endAt = new Date(Date.now() + (game.duration_seconds || 60) * 1000).toISOString();
+    const endAt = new Date(
+      Date.now() + (game.duration_seconds || 60) * 1000
+    ).toISOString();
     await supabase
       .from("multiplayer_games")
       .update({ status: "in_progress", end_at: endAt })
@@ -214,6 +198,7 @@ export default function MultiplayerGame() {
     setCurrentQ(randomQ);
     setQuestionStartTime(Date.now());
     setTextAnswer("");
+    setLastAnswerStatus(null); // reset animation status
   };
 
   const getScoreForAnswerTime = (elapsedSec) => {
@@ -230,9 +215,11 @@ export default function MultiplayerGame() {
     if (!currentQ || !playerId) return;
     const elapsed = (Date.now() - questionStartTime) / 1000;
     let earned = 0;
-    if (answer.toLowerCase().trim() === currentQ.answer.toLowerCase().trim()) {
-      earned = getScoreForAnswerTime(elapsed);
-    }
+    const isCorrect =
+      answer.toLowerCase().trim() === currentQ.answer.toLowerCase().trim();
+    setLastAnswerStatus(isCorrect ? "correct" : "wrong");
+    if (isCorrect) earned = getScoreForAnswerTime(elapsed);
+
     await supabase.from("multiplayer_answers").insert({
       game_id: gameId,
       player_id: playerId,
@@ -245,7 +232,8 @@ export default function MultiplayerGame() {
       p_user_id: user.id,
       p_points: earned,
     });
-    pickNextQuestion(updatedAnswered);
+
+    setTimeout(() => pickNextQuestion(updatedAnswered), 600);
   };
 
   const handleShare = async () => {
@@ -280,7 +268,7 @@ export default function MultiplayerGame() {
     }
   };
 
-  // Render pre-countdown
+  // --- Pre-countdown screen ---
   if (preCountdown !== null && preCountdown > 0) {
     return (
       <div className="flex items-center justify-center h-screen bg-black text-white">
@@ -304,43 +292,87 @@ export default function MultiplayerGame() {
     );
   }
 
-  // Render finished state
+  // --- Finished screen ---
+  // Inside the finished state rendering section:
   if (game?.status === "finished") {
     const matchCode = game?.token || "N/A";
     const finishedAt = new Date().toLocaleString();
+
+    const medal = (idx) => {
+      if (idx === 0) return "🥇";
+      if (idx === 1) return "🥈";
+      if (idx === 2) return "🥉";
+      return "";
+    };
+
     return (
-      <div className="p-6 text-center">
-        <div
-          ref={leaderboardRef}
-          className="max-w-md mx-auto bg-white rounded-lg shadow p-4"
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
+        {/* Trophy */}
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="text-6xl mb-4"
         >
-          <h2 className="text-3xl font-bold mb-4">🏆 Final Leaderboard</h2>
-          <p className="text-sm text-gray-500 mb-2">Match Code: {matchCode}</p>
-          <p className="text-sm text-gray-500 mb-4">Finished: {finishedAt}</p>
-          {leaderboard.map((p, idx) => {
-            const isMe = p.user_id === user.id;
-            return (
-              <div
-                key={p.id}
-                className={`mb-2 p-2 rounded ${
-                  isMe ? "bg-yellow-200 font-bold" : "bg-gray-100"
-                }`}
-              >
-                {idx + 1}. {p.player_name} — {p.score} pts {isMe && " (You)"}
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-6 flex gap-4 justify-center">
+          🏆
+        </motion.div>
+
+        {/* Title */}
+        <h2 className="text-4xl font-bold mb-2">Final Leaderboard</h2>
+        <p className="text-sm text-gray-400">
+          Match Code: {matchCode} • Finished: {finishedAt}
+        </p>
+
+        {/* Leaderboard Card */}
+        <motion.div
+          ref={leaderboardRef}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mt-6 w-full max-w-md backdrop-blur-lg bg-white/10 rounded-2xl p-4 shadow-lg border border-white/20"
+        >
+          <AnimatePresence>
+            {leaderboard.map((p, idx) => {
+              const isMe = p.user_id === user.id;
+              return (
+                <motion.div
+                  key={p.id}
+                  layout
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={`flex justify-between items-center p-3 rounded-xl mb-2 ${
+                    isMe
+                      ? "bg-gradient-to-r from-green-500/40 to-green-400/20 border border-green-400 shadow-lg"
+                      : "bg-white/5"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{medal(idx) || idx + 1}.</span>
+                    <span className="font-medium">{p.player_name}</span>
+                    {isMe && (
+                      <span className="text-xs text-green-300">(You)</span>
+                    )}
+                  </div>
+                  <span className="font-semibold">{p.score} pts</span>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Buttons */}
+        <div className="mt-8 flex gap-4">
           <button
             onClick={() => navigate("/map")}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            className="px-5 py-2 rounded-full bg-green-500 hover:bg-green-400 transition-colors shadow-lg"
           >
             Return to Map
           </button>
           <button
             onClick={handleShare}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-5 py-2 rounded-full bg-blue-500 hover:bg-blue-400 transition-colors shadow-lg"
           >
             Share
           </button>
@@ -349,17 +381,33 @@ export default function MultiplayerGame() {
     );
   }
 
-  // Render in-progress state
+  // --- In-progress screen ---
   if (game?.status === "in_progress") {
     return (
       <div className="flex flex-col md:flex-row h-screen">
+        {/* Question Area */}
         <div className="flex-1 flex flex-col items-center justify-center p-6">
           <div className="text-lg mb-2">⏳ Time Left: {gameTimer}s</div>
           <div className="text-xl font-bold mb-6">
             Your Score: {players.find((p) => p.user_id === user.id)?.score || 0}
           </div>
           {currentQ ? (
-            <div className="w-full max-w-2xl text-center">
+            <motion.div
+              key={currentQ.id}
+              className="w-full max-w-2xl text-center"
+              initial={{ rotateY: 90, opacity: 0 }}
+              animate={{
+                rotateY: 0,
+                opacity: 1,
+                scale:
+                  lastAnswerStatus === "correct"
+                    ? [1, 1.1, 1]
+                    : lastAnswerStatus === "wrong"
+                    ? [1, 0.9, 1.05, 0.95, 1]
+                    : 1,
+              }}
+              transition={{ duration: 0.5 }}
+            >
               <h3 className="text-2xl font-bold mb-4">{currentQ.question}</h3>
               {currentQ.mode === "trivia" ||
               currentQ.mode === "scripture-match" ? (
@@ -394,13 +442,15 @@ export default function MultiplayerGame() {
                   </button>
                 </div>
               ) : null}
-            </div>
+            </motion.div>
           ) : (
             <p className="text-gray-500 mt-4">
               No more questions, waiting for game to end...
             </p>
           )}
         </div>
+
+        {/* Leaderboard */}
         <div className="w-full md:w-72 bg-gray-50 border-l p-4 overflow-y-auto">
           <h2 className="text-xl font-bold mb-4">Leaderboard</h2>
           <AnimatePresence>
@@ -428,11 +478,10 @@ export default function MultiplayerGame() {
     );
   }
 
-  // Render waiting state
+  // --- Waiting screen ---
   return (
     <div className="flex items-center justify-center h-screen text-center">
       <p className="text-xl font-semibold">⏳ Waiting for game to start...</p>
     </div>
   );
 }
-
