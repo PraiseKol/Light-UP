@@ -160,16 +160,24 @@ export default function MultiplayerLobby() {
   };
 
   const handleBack = async () => {
-    // If creator, delete the game + players before leaving
-    if (user?.id === game?.creator_id) {
-      try {
+    try {
+      if (user?.id === game?.creator_id) {
+        // Creator: delete whole game & players, go back one step
         await supabase.from("multiplayer_players").delete().eq("game_id", gameId);
         await supabase.from("multiplayer_games").delete().eq("id", gameId);
-      } catch (err) {
-        console.error("❌ Error deleting game:", err);
+        navigate(-1);
+      } else {
+        // Non-creator: delete only self, go to Create Multiplayer Game page
+        await supabase
+          .from("multiplayer_players")
+          .delete()
+          .eq("game_id", gameId)
+          .eq("user_id", user.id);
+        navigate("/multiplayer/create");
       }
+    } catch (err) {
+      console.error("❌ Error leaving game:", err);
     }
-    navigate(-1);
   };
 
   if (!game) return <div className="text-center mt-20">Preparing your lobby...</div>;
