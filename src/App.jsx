@@ -16,6 +16,7 @@ import WeeklyChallengeScreen from "pages/WeeklyChallengeScreen";
 import CreateMultiplayerGame from "components/CreateMultiplayerGame";
 import MultiplayerLobby from "components/MultiplayerLobby";
 import JoinMultiplayerGame from "components/JoinMultiplayerGame";
+import MultiplayerGame from "./components/MultiplayerGame";
 
 // Protect routes by checking user state from AuthProvider
 function ProtectedRoute({ children }) {
@@ -86,6 +87,18 @@ export default function App() {
                   {console.log("📍 Routed to /multiplayer/join/:token")}
                   <ProtectedRoute>
                     <JoinMultiplayerGame />
+                  </ProtectedRoute>
+                </>
+              }
+            />
+
+            <Route
+              path="/multiplayer/game/:gameId"
+              element={
+                <>
+                  {console.log("📍 Routed to /multiplayer/game/:gameId")}
+                  <ProtectedRoute>
+                    <MultiplayerGame />
                   </ProtectedRoute>
                 </>
               }

@@ -98,7 +98,10 @@ export default function MultiplayerLobby() {
           setGame(updatedGame);
 
           if (updatedGame.status === "in_progress") {
-            navigate(`/multiplayer/game/${gameId}`);
+            // Pass startAt to MultiplayerGame for synced countdown
+            navigate(`/multiplayer/game/${gameId}`, {
+              state: { startAt: updatedGame.start_at }
+            });
           }
         }
       )
@@ -110,6 +113,16 @@ export default function MultiplayerLobby() {
   }, [gameId, setGame, navigate]);
 
   const handleJoinSlot = async (slot) => {
+    // Check if game is full
+    const filledSlots = Array.isArray(players)
+      ? players.filter((p) => p.slot_number).length
+      : 0;
+
+    if (filledSlots >= totalSlots) {
+      alert("Game Full");
+      return;
+    }
+
     const existing = Array.isArray(players)
       ? players.find((p) => p.user_id === user.id)
       : null;
@@ -145,9 +158,15 @@ export default function MultiplayerLobby() {
   const handleStartGame = async () => {
     if (players.filter((p) => p.slot_number).length < totalSlots) return;
 
+    // Set a start time 5 seconds from now
+    const startAt = new Date(Date.now() + 5000).toISOString();
+
     await supabase
       .from("multiplayer_games")
-      .update({ status: "in_progress" })
+      .update({
+        status: "in_progress",
+        start_at: startAt // Must exist in DB
+      })
       .eq("id", gameId);
   };
 
