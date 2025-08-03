@@ -22,6 +22,7 @@ export default function MultiplayerGame() {
   const [textAnswer, setTextAnswer] = useState("");
   const [playerId, setPlayerId] = useState(null);
   const [lastAnswerStatus, setLastAnswerStatus] = useState(null); // NEW for bounce/shake
+  const [showLeaderboard, setShowLeaderboard] = useState(true);
 
   const countdownRef = useRef(null);
   const gameTimerRef = useRef(null);
@@ -382,77 +383,92 @@ export default function MultiplayerGame() {
   }
 
   // --- In-progress screen ---
-  if (game?.status === "in_progress") {
-    return (
-      <div className="flex flex-col md:flex-row h-screen">
-        {/* Question Area */}
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
-          <div className="text-lg mb-2">⏳ Time Left: {gameTimer}s</div>
-          <div className="text-xl font-bold mb-6">
-            Your Score: {players.find((p) => p.user_id === user.id)?.score || 0}
-          </div>
-          {currentQ ? (
-            <motion.div
-              key={currentQ.id}
-              className="w-full max-w-2xl text-center"
-              initial={{ rotateY: 90, opacity: 0 }}
-              animate={{
-                rotateY: 0,
-                opacity: 1,
-                scale:
-                  lastAnswerStatus === "correct"
-                    ? [1, 1.1, 1]
-                    : lastAnswerStatus === "wrong"
-                    ? [1, 0.9, 1.05, 0.95, 1]
-                    : 1,
-              }}
-              transition={{ duration: 0.5 }}
-            >
-              <h3 className="text-2xl font-bold mb-4">{currentQ.question}</h3>
-              {currentQ.mode === "trivia" ||
-              currentQ.mode === "scripture-match" ? (
-                <div className="grid gap-3">
-                  {currentQ.options?.map((opt, i) => (
-                    <button
-                      key={i}
-                      className="p-3 bg-blue-500 text-white rounded hover:bg-blue-600"
-                      onClick={() => handleAnswer(opt)}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              ) : currentQ.mode === "word-fill" ? (
-                <div className="flex gap-2 justify-center">
-                  <input
-                    type="text"
-                    value={textAnswer}
-                    onChange={(e) => setTextAnswer(e.target.value)}
-                    placeholder="Your answer"
-                    className="border p-2 rounded w-64"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleAnswer(textAnswer);
-                    }}
-                  />
-                  <button
-                    onClick={() => handleAnswer(textAnswer)}
-                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                  >
-                    Submit
-                  </button>
-                </div>
-              ) : null}
-            </motion.div>
-          ) : (
-            <p className="text-gray-500 mt-4">
-              No more questions, waiting for game to end...
-            </p>
-          )}
-        </div>
+if (game?.status === "in_progress") {
+  
 
-        {/* Leaderboard */}
-        <div className="w-full md:w-72 bg-gray-50 border-l p-4 overflow-y-auto">
-          <h2 className="text-xl font-bold mb-4">Leaderboard</h2>
+  return (
+    <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+      {/* Question Area */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="text-lg mb-2">⏳ Time Left: {gameTimer}s</div>
+        {/* <div className="text-xl font-bold mb-6">
+          Your Score: {players.find((p) => p.user_id === user.id)?.score || 0}
+        </div> */}
+        {currentQ ? (
+          <motion.div
+            key={currentQ.id}
+            className="w-full max-w-2xl text-center backdrop-blur-lg bg-white/5 p-6 rounded-2xl border border-white/20 shadow-lg"
+            initial={{ rotateY: 90, opacity: 0 }}
+            animate={{
+              rotateY: 0,
+              opacity: 1,
+              scale:
+                lastAnswerStatus === "correct"
+                  ? [1, 1.1, 1]
+                  : lastAnswerStatus === "wrong"
+                  ? [1, 0.9, 1.05, 0.95, 1]
+                  : 1,
+            }}
+            transition={{ duration: 0.5 }}
+          >
+            <h3 className="text-2xl font-bold mb-4">{currentQ.question}</h3>
+            {currentQ.mode === "trivia" ||
+            currentQ.mode === "scripture-match" ? (
+              <div className="grid gap-3">
+                {currentQ.options?.map((opt, i) => (
+                  <button
+                    key={i}
+                    className="p-3 rounded-xl bg-blue-500 hover:bg-blue-400 shadow-lg transition"
+                    onClick={() => handleAnswer(opt)}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            ) : currentQ.mode === "word-fill" ? (
+              <div className="flex gap-2 justify-center">
+                <input
+                  type="text"
+                  value={textAnswer}
+                  onChange={(e) => setTextAnswer(e.target.value)}
+                  placeholder="Your answer"
+                  className="border p-2 rounded-xl w-64 text-black"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAnswer(textAnswer);
+                  }}
+                />
+                <button
+                  onClick={() => handleAnswer(textAnswer)}
+                  className="px-4 py-2 bg-green-500 rounded-xl hover:bg-green-400 shadow-lg transition"
+                >
+                  Submit
+                </button>
+              </div>
+            ) : null}
+          </motion.div>
+        ) : (
+          <p className="text-gray-400 mt-4">
+            No more questions, waiting for game to end...
+          </p>
+        )}
+      </div>
+
+      {/* Leaderboard Collapsible */}
+      <div
+        className={`transition-all duration-500 ease-in-out ${
+          showLeaderboard ? "w-full md:w-80" : "w-0 md:w-12"
+        } overflow-hidden bg-white/10 backdrop-blur-lg border-l border-white/20`}
+      >
+        <div className="flex justify-between items-center p-4">
+          <h2 className="text-lg font-semibold">Leaderboard</h2>
+          <button
+            className="text-sm px-2 py-1 bg-gray-700 rounded-lg hover:bg-gray-600"
+            onClick={() => setShowLeaderboard((prev) => !prev)}
+          >
+            {showLeaderboard ? "Hide" : "Show"}
+          </button>
+        </div>
+        <div className="p-4 overflow-y-auto">
           <AnimatePresence>
             {leaderboard.map((p, idx) => {
               const isMe = p.user_id === user.id;
@@ -461,22 +477,31 @@ export default function MultiplayerGame() {
                   key={p.id}
                   layout
                   initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0, scale: [1, 1.05, 1] }}
+                  animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className={`text-sm p-2 rounded mb-2 ${
-                    isMe ? "bg-yellow-200 font-bold" : "bg-white"
+                  className={`p-2 rounded-xl mb-2 ${
+                    isMe
+                      ? "bg-gradient-to-r from-green-500/30 to-green-400/10 border border-green-400"
+                      : "bg-white/5"
                   }`}
                 >
-                  {idx + 1}. {p.player_name} — {p.score} pts {isMe && " (You)"}
+                  <span className="font-medium">
+                    {idx + 1}. {p.player_name}
+                  </span>
+                  <span className="float-right font-semibold">
+                    {p.score} pts
+                  </span>
                 </motion.div>
               );
             })}
           </AnimatePresence>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   // --- Waiting screen ---
   return (
