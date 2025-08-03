@@ -59,7 +59,7 @@ export default function JoinMultiplayerGame() {
     loadGame();
   }, [token, user, navigate, setGame, setPlayers]);
 
-  if (loading) return <div className="p-6 text-center">Loading lobby...</div>;
+  if (loading) return <div className="p-6 text-center">Preparing your cave...</div>;
   if (errorMessage) return <div className="p-6 text-center text-red-500">{errorMessage}</div>;
 
   return null;

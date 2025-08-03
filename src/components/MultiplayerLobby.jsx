@@ -10,7 +10,9 @@ export default function MultiplayerLobby() {
   const { user } = useAuth();
   const { game, players = [], setPlayers, setGame } = useMultiplayerStore();
 
-  const joinUrl = game ? `${window.location.origin}/multiplayer/join/${game.token}` : "";
+  const joinUrl = game
+    ? `${window.location.origin}/multiplayer/join/${game.token}`
+    : "";
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(joinUrl);
@@ -21,35 +23,46 @@ export default function MultiplayerLobby() {
     "1v1": 2,
     "1v1v1": 3,
     "1v1v1v1": 4,
-    "2v2": 4
+    "2v2": 4,
   };
   const totalSlots = slotCountMap[game?.mode] || 2;
 
-  // Initial fetch
+  useEffect(() => {
+    if (game?.status === "in_progress" || game?.status === "starting") {
+      console.log("[DEBUG] Game already started or starting — redirecting to game.");
+      navigate(`/multiplayer/game/${gameId}`, { replace: true });
+    }
+  }, [game?.status, gameId, navigate]);
+
   useEffect(() => {
     const loadLobbyData = async () => {
-      const { data: gameData } = await supabase
+      console.log("[DEBUG] Loading initial lobby data...");
+      const { data: gameData, error: gameError } = await supabase
         .from("multiplayer_games")
         .select("*")
         .eq("id", gameId)
         .single();
+      if (gameError) console.error("[DEBUG] Game fetch error:", gameError);
+      if (gameData) {
+        console.log("[DEBUG] Game data loaded:", gameData);
+        setGame(gameData);
+      }
 
-      if (gameData) setGame(gameData);
-
-      const { data: playerData } = await supabase
+      const { data: playerData, error: playerError } = await supabase
         .from("multiplayer_players")
         .select("*")
         .eq("game_id", gameId);
-
+      if (playerError) console.error("[DEBUG] Players fetch error:", playerError);
+      console.log("[DEBUG] Players data loaded:", playerData);
       setPlayers(Array.isArray(playerData) ? playerData : []);
     };
 
     loadLobbyData();
   }, [gameId, setGame, setPlayers]);
 
-  // Realtime subscription for players
   useEffect(() => {
     if (!gameId) return;
+    console.log("[DEBUG] Subscribing to lobby players channel...");
 
     const playerChannel = supabase
       .channel(`lobby-players-${gameId}`)
@@ -59,15 +72,17 @@ export default function MultiplayerLobby() {
           event: "*",
           schema: "public",
           table: "multiplayer_players",
-          filter: `game_id=eq.${gameId}`
+          filter: `game_id=eq.${gameId}`,
         },
-        async () => {
+        async (payload) => {
+          console.log("[DEBUG] Players change detected:", payload);
           const { data: updatedPlayers, error } = await supabase
             .from("multiplayer_players")
             .select("*")
             .eq("game_id", gameId);
-
-          if (!error) {
+          if (error) console.error("[DEBUG] Error fetching updated players:", error);
+          else {
+            console.log("[DEBUG] Updated players list:", updatedPlayers);
             setPlayers(Array.isArray(updatedPlayers) ? updatedPlayers : []);
           }
         }
@@ -79,9 +94,9 @@ export default function MultiplayerLobby() {
     };
   }, [gameId, setPlayers]);
 
-  // Realtime subscription for game status
   useEffect(() => {
     if (!gameId) return;
+    console.log("[DEBUG] Subscribing to lobby game channel...");
 
     const gameChannel = supabase
       .channel(`lobby-game-${gameId}`)
@@ -91,16 +106,18 @@ export default function MultiplayerLobby() {
           event: "UPDATE",
           schema: "public",
           table: "multiplayer_games",
-          filter: `id=eq.${gameId}`
+          filter: `id=eq.${gameId}`,
         },
         (payload) => {
+          console.log("[DEBUG] Game status change detected:", payload);
           const updatedGame = payload.new;
           setGame(updatedGame);
 
-          if (updatedGame.status === "in_progress") {
-            // Pass startAt to MultiplayerGame for synced countdown
+          if (updatedGame.status === "in_progress" || updatedGame.status === "starting") {
+            console.log("[DEBUG] Redirecting to game page...");
             navigate(`/multiplayer/game/${gameId}`, {
-              state: { startAt: updatedGame.start_at }
+              state: { startAt: updatedGame.start_at },
+              replace: true,
             });
           }
         }
@@ -113,10 +130,11 @@ export default function MultiplayerLobby() {
   }, [gameId, setGame, navigate]);
 
   const handleJoinSlot = async (slot) => {
-    // Check if game is full
+    console.log("[DEBUG] Attempting to join slot:", slot);
     const filledSlots = Array.isArray(players)
       ? players.filter((p) => p.slot_number).length
       : 0;
+    console.log("[DEBUG] Filled slots:", filledSlots, "/", totalSlots);
 
     if (filledSlots >= totalSlots) {
       alert("Game Full");
@@ -127,50 +145,60 @@ export default function MultiplayerLobby() {
       ? players.find((p) => p.user_id === user.id)
       : null;
 
-    if (existing?.slot_number === slot) return;
+    if (existing?.slot_number === slot) {
+      console.log("[DEBUG] Already in this slot.");
+      return;
+    }
 
-    const { data: gameUser } = await supabase
+    const { data: gameUser, error: gameUserError } = await supabase
       .from("game_users")
       .select("player_name")
       .eq("user_id", user.id)
       .single();
+    if (gameUserError) console.error("[DEBUG] Error fetching player name:", gameUserError);
 
     const playerName = gameUser?.player_name || "Unnamed";
 
     if (existing) {
+      console.log("[DEBUG] Updating existing player slot...");
       await supabase
         .from("multiplayer_players")
         .update({ slot_number: slot })
         .eq("id", existing.id);
     } else {
+      console.log("[DEBUG] Adding new player to slot...");
       await supabase.from("multiplayer_players").insert([
         {
           game_id: game.id,
           user_id: user.id,
           player_name: playerName,
           slot_number: slot,
-          team_number: null
-        }
+          team_number: null,
+        },
       ]);
     }
   };
 
   const handleStartGame = async () => {
-    if (players.filter((p) => p.slot_number).length < totalSlots) return;
+    console.log("[DEBUG] Start Game button clicked.");
+    if (players.filter((p) => p.slot_number).length < totalSlots) {
+      console.log("[DEBUG] Not enough players to start.");
+      return;
+    }
 
-    // Set a start time 5 seconds from now
-    const startAt = new Date(Date.now() + 5000).toISOString();
-
-    await supabase
+    console.log("[DEBUG] Updating game status to 'starting'...");
+    const { error } = await supabase
       .from("multiplayer_games")
       .update({
-        status: "in_progress",
-        start_at: startAt // Must exist in DB
+        status: "starting",
       })
       .eq("id", gameId);
+
+    if (error) console.error("[DEBUG] Error setting starting status:", error);
+    else console.log("[DEBUG] Starting countdown triggered successfully.");
   };
 
-  if (!game) return <div>Loading lobby...</div>;
+  if (!game) return <div>Preparing your cave...</div>;
 
   return (
     <div className="p-6 max-w-lg mx-auto bg-white rounded-lg shadow-lg">
@@ -216,7 +244,9 @@ export default function MultiplayerLobby() {
                 }`}
                 disabled={!!occupant && !isMe}
               >
-                {occupant ? occupant.player_name : `Join Slot ${slotNum}`}
+                {occupant
+                  ? occupant.player_name
+                  : `Join Slot ${slotNum}`}
               </button>
             );
           })}
