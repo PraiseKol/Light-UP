@@ -29,31 +29,23 @@ export default function MultiplayerLobby() {
 
   useEffect(() => {
     if (game?.status === "in_progress" || game?.status === "starting") {
-      console.log("[DEBUG] Game already started or starting — redirecting to game.");
       navigate(`/multiplayer/game/${gameId}`, { replace: true });
     }
   }, [game?.status, gameId, navigate]);
 
   useEffect(() => {
     const loadLobbyData = async () => {
-      console.log("[DEBUG] Loading initial lobby data...");
-      const { data: gameData, error: gameError } = await supabase
+      const { data: gameData } = await supabase
         .from("multiplayer_games")
         .select("*")
         .eq("id", gameId)
         .single();
-      if (gameError) console.error("[DEBUG] Game fetch error:", gameError);
-      if (gameData) {
-        console.log("[DEBUG] Game data loaded:", gameData);
-        setGame(gameData);
-      }
+      if (gameData) setGame(gameData);
 
-      const { data: playerData, error: playerError } = await supabase
+      const { data: playerData } = await supabase
         .from("multiplayer_players")
         .select("*")
         .eq("game_id", gameId);
-      if (playerError) console.error("[DEBUG] Players fetch error:", playerError);
-      console.log("[DEBUG] Players data loaded:", playerData);
       setPlayers(Array.isArray(playerData) ? playerData : []);
     };
 
@@ -61,9 +53,6 @@ export default function MultiplayerLobby() {
   }, [gameId, setGame, setPlayers]);
 
   useEffect(() => {
-    if (!gameId) return;
-    console.log("[DEBUG] Subscribing to lobby players channel...");
-
     const playerChannel = supabase
       .channel(`lobby-players-${gameId}`)
       .on(
@@ -74,30 +63,20 @@ export default function MultiplayerLobby() {
           table: "multiplayer_players",
           filter: `game_id=eq.${gameId}`,
         },
-        async (payload) => {
-          console.log("[DEBUG] Players change detected:", payload);
-          const { data: updatedPlayers, error } = await supabase
+        async () => {
+          const { data: updatedPlayers } = await supabase
             .from("multiplayer_players")
             .select("*")
             .eq("game_id", gameId);
-          if (error) console.error("[DEBUG] Error fetching updated players:", error);
-          else {
-            console.log("[DEBUG] Updated players list:", updatedPlayers);
-            setPlayers(Array.isArray(updatedPlayers) ? updatedPlayers : []);
-          }
+          setPlayers(Array.isArray(updatedPlayers) ? updatedPlayers : []);
         }
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(playerChannel);
-    };
+    return () => supabase.removeChannel(playerChannel);
   }, [gameId, setPlayers]);
 
   useEffect(() => {
-    if (!gameId) return;
-    console.log("[DEBUG] Subscribing to lobby game channel...");
-
     const gameChannel = supabase
       .channel(`lobby-game-${gameId}`)
       .on(
@@ -109,12 +88,12 @@ export default function MultiplayerLobby() {
           filter: `id=eq.${gameId}`,
         },
         (payload) => {
-          console.log("[DEBUG] Game status change detected:", payload);
           const updatedGame = payload.new;
           setGame(updatedGame);
-
-          if (updatedGame.status === "in_progress" || updatedGame.status === "starting") {
-            console.log("[DEBUG] Redirecting to game page...");
+          if (
+            updatedGame.status === "in_progress" ||
+            updatedGame.status === "starting"
+          ) {
             navigate(`/multiplayer/game/${gameId}`, {
               state: { startAt: updatedGame.start_at },
               replace: true,
@@ -124,17 +103,13 @@ export default function MultiplayerLobby() {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(gameChannel);
-    };
+    return () => supabase.removeChannel(gameChannel);
   }, [gameId, setGame, navigate]);
 
   const handleJoinSlot = async (slot) => {
-    console.log("[DEBUG] Attempting to join slot:", slot);
     const filledSlots = Array.isArray(players)
       ? players.filter((p) => p.slot_number).length
       : 0;
-    console.log("[DEBUG] Filled slots:", filledSlots, "/", totalSlots);
 
     if (filledSlots >= totalSlots) {
       alert("Game Full");
@@ -145,28 +120,22 @@ export default function MultiplayerLobby() {
       ? players.find((p) => p.user_id === user.id)
       : null;
 
-    if (existing?.slot_number === slot) {
-      console.log("[DEBUG] Already in this slot.");
-      return;
-    }
+    if (existing?.slot_number === slot) return;
 
-    const { data: gameUser, error: gameUserError } = await supabase
+    const { data: gameUser } = await supabase
       .from("game_users")
       .select("player_name")
       .eq("user_id", user.id)
       .single();
-    if (gameUserError) console.error("[DEBUG] Error fetching player name:", gameUserError);
 
     const playerName = gameUser?.player_name || "Unnamed";
 
     if (existing) {
-      console.log("[DEBUG] Updating existing player slot...");
       await supabase
         .from("multiplayer_players")
         .update({ slot_number: slot })
         .eq("id", existing.id);
     } else {
-      console.log("[DEBUG] Adding new player to slot...");
       await supabase.from("multiplayer_players").insert([
         {
           game_id: game.id,
@@ -180,97 +149,132 @@ export default function MultiplayerLobby() {
   };
 
   const handleStartGame = async () => {
-    console.log("[DEBUG] Start Game button clicked.");
-    if (players.filter((p) => p.slot_number).length < totalSlots) {
-      console.log("[DEBUG] Not enough players to start.");
-      return;
-    }
+    if (players.filter((p) => p.slot_number).length < totalSlots) return;
 
-    console.log("[DEBUG] Updating game status to 'starting'...");
-    const { error } = await supabase
+    await supabase
       .from("multiplayer_games")
       .update({
         status: "starting",
       })
       .eq("id", gameId);
-
-    if (error) console.error("[DEBUG] Error setting starting status:", error);
-    else console.log("[DEBUG] Starting countdown triggered successfully.");
   };
 
-  if (!game) return <div>Preparing your cave...</div>;
+  if (!game) return <div className="text-center mt-20">Preparing your lobby...</div>;
+
+  const renderSlots = () => {
+    if (game.mode === "2v2") {
+      return (
+        <div className="grid grid-cols-2 gap-6">
+          {/* Team A */}
+          <div className="bg-blue-900/30 p-4 rounded-xl">
+            <h3 className="text-blue-300 font-semibold mb-3 text-center">
+              Team A
+            </h3>
+            <div className="space-y-3">
+              {[1, 2].map((slotNum) => renderSlotButton(slotNum))}
+            </div>
+          </div>
+          {/* Team B */}
+          <div className="bg-red-900/30 p-4 rounded-xl">
+            <h3 className="text-red-300 font-semibold mb-3 text-center">
+              Team B
+            </h3>
+            <div className="space-y-3">
+              {[3, 4].map((slotNum) => renderSlotButton(slotNum))}
+            </div>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className={`grid grid-cols-${totalSlots} gap-3`}>
+          {Array.from({ length: totalSlots }).map((_, idx) =>
+            renderSlotButton(idx + 1)
+          )}
+        </div>
+      );
+    }
+  };
+
+  const renderSlotButton = (slotNum) => {
+    const occupant = players.find((p) => p.slot_number === slotNum);
+    const isMe = occupant?.user_id === user.id;
+    return (
+      <button
+        key={slotNum}
+        onClick={() => handleJoinSlot(slotNum)}
+        disabled={!!occupant && !isMe}
+        className={`w-full p-3 rounded-lg border transition-all duration-300 ${
+          occupant
+            ? isMe
+              ? "bg-yellow-400 text-black border-yellow-500"
+              : "bg-gray-500 text-white border-gray-600 cursor-not-allowed"
+            : "bg-green-500/20 text-green-200 border-green-400 hover:bg-green-500 hover:text-white"
+        }`}
+      >
+        {occupant ? (
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
+              {occupant.player_name.charAt(0).toUpperCase()}
+            </div>
+            <span className="mt-1 text-sm">{occupant.player_name}</span>
+          </div>
+        ) : (
+          <span>Join Slot {slotNum}</span>
+        )}
+      </button>
+    );
+  };
 
   return (
-    <div className="p-6 max-w-lg mx-auto bg-white rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold text-center mb-2">
-        {game.mode} Lobby - {game.token}
-      </h2>
-      <p className="text-center text-sm text-gray-500 mb-4">
-        Duration: {game.duration_seconds / 60} min
-      </p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
+      <div className="max-w-xl w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20">
+        {/* Lobby Header */}
+        <h2 className="text-2xl font-bold text-center mb-1">
+          {game.mode} Lobby  •{" "}
+          {game.duration_seconds / 60} min
 
-      <input
-        type="text"
-        value={joinUrl}
-        readOnly
-        className="border px-2 py-1 rounded w-full text-center text-sm mb-2"
-      />
-      <button
-        onClick={copyToClipboard}
-        className="w-full mb-4 px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-      >
-        Copy Join Link
-      </button>
+        </h2>
+        <p className="text-center text-sm text-gray-300 mb-4">
+          Match Code: <span className="font-mono">{game.token}</span> 
+        </p>
 
-      <div className="border rounded p-4 mb-4">
-        <h3 className="font-semibold mb-2">Slots</h3>
-        <div className="grid grid-cols-2 gap-2">
-          {Array.from({ length: totalSlots }).map((_, index) => {
-            const slotNum = index + 1;
-            const occupant = Array.isArray(players)
-              ? players.find((p) => p.slot_number === slotNum)
-              : null;
-            const isMe = occupant?.user_id === user.id;
-            return (
-              <button
-                key={slotNum}
-                onClick={() => handleJoinSlot(slotNum)}
-                className={`p-3 border rounded ${
-                  occupant
-                    ? isMe
-                      ? "bg-yellow-200 hover:bg-yellow-300"
-                      : "bg-gray-300 cursor-not-allowed"
-                    : "bg-green-100 hover:bg-green-200"
-                }`}
-                disabled={!!occupant && !isMe}
-              >
-                {occupant
-                  ? occupant.player_name
-                  : `Join Slot ${slotNum}`}
-              </button>
-            );
-          })}
+        {/* Join Link */}
+        <div className="flex gap-2 mb-6">
+          <input
+            type="text"
+            value={joinUrl}
+            readOnly
+            className="flex-1 bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-sm"
+          />
+          <button
+            onClick={copyToClipboard}
+            className="px-4 py-2 bg-blue-500 rounded-lg hover:bg-blue-400 text-sm font-medium"
+          >
+            Copy
+          </button>
         </div>
-      </div>
 
-      {game.creator_id === user?.id && (
-        <button
-          onClick={handleStartGame}
-          disabled={
-            Array.isArray(players)
-              ? players.filter((p) => p.slot_number).length < totalSlots
-              : true
-          }
-          className={`w-full py-2 rounded text-white ${
-            Array.isArray(players) &&
-            players.filter((p) => p.slot_number).length >= totalSlots
-              ? "bg-green-500 hover:bg-green-600"
-              : "bg-gray-400"
-          }`}
-        >
-          Start Game
-        </button>
-      )}
+        {/* Slots */}
+        {renderSlots()}
+
+        {/* Start Game Button */}
+        {game.creator_id === user?.id && (
+          <button
+            onClick={handleStartGame}
+            disabled={
+              players.filter((p) => p.slot_number).length < totalSlots
+            }
+            className={`w-full mt-6 py-3 rounded-lg font-semibold transition-all ${
+              players.filter((p) => p.slot_number).length >= totalSlots
+                ? "bg-green-500 hover:bg-green-400"
+                : "bg-gray-500 cursor-not-allowed"
+            }`}
+          >
+            Start Game
+          </button>
+        )}
+      </div>
     </div>
   );
 }
