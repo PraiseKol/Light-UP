@@ -222,8 +222,8 @@ export default function MainGameQuizManager() {
   };
 
   const handleDeletePhase = async (phaseNumber) => {
-    const confirmPhrase = prompt(`You are ABOUT TO DELETE ALL QUIZZES IN PHASE ${phaseNumber}! If you're certain, type "burn" to confirm deleting ALL quizzes from Phase ${phaseNumber}:`);
-    if (confirmPhrase !== "burn") {
+    const confirmPhrase = prompt(`Type "burn down" to confirm deleting ALL quizzes from Phase ${phaseNumber}:`);
+    if (confirmPhrase !== "burn down") {
       alert("❌ Deletion cancelled. Incorrect confirmation phrase.");
       return;
     }
@@ -232,7 +232,7 @@ export default function MainGameQuizManager() {
   };
 
   const handleDeleteAll = async () => {
-    const confirmPhrase = prompt(`You are ABOUT TO DELETE ALL QUIZZES! If you're certain, type "burn down" to confirm deleting ALL quizzes from ALL phases:`);
+    const confirmPhrase = prompt(`Type "burn down" to confirm deleting ALL quizzes from ALL phases:`);
     if (confirmPhrase !== "burn down") {
       alert("❌ Deletion cancelled. Incorrect confirmation phrase.");
       return;
