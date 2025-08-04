@@ -1,17 +1,28 @@
 // src/admin/MultiplayerQuizManager.jsx
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "lib/supabaseClient";
 import { Button } from "components/ui/button";
 
 export default function MultiplayerQuizManager() {
   const [quizzes, setQuizzes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState(getDefaultForm());
+  const [editingId, setEditingId] = useState(null);
+  const [showAddQuiz, setShowAddQuiz] = useState(true);
+  const [showExistingQuiz, setShowExistingQuiz] = useState(true);
 
-  // Form states
-  const [question, setQuestion] = useState("");
-  const [options, setOptions] = useState(["", "", "", ""]);
-  const [correctIndex, setCorrectIndex] = useState(0);
-  const [image, setImage] = useState(null);
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const quizzesPerPage = 20;
+
+  function getDefaultForm() {
+    return {
+      mode: "trivia",
+      question: "",
+      options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+      answer: "Type correct answer here",
+    };
+  }
 
   useEffect(() => {
     fetchQuizzes();
@@ -22,149 +33,259 @@ export default function MultiplayerQuizManager() {
     const { data, error } = await supabase
       .from("multiplayer_quiz")
       .select("*")
-      .order("id", { ascending: false });
+      .order("id", { ascending: true });
 
-    if (error) {
-      console.error("Error fetching multiplayer quiz:", error);
-    } else {
-      setQuizzes(data);
-    }
+    if (!error) setQuizzes(data || []);
+    else console.error("❌ Error fetching quizzes:", error);
+
     setLoading(false);
   };
 
-  const handleAddQuiz = async () => {
-    if (!question || options.some((opt) => !opt)) {
-      alert("Please fill in all fields");
-      return;
-    }
+  const updateForm = (key, value) => {
+    setForm((prev) => {
+      const updated = { ...prev, [key]: value };
 
-    let image_url = null;
-    if (image) {
-      const fileName = `${Date.now()}-${image.name}`;
-      const { error: storageError } = await supabase.storage
-        .from("quiz-images")
-        .upload(fileName, image);
-
-      if (storageError) {
-        alert("Error uploading image");
-        return;
+      if (key === "mode") {
+        if (value === "trivia" || value === "scripture-match") {
+          updated.options = ["Option 1", "Option 2", "Option 3", "Option 4"];
+          updated.answer = "Type correct answer here";
+          updated.question = "";
+        }
+        if (value === "word-fill") {
+          updated.answer = "Type correct answer here";
+          updated.options = [];
+          updated.question = "";
+        }
       }
-
-      image_url = supabase.storage
-        .from("quiz-images")
-        .getPublicUrl(fileName).data.publicUrl;
-    }
-
-    const { error } = await supabase.from("multiplayer_quiz").insert([
-      {
-        question,
-        options,
-        correct_index: correctIndex,
-        image_url,
-      },
-    ]);
-
-    if (error) {
-      alert("Error adding quiz");
-    } else {
-      resetForm();
-      fetchQuizzes();
-    }
+      return updated;
+    });
   };
 
-  const handleDeleteQuiz = async (id) => {
-    if (!window.confirm("Delete this question?")) return;
-    const { error } = await supabase.from("multiplayer_quiz").delete().eq("id", id);
-    if (error) {
-      alert("Error deleting quiz");
-    } else {
-      fetchQuizzes();
-    }
+  const handleAddOption = () => {
+    setForm((prev) => ({
+      ...prev,
+      options: [...prev.options, ""],
+    }));
+  };
+
+  const handleOptionChange = (index, value) => {
+    const updated = [...form.options];
+    updated[index] = value;
+    setForm((prev) => ({ ...prev, options: updated }));
+  };
+
+  const handleRemoveOption = (index) => {
+    const updated = [...form.options];
+    updated.splice(index, 1);
+    setForm((prev) => ({ ...prev, options: updated }));
   };
 
   const resetForm = () => {
-    setQuestion("");
-    setOptions(["", "", "", ""]);
-    setCorrectIndex(0);
-    setImage(null);
+    setForm(getDefaultForm());
+    setEditingId(null);
+  };
+
+  const handleSave = async () => {
+    const payload = {
+      mode: form.mode,
+      question: form.question,
+      options: form.options.length > 0 ? form.options : null,
+      answer: form.answer,
+    };
+
+    let error;
+    if (editingId) {
+      ({ error } = await supabase.from("multiplayer_quiz").update(payload).eq("id", editingId));
+    } else {
+      ({ error } = await supabase.from("multiplayer_quiz").insert([payload]));
+    }
+
+    if (!error) {
+      resetForm();
+      fetchQuizzes();
+    } else {
+      alert("Error saving quiz: " + error.message);
+    }
+  };
+
+  const handleEdit = (quiz) => {
+    setEditingId(quiz.id);
+    setForm({
+      mode: quiz.mode || "trivia",
+      question: quiz.question || "",
+      options: quiz.options || [],
+      answer: quiz.answer || "",
+    });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this quiz?")) return;
+    const { error } = await supabase.from("multiplayer_quiz").delete().eq("id", id);
+    if (!error) fetchQuizzes();
+  };
+
+  const handleDeleteAll = async () => {
+    const confirmPhrase = prompt(`Type "burn down" to confirm deleting ALL quizzes from Multiplayer Quiz:`);
+    if (confirmPhrase !== "burn down") {
+      alert("❌ Deletion cancelled. Incorrect confirmation phrase.");
+      return;
+    }
+    const { error } = await supabase.from("multiplayer_quiz").delete();
+    if (!error) fetchQuizzes();
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(quizzes.length / quizzesPerPage);
+  const displayedQuizzes = quizzes.slice(
+    (currentPage - 1) * quizzesPerPage,
+    currentPage * quizzesPerPage
+  );
+
+  const handlePageJump = (e) => {
+    if (e.key === "Enter") {
+      const page = parseInt(e.target.value, 10);
+      if (!isNaN(page) && page >= 1 && page <= totalPages) {
+        setCurrentPage(page);
+      }
+      e.target.value = "";
+    }
   };
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-bold mb-4">🤝 Manage Multiplayer Quiz</h2>
+      {/* Collapsible Add Quiz */}
+      <Button className="mb-4" onClick={() => setShowAddQuiz((prev) => !prev)}>
+        {showAddQuiz ? "Hide Add New Quiz" : "Show Add New Quiz"}
+      </Button>
 
-      {/* Add Quiz Form */}
-      <div className="bg-gray-50 p-4 rounded mb-6">
-        <h3 className="font-semibold mb-2">Add New Question</h3>
-        <input
-          type="text"
-          placeholder="Question"
-          className="border w-full px-3 py-2 mb-2 rounded"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-        />
+      {showAddQuiz && (
+        <div className="grid gap-3 mb-6">
+          <h2 className="text-lg font-bold">{editingId ? "Edit Quiz" : "Add New Quiz"}</h2>
+          <label>Game Mode</label>
+          <select
+            value={form.mode}
+            onChange={(e) => updateForm("mode", e.target.value)}
+            className="border p-2 rounded"
+          >
+            <option value="trivia">Trivia</option>
+            <option value="word-fill">Word Fill</option>
+            <option value="scripture-match">Scripture Match</option>
+          </select>
 
-        {options.map((opt, idx) => (
-          <input
-            key={idx}
-            type="text"
-            placeholder={`Option ${idx + 1}`}
-            className="border w-full px-3 py-2 mb-2 rounded"
-            value={opt}
-            onChange={(e) =>
-              setOptions((prev) =>
-                prev.map((o, i) => (i === idx ? e.target.value : o))
-              )
-            }
-          />
-        ))}
+          {(form.mode === "trivia" || form.mode === "scripture-match" || form.mode === "word-fill") && (
+            <>
+              <label>Question</label>
+              <textarea
+                value={form.question}
+                onChange={(e) => updateForm("question", e.target.value)}
+                className="border p-2 rounded"
+              />
+            </>
+          )}
 
-        <label className="block text-sm mb-1">Correct Option:</label>
-        <select
-          className="border px-3 py-2 rounded mb-2"
-          value={correctIndex}
-          onChange={(e) => setCorrectIndex(Number(e.target.value))}
-        >
-          {options.map((_, idx) => (
-            <option key={idx} value={idx}>
-              Option {idx + 1}
-            </option>
-          ))}
-        </select>
+          {(form.mode === "trivia" || form.mode === "scripture-match") && (
+            <>
+              <label>Options</label>
+              {form.options.map((opt, idx) => (
+                <div key={idx} className="flex gap-2 mb-2">
+                  <input
+                    value={opt}
+                    onChange={(e) => handleOptionChange(idx, e.target.value)}
+                    className="border p-2 rounded flex-1"
+                  />
+                  <Button variant="destructive" onClick={() => handleRemoveOption(idx)}>❌</Button>
+                </div>
+              ))}
+              <Button onClick={handleAddOption}>+ Add Option</Button>
+            </>
+          )}
 
-        <input
-          type="file"
-          accept="image/*"
-          className="mb-2"
-          onChange={(e) => setImage(e.target.files[0])}
-        />
+          {(form.mode === "trivia" || form.mode === "scripture-match" || form.mode === "word-fill") && (
+            <>
+              <label>Answer</label>
+              <input
+                value={form.answer}
+                onChange={(e) => updateForm("answer", e.target.value)}
+                className="border p-2 rounded"
+              />
+            </>
+          )}
 
-        <Button onClick={handleAddQuiz}>Add Question</Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSave}>{editingId ? "Update Quiz" : "Add Quiz"}</Button>
+            {editingId && <Button onClick={resetForm}>Cancel</Button>}
+          </div>
+        </div>
+      )}
+
+      {/* Delete all quizzes */}
+      <Button
+        variant="destructive"
+        className="mb-4 bg-red-700"
+        onClick={handleDeleteAll}
+      >
+        🚨 Delete ALL Multiplayer Quizzes
+      </Button>
+
+      {/* Existing Quizzes */}
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-lg font-bold">Existing Quizzes</h2>
+        <Button onClick={() => setShowExistingQuiz((prev) => !prev)}>
+          {showExistingQuiz ? "Hide" : "Show"} Existing Quizzes
+        </Button>
       </div>
 
-      {/* Quiz List */}
       {loading ? (
-        <p>Loading...</p>
+        <p>Loading quizzes...</p>
       ) : (
-        <div className="space-y-3">
-          {quizzes.map((quiz) => (
-            <div
-              key={quiz.id}
-              className="p-3 border rounded flex justify-between items-center"
-            >
-              <div>
-                <p className="font-medium">{quiz.question}</p>
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleDeleteQuiz(quiz.id)}
+        showExistingQuiz && (
+          <>
+            {displayedQuizzes.map((quiz) => (
+              <div
+                key={quiz.id}
+                className="border p-3 rounded flex justify-between items-center mb-2"
               >
-                Delete
+                <div>
+                  <p className="font-semibold">({quiz.mode})</p>
+                  <p>{quiz.question}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => handleEdit(quiz)}>Edit</Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDelete(quiz.id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {/* Pagination controls */}
+            <div className="flex items-center gap-2 mt-4">
+              <Button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>
+                Prev
+              </Button>
+              <span>
+                Page {currentPage} of {totalPages} | Total Quizzes: {quizzes.length}
+              </span>
+              <input
+                type="number"
+                min="1"
+                max={totalPages}
+                placeholder="Go to page"
+                onKeyDown={handlePageJump}
+                className="border p-1 rounded w-20"
+              />
+              <Button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                Next
               </Button>
             </div>
-          ))}
-        </div>
+          </>
+        )
       )}
     </div>
   );

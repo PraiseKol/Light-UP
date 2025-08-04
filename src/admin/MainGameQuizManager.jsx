@@ -30,7 +30,8 @@ export default function MainGameQuizManager() {
       options: ["Option 1", "Option 2", "Option 3", "Option 4"],
       answer: "Type correct answer here",
       image_urls: "",
-      letters: "12 letters, including the letters in the answer, no punctuation marks",
+      letters:
+        "12 letters, including the letters in the answer, no punctuation marks",
     };
   }
 
@@ -52,11 +53,17 @@ export default function MainGameQuizManager() {
     setLoading(false);
   };
 
-  const buildImageUrls = (phase, level, extensions = ["jpg", "jpg", "jpg", "jpg"]) => {
+  const buildImageUrls = (
+    phase,
+    level,
+    extensions = ["jpg", "jpg", "jpg", "jpg"]
+  ) => {
     return extensions
       .map(
         (ext, idx) =>
-          `https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/fourpics-images/phase${phase}level${level}image${idx + 1}.${ext}`
+          `https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/fourpics-images/phase${phase}level${level}image${
+            idx + 1
+          }.${ext}`
       )
       .join(",");
   };
@@ -65,8 +72,14 @@ export default function MainGameQuizManager() {
     setForm((prev) => {
       const updated = { ...prev, [key]: value };
 
-      if ((key === "phase_number" || key === "level_number") && updated.mode === "four-pics") {
-        updated.image_urls = buildImageUrls(updated.phase_number, updated.level_number);
+      if (
+        (key === "phase_number" || key === "level_number") &&
+        updated.mode === "four-pics"
+      ) {
+        updated.image_urls = buildImageUrls(
+          updated.phase_number,
+          updated.level_number
+        );
       }
 
       if (key === "mode") {
@@ -107,8 +120,12 @@ export default function MainGameQuizManager() {
         if (value === "four-pics") {
           updated.answer = "Type correct answer here";
           updated.options = [];
-          updated.letters = "12 letters, including the letters in the answer, no punctuation marks";
-          updated.image_urls = buildImageUrls(updated.phase_number, updated.level_number);
+          updated.letters =
+            "12 letters, including the letters in the answer, no punctuation marks";
+          updated.image_urls = buildImageUrls(
+            updated.phase_number,
+            updated.level_number
+          );
           updated.question = "";
         }
       }
@@ -127,7 +144,9 @@ export default function MainGameQuizManager() {
       const ext = file.name.split(".").pop().toLowerCase();
       exts[i] = ext;
 
-      const path = `phase${form.phase_number}level${form.level_number}image${i + 1}.${ext}`;
+      const path = `phase${form.phase_number}level${form.level_number}image${
+        i + 1
+      }.${ext}`;
       const { error } = await supabase.storage
         .from("fourpics-images")
         .upload(path, file, { upsert: true });
@@ -188,7 +207,10 @@ export default function MainGameQuizManager() {
 
     let error;
     if (editingId) {
-      ({ error } = await supabase.from("quiz").update(payload).eq("id", editingId));
+      ({ error } = await supabase
+        .from("quiz")
+        .update(payload)
+        .eq("id", editingId));
     } else {
       ({ error } = await supabase.from("quiz").insert([payload]));
     }
@@ -222,17 +244,24 @@ export default function MainGameQuizManager() {
   };
 
   const handleDeletePhase = async (phaseNumber) => {
-    const confirmPhrase = prompt(`Type "burn down" to confirm deleting ALL quizzes from Phase ${phaseNumber}:`);
+    const confirmPhrase = prompt(
+      `Type "burn down" to confirm deleting ALL quizzes from Phase ${phaseNumber}:`
+    );
     if (confirmPhrase !== "burn down") {
       alert("❌ Deletion cancelled. Incorrect confirmation phrase.");
       return;
     }
-    const { error } = await supabase.from("quiz").delete().eq("phase_number", phaseNumber);
+    const { error } = await supabase
+      .from("quiz")
+      .delete()
+      .eq("phase_number", phaseNumber);
     if (!error) fetchQuizzes();
   };
 
   const handleDeleteAll = async () => {
-    const confirmPhrase = prompt(`Type "burn down" to confirm deleting ALL quizzes from ALL phases:`);
+    const confirmPhrase = prompt(
+      `Type "burn down" to confirm deleting ALL quizzes from ALL phases:`
+    );
     if (confirmPhrase !== "burn down") {
       alert("❌ Deletion cancelled. Incorrect confirmation phrase.");
       return;
@@ -250,7 +279,9 @@ export default function MainGameQuizManager() {
   };
 
   // Group quizzes by phase
-  const phases = Array.from(new Set(quizzes.map((q) => q.phase_number))).sort((a, b) => a - b);
+  const phases = Array.from(new Set(quizzes.map((q) => q.phase_number))).sort(
+    (a, b) => a - b
+  );
 
   // Pagination logic
   const totalPages = Math.ceil(phases.length / phasesPerPage);
@@ -258,6 +289,10 @@ export default function MainGameQuizManager() {
     (currentPage - 1) * phasesPerPage,
     currentPage * phasesPerPage
   );
+
+  const totalQuizzesInPage = quizzes.filter((q) =>
+    displayedPhases.includes(q.phase_number)
+  ).length;
 
   const handlePageJump = (e) => {
     if (e.key === "Enter") {
@@ -278,7 +313,9 @@ export default function MainGameQuizManager() {
 
       {showAddQuiz && (
         <div className="grid gap-3 mb-6">
-          <h2 className="text-lg font-bold">{editingId ? "Edit Quiz" : "Add New Quiz"}</h2>
+          <h2 className="text-lg font-bold">
+            {editingId ? "Edit Quiz" : "Add New Quiz"}
+          </h2>
           <label>Phase Number</label>
           <input
             type="number"
@@ -327,7 +364,12 @@ export default function MainGameQuizManager() {
                     onChange={(e) => handleOptionChange(idx, e.target.value)}
                     className="border p-2 rounded flex-1"
                   />
-                  <Button variant="destructive" onClick={() => handleRemoveOption(idx)}>❌</Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleRemoveOption(idx)}
+                  >
+                    ❌
+                  </Button>
                 </div>
               ))}
               <Button onClick={handleAddOption}>+ Add Option</Button>
@@ -394,13 +436,19 @@ export default function MainGameQuizManager() {
           )}
 
           <div className="flex gap-2">
-            <Button onClick={handleSave}>{editingId ? "Update Quiz" : "Add Quiz"}</Button>
+            <Button onClick={handleSave}>
+              {editingId ? "Update Quiz" : "Add Quiz"}
+            </Button>
             {editingId && <Button onClick={resetForm}>Cancel</Button>}
           </div>
         </div>
       )}
 
-      <Button variant="destructive" className="mb-4 bg-red-700" onClick={handleDeleteAll}>
+      <Button
+        variant="destructive"
+        className="mb-4 bg-red-700"
+        onClick={handleDeleteAll}
+      >
         🚨 Delete ALL Quizzes (All Phases)
       </Button>
 
@@ -458,7 +506,15 @@ export default function MainGameQuizManager() {
           ))}
 
           <div className="flex items-center gap-2 mt-4">
-            <Button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>
+            <span>
+              Total Phases: {phases.length} | Total Quizzes: {quizzes.length} |
+              Quizzes on this page: {totalQuizzesInPage}
+            </span>
+
+            <Button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
               Prev
             </Button>
             <span>

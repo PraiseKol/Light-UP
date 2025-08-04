@@ -263,7 +263,7 @@ export default function WeeklyQuizManager() {
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-lg font-bold">Existing Quizzes</h2>
         <Button onClick={toggleShowExisting}>
-          {showExisting ? "Hide" : "Show"}
+          {showExisting ? "Hide Existing Quizzes" : "Show Existing Quizzes"}
         </Button>
       </div>
 
