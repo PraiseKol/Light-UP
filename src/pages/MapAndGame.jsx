@@ -18,6 +18,7 @@ import GameScreen from "components/GameScreen";
 import AppToaster from "components/ui/toaster";
 import ScriptureModal from "components/ScriptureModal";
 import SettingsModal from "components/SettingsModal";
+import FeedbackButton from "components/FeedbackButton";
 import { toast } from "sonner";
 
 import {
@@ -289,6 +290,9 @@ export default function MapAndGame() {
     <div className="relative min-h-screen overflow-hidden">
       <AnimatedBackground />
 
+
+      
+
       {/* Settings Button */}
       <button
         onClick={() => setShowSettings(true)}
@@ -296,6 +300,8 @@ export default function MapAndGame() {
       >
         Settings
       </button>
+
+      
 
       {/* Total Score Leaderboard Toggle */}
       <button
@@ -374,6 +380,9 @@ export default function MapAndGame() {
           </div>
         </div>
       )}
+
+       {/* Floating Feedback Button */}
+       <FeedbackButton />
 
       {/* Sticky Header with Player Info */}
       <div className="relative z-10 max-w-3xl mx-auto overflow-y-auto max-h-[90vh]">

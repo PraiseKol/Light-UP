@@ -1,13 +1,36 @@
 // src/admin/AdminDashboard.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "components/ui/button";
+import { supabase } from "lib/supabaseClient";
+import { useAuth } from "auth/AuthProvider";
 
 import MainGameQuizManager from "admin/MainGameQuizManager";
 import WeeklyQuizManager from "admin/WeeklyQuizManager";
 import MultiplayerQuizManager from "admin/MultiplayerQuizManager";
+import LeaderboardManager from "admin/LeaderboardManager";
+import AnalyticsDashboard from "admin/AnalyticsDashboard";
+import FeedbackManager from "admin/FeedbackManager";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("main");
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchRole = async () => {
+      const { data, error } = await supabase
+        .from("game_users")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!error && data?.role === "super_admin") {
+        setIsSuperAdmin(true);
+      }
+    };
+    fetchRole();
+  }, [user]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -17,6 +40,12 @@ export default function AdminDashboard() {
         return <WeeklyQuizManager />;
       case "multiplayer":
         return <MultiplayerQuizManager />;
+      case "feedback":
+        return <FeedbackManager />;
+      case "leaderboard":
+        return isSuperAdmin ? <LeaderboardManager /> : null;
+      case "analytics":
+        return isSuperAdmin ? <AnalyticsDashboard /> : null;
       default:
         return null;
     }
@@ -27,10 +56,24 @@ export default function AdminDashboard() {
     window.location.href = "/map";
   };
 
+  const tabButton = (key, label, show = true) =>
+    show && (
+      <button
+        key={key}
+        className={`flex-1 px-4 py-2 font-medium text-center transition ${
+          activeTab === key
+            ? "bg-white border-b-2 border-blue-500"
+            : "hover:bg-gray-200"
+        }`}
+        onClick={() => setActiveTab(key)}
+      >
+        {label}
+      </button>
+    );
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-5xl mx-auto bg-white shadow rounded-lg overflow-hidden">
-        
+      <div className="max-w-6xl mx-auto bg-white shadow rounded-lg overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
           <h1 className="text-xl font-bold">🛠 Admin Dashboard</h1>
@@ -40,37 +83,13 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b bg-gray-100">
-          <button
-            className={`flex-1 px-4 py-2 font-medium text-center transition ${
-              activeTab === "main"
-                ? "bg-white border-b-2 border-blue-500"
-                : "hover:bg-gray-200"
-            }`}
-            onClick={() => setActiveTab("main")}
-          >
-            Main Game Quiz
-          </button>
-          <button
-            className={`flex-1 px-4 py-2 font-medium text-center transition ${
-              activeTab === "weekly"
-                ? "bg-white border-b-2 border-blue-500"
-                : "hover:bg-gray-200"
-            }`}
-            onClick={() => setActiveTab("weekly")}
-          >
-            Weekly Quiz
-          </button>
-          <button
-            className={`flex-1 px-4 py-2 font-medium text-center transition ${
-              activeTab === "multiplayer"
-                ? "bg-white border-b-2 border-blue-500"
-                : "hover:bg-gray-200"
-            }`}
-            onClick={() => setActiveTab("multiplayer")}
-          >
-            Multiplayer Quiz
-          </button>
+        <div className="flex border-b bg-gray-100 flex-wrap">
+          {tabButton("main", "Main Game Quiz")}
+          {tabButton("weekly", "Weekly Quiz")}
+          {tabButton("multiplayer", "Multiplayer Quiz")}
+          {tabButton("feedback", "Feedback")}
+          {tabButton("leaderboard", "Leaderboards", isSuperAdmin)}
+          {tabButton("analytics", "Analytics", isSuperAdmin)}
         </div>
 
         {/* Tab Content */}
