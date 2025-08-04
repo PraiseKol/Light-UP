@@ -18,11 +18,22 @@ import MultiplayerLobby from "components/MultiplayerLobby";
 import JoinMultiplayerGame from "components/JoinMultiplayerGame";
 import MultiplayerGame from "./components/MultiplayerGame";
 
+import CreateAdmin from "CreateAdmin";
+import AdminRoute from "components/AdminRoute";
+import AdminLogin from "pages/AdminLogin";
+import AdminDashboard from "pages/AdminDashboard"; // we'll build this later
+
 // Protect routes by checking user state from AuthProvider
 function ProtectedRoute({ children }) {
   const { user, authLoading } = useAuth();
   if (authLoading) return <div className="text-center p-6">Loading...</div>;
   return user ? children : <Navigate to="/login" replace />;
+}
+
+// Protect admin routes by checking adminSession in localStorage
+function AdminProtectedRoute({ children }) {
+  const admin = JSON.parse(localStorage.getItem("adminSession") || "null");
+  return admin ? children : <Navigate to="/admin/login" replace />;
 }
 
 export default function App() {
@@ -33,8 +44,10 @@ export default function App() {
       <Router>
         <AuthProvider>
           <Routes>
+            {/* Main Game Login */}
             <Route path="/login" element={<LoginPage />} />
 
+            {/* Game Routes */}
             <Route
               path="/map"
               element={
@@ -47,63 +60,64 @@ export default function App() {
             <Route
               path="/weekly-challenge"
               element={
-                <>
-                  {console.log("📍 Routed to /weekly-challenge")}
-                  <ProtectedRoute>
-                    <WeeklyChallengeScreen />
-                  </ProtectedRoute>
-                </>
+                <ProtectedRoute>
+                  <WeeklyChallengeScreen />
+                </ProtectedRoute>
               }
             />
 
             <Route
               path="/multiplayer/create"
               element={
-                <>
-                  {console.log("📍 Routed to /multiplayer/create")}
-                  <ProtectedRoute>
-                    <CreateMultiplayerGame />
-                  </ProtectedRoute>
-                </>
+                <ProtectedRoute>
+                  <CreateMultiplayerGame />
+                </ProtectedRoute>
               }
             />
 
             <Route
               path="/multiplayer/lobby/:gameId"
               element={
-                <>
-                  {console.log("📍 Routed to /multiplayer/lobby/:gameId")}
-                  <ProtectedRoute>
-                    <MultiplayerLobby />
-                  </ProtectedRoute>
-                </>
+                <ProtectedRoute>
+                  <MultiplayerLobby />
+                </ProtectedRoute>
               }
             />
 
             <Route
               path="/multiplayer/join/:token"
               element={
-                <>
-                  {console.log("📍 Routed to /multiplayer/join/:token")}
-                  <ProtectedRoute>
-                    <JoinMultiplayerGame />
-                  </ProtectedRoute>
-                </>
+                <ProtectedRoute>
+                  <JoinMultiplayerGame />
+                </ProtectedRoute>
               }
             />
 
             <Route
               path="/multiplayer/game/:gameId"
               element={
-                <>
-                  {console.log("📍 Routed to /multiplayer/game/:gameId")}
-                  <ProtectedRoute>
-                    <MultiplayerGame />
-                  </ProtectedRoute>
-                </>
+                <ProtectedRoute>
+                  <MultiplayerGame />
+                </ProtectedRoute>
               }
             />
 
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+
+            <Route
+              path="/admin/dashboard"
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              }
+            />
+
+            {/* One-time route to create first admin */}
+            <Route path="/create-admin" element={<CreateAdmin />} />
+
+            {/* Default route */}
             <Route path="*" element={<Navigate to="/map" replace />} />
           </Routes>
         </AuthProvider>

@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { supabase } from "lib/supabaseClient";
 import { Button } from "components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export default function SettingsModal({ isOpen, onClose, gameUser, onSave }) {
   const [name, setName] = useState(gameUser?.player_name || "");
   const [loading, setLoading] = useState(false);
   const [soundOn, setSoundOn] = useState(true); // dummy
   const [wallpaper, setWallpaper] = useState("default"); // dummy
+
+  const navigate = useNavigate();
 
   const handleSave = async () => {
     setLoading(true);
@@ -23,6 +26,11 @@ export default function SettingsModal({ isOpen, onClose, gameUser, onSave }) {
     } else {
       alert("Failed to save name");
     }
+  };
+
+  const handleAdminLogin = () => {
+    onClose();
+    navigate("/admin/login");
   };
 
   if (!isOpen) return null;
@@ -69,6 +77,19 @@ export default function SettingsModal({ isOpen, onClose, gameUser, onSave }) {
             <option value="ocean">Ocean</option>
           </select>
         </div>
+
+        {/* Admin Login Button (Only for admins) */}
+        {gameUser?.is_admin && (
+          <div className="border-t pt-4">
+            <Button
+              onClick={handleAdminLogin}
+              variant="secondary"
+              className="w-full bg-purple-600 text-white hover:bg-purple-500"
+            >
+              Admin Login
+            </Button>
+          </div>
+        )}
 
         <div className="flex justify-end space-x-2 pt-4 border-t">
           <Button onClick={onClose} variant="ghost">
