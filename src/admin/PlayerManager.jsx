@@ -36,21 +36,17 @@ export default function PlayerManager() {
   };
 
   const fetchPlayers = useCallback(async () => {
+    // Pull all relevant player info from game_users directly
     const { data: users } = await supabase
       .from("game_users")
-      .select("user_id, player_name, lives, updated_at, created_at");
-
-    // Get total score
-    const { data: mainScores } = await supabase
-      .from("main_game_leaderboard")
-      .select("user_id, total_score");
+      .select("user_id, player_name, lives, total_user_score, updated_at, created_at");
 
     // Weekly challenge attempts
     const { data: weeklyAttempts } = await supabase
       .from("weekly_leaderboard")
-      .select("user_id, count:score", { count: "exact" });
+      .select("user_id");
 
-    // Multiplayer games played (mode = 'multiplayer')
+    // Multiplayer games played
     const { data: multiplayerGames } = await supabase
       .from("progress")
       .select("user_id, mode")
@@ -58,7 +54,6 @@ export default function PlayerManager() {
 
     // Map data together
     const playerList = users.map((u) => {
-      const scoreEntry = mainScores.find((s) => s.user_id === u.user_id);
       const weeklyCount = weeklyAttempts.filter(
         (w) => w.user_id === u.user_id
       ).length;
@@ -68,7 +63,7 @@ export default function PlayerManager() {
 
       return {
         ...u,
-        total_score: scoreEntry ? scoreEntry.total_score : 0,
+        total_score: u.total_user_score || 0,
         weekly_attempts: weeklyCount,
         multiplayer_games: multiCount,
       };
@@ -103,8 +98,8 @@ export default function PlayerManager() {
   const resetScore = async (playerId) => {
     if (!window.confirm("Reset this player's total score to 0?")) return;
     await supabase
-      .from("main_game_leaderboard")
-      .update({ total_score: 0 })
+      .from("game_users")
+      .update({ total_user_score: 0 })
       .eq("user_id", playerId);
     fetchPlayers();
   };

@@ -48,11 +48,12 @@ export default function LeaderboardManager() {
     setLoading(false);
   };
 
+  // 🔹 Changed: Pull from game_users instead of main_game_leaderboard
   const fetchMainLeaderboard = async () => {
     const { data } = await supabase
-      .from("main_game_leaderboard")
-      .select("*")
-      .order("total_score", { ascending: false });
+      .from("game_users")
+      .select("user_id, player_name, total_user_score")
+      .order("total_user_score", { ascending: false });
     setMainData(data || []);
   };
 
@@ -116,36 +117,47 @@ export default function LeaderboardManager() {
 
   const handleDeleteRow = async (table, id) => {
     if (!window.confirm("Delete this record?")) return;
-    await supabase.from(table).delete().eq("id", id);
-    table === "main_game_leaderboard"
-      ? fetchMainLeaderboard()
-      : fetchWeeklyLeaderboard();
+
+    if (table === "game_users") {
+      await supabase.from("game_users").update({ total_user_score: 0 }).eq("user_id", id);
+      fetchMainLeaderboard();
+    } else {
+      await supabase.from(table).delete().eq("id", id);
+      fetchWeeklyLeaderboard();
+    }
   };
 
   const handleBan = async (banTable, leaderboardTable, row) => {
     if (!window.confirm(`Ban ${row.player_name}? This will remove their score.`)) return;
     await supabase.from(banTable).insert({ user_id: row.user_id });
-    await supabase.from(leaderboardTable).delete().eq("user_id", row.user_id);
+
+    if (leaderboardTable === "game_users") {
+      await supabase.from("game_users").update({ total_user_score: 0 }).eq("user_id", row.user_id);
+      fetchMainLeaderboard();
+    } else {
+      await supabase.from(leaderboardTable).delete().eq("user_id", row.user_id);
+      fetchWeeklyLeaderboard();
+    }
+
     await fetchBans();
-    leaderboardTable === "main_game_leaderboard"
-      ? fetchMainLeaderboard()
-      : fetchWeeklyLeaderboard();
   };
 
   const handleDeleteAll = async (table) => {
     const confirmPhrase = prompt(`Type "burn down" to confirm deleting ALL entries from ${table}:`);
     if (confirmPhrase !== "burn down") return alert("❌ Cancelled.");
-    await supabase.from(table).delete();
-    table === "main_game_leaderboard"
-      ? fetchMainLeaderboard()
-      : fetchWeeklyLeaderboard();
+
+    if (table === "game_users") {
+      await supabase.from("game_users").update({ total_user_score: 0 });
+      fetchMainLeaderboard();
+    } else {
+      await supabase.from(table).delete();
+      fetchWeeklyLeaderboard();
+    }
   };
 
   const handleEditScore = async (table, userId, field, value) => {
     await supabase.from(table).update({ [field]: value }).eq("user_id", userId);
-    table === "main_game_leaderboard"
-      ? fetchMainLeaderboard()
-      : fetchWeeklyLeaderboard();
+    table === "game_users" ? fetchMainLeaderboard() : fetchWeeklyLeaderboard();
   };
 
   const handleUnban = async (table, userId) => {
@@ -209,7 +221,7 @@ export default function LeaderboardManager() {
                 className="border p-1 rounded"
               />
               <Button onClick={() => exportCSV(mainData, "main_game_leaderboard.csv")}>📥 Export CSV</Button>
-              <Button variant="destructive" onClick={() => handleDeleteAll("main_game_leaderboard")}>
+              <Button variant="destructive" onClick={() => handleDeleteAll("game_users")}>
                 🚨 Burn Down All
               </Button>
             </div>
@@ -228,21 +240,21 @@ export default function LeaderboardManager() {
                   #{(mainPage - 1) * rowsPerPage + idx + 1} {row.player_name} -{" "}
                   <input
                     type="number"
-                    value={row.total_score}
+                    value={row.total_user_score}
                     onChange={(e) =>
-                      handleEditScore("main_game_leaderboard", row.user_id, "total_score", e.target.value)
+                      handleEditScore("game_users", row.user_id, "total_user_score", e.target.value)
                     }
                     className="border rounded w-20 p-1"
                   />{" "}
                   pts
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="destructive" onClick={() => handleDeleteRow("main_game_leaderboard", row.id)}>
+                  <Button variant="destructive" onClick={() => handleDeleteRow("game_users", row.user_id)}>
                     Delete
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => handleBan("main_leaderboard_bans", "main_game_leaderboard", row)}
+                    onClick={() => handleBan("main_leaderboard_bans", "game_users", row)}
                   >
                     🚫 Ban
                   </Button>
