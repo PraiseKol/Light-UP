@@ -9,7 +9,7 @@ export function LivesDisplay({ lives, lastLostAt }) {
     const interval = setInterval(() => {
       const now = new Date();
       const last = new Date(lastLostAt);
-      const nextLifeAt = new Date(last.getTime() + 15 * 60 * 1000);
+      const nextLifeAt = new Date(last.getTime() +30 * 60 * 1000);
       const remaining = nextLifeAt - now;
 
       if (remaining <= 0) {

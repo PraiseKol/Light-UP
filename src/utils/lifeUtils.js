@@ -1,6 +1,6 @@
 export function calculateUpdatedLives(lives, lastLostAt) {
   const MAX_LIVES = 5;
-  const MINUTES_PER_LIFE = 15;
+  const MINUTES_PER_LIFE = 30;
 
   if (lives >= MAX_LIVES || !lastLostAt) {
     return { lives, newLastLostAt: null, nextLifeIn: null };

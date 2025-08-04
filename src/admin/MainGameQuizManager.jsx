@@ -6,20 +6,34 @@ import { Button } from "components/ui/button";
 export default function MainGameQuizManager() {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    phase_number: 1,
-    level_number: 1,
-    mode: "trivia",
-    question: "",
-    options: [],
-    answer: "",
-    image_urls: "",
-    letters: "",
-  });
-
+  const [form, setForm] = useState(getDefaultForm());
   const [editingId, setEditingId] = useState(null);
+  const [imageFiles, setImageFiles] = useState([null, null, null, null]);
 
-  // Fetch quizzes
+  // Collapsible states
+  const [collapsedPhases, setCollapsedPhases] = useState(() => {
+    const saved = localStorage.getItem("collapsedPhases");
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [showAddQuiz, setShowAddQuiz] = useState(true);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const phasesPerPage = 20;
+
+  function getDefaultForm() {
+    return {
+      phase_number: 1,
+      level_number: 1,
+      mode: "trivia",
+      question: "",
+      options: ["Option 1", "Option 2", "Option 3", "Option 4"],
+      answer: "Type correct answer here",
+      image_urls: "",
+      letters: "12 letters, including the letters in the answer, no punctuation marks",
+    };
+  }
+
   useEffect(() => {
     fetchQuizzes();
   }, []);
@@ -29,20 +43,102 @@ export default function MainGameQuizManager() {
     const { data, error } = await supabase
       .from("quiz")
       .select("*")
-      .order("phase_number", { ascending: true })
-      .order("level_number", { ascending: true });
+      .order("phase_number")
+      .order("level_number");
 
-    if (error) {
-      console.error("❌ Error fetching quizzes:", error);
-    } else {
-      setQuizzes(data || []);
-    }
+    if (!error) setQuizzes(data || []);
+    else console.error("❌ Error fetching quizzes:", error);
+
     setLoading(false);
   };
 
-  // Handle form input
+  const buildImageUrls = (phase, level, extensions = ["jpg", "jpg", "jpg", "jpg"]) => {
+    return extensions
+      .map(
+        (ext, idx) =>
+          `https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/fourpics-images/phase${phase}level${level}image${idx + 1}.${ext}`
+      )
+      .join(",");
+  };
+
   const updateForm = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => {
+      const updated = { ...prev, [key]: value };
+
+      if ((key === "phase_number" || key === "level_number") && updated.mode === "four-pics") {
+        updated.image_urls = buildImageUrls(updated.phase_number, updated.level_number);
+      }
+
+      if (key === "mode") {
+        if (value === "trivia") {
+          updated.options = ["Option 1", "Option 2", "Option 3", "Option 4"];
+          updated.answer = "Type correct answer here";
+          updated.image_urls = "";
+          updated.letters = "";
+          updated.question = "";
+        }
+        if (value === "word-fill") {
+          updated.answer = "Type correct answer here";
+          updated.options = [];
+          updated.image_urls = "";
+          updated.letters = "";
+          updated.question = "";
+        }
+        if (value === "scripture-match") {
+          updated.answer = "";
+          updated.options = [];
+          updated.image_urls = "";
+          updated.letters = "";
+          updated.question = `[
+  {
+    "reference": "your scripture goes here",
+    "verse": "your verse goes here"
+  },
+  {
+    "reference": "your scripture goes here",
+    "verse": "your verse goes here"
+  },
+  {
+    "reference": "your scripture goes here",
+    "verse": "your verse goes here"
+  }
+]`;
+        }
+        if (value === "four-pics") {
+          updated.answer = "Type correct answer here";
+          updated.options = [];
+          updated.letters = "12 letters, including the letters in the answer, no punctuation marks";
+          updated.image_urls = buildImageUrls(updated.phase_number, updated.level_number);
+          updated.question = "";
+        }
+      }
+      return updated;
+    });
+  };
+
+  const handleImageUpload = async () => {
+    if (form.mode !== "four-pics") return null;
+
+    let exts = ["jpg", "jpg", "jpg", "jpg"];
+    for (let i = 0; i < 4; i++) {
+      const file = imageFiles[i];
+      if (!file) continue;
+
+      const ext = file.name.split(".").pop().toLowerCase();
+      exts[i] = ext;
+
+      const path = `phase${form.phase_number}level${form.level_number}image${i + 1}.${ext}`;
+      const { error } = await supabase.storage
+        .from("fourpics-images")
+        .upload(path, file, { upsert: true });
+
+      if (error) {
+        console.error(`❌ Error uploading image ${i + 1}:`, error);
+        alert(`Error uploading image ${i + 1}`);
+      }
+    }
+
+    return buildImageUrls(form.phase_number, form.level_number, exts);
   };
 
   const handleAddOption = () => {
@@ -65,20 +161,20 @@ export default function MainGameQuizManager() {
   };
 
   const resetForm = () => {
-    setForm({
-      phase_number: 1,
-      level_number: 1,
-      mode: "trivia",
-      question: "",
-      options: [],
-      answer: "",
-      image_urls: "",
-      letters: "",
-    });
+    setForm(getDefaultForm());
     setEditingId(null);
+    setImageFiles([null, null, null, null]);
   };
 
   const handleSave = async () => {
+    let imageUrls = form.image_urls;
+    if (form.mode === "four-pics") {
+      const uploadedUrls = await handleImageUpload();
+      if (uploadedUrls) {
+        imageUrls = uploadedUrls;
+      }
+    }
+
     const payload = {
       phase_number: Number(form.phase_number),
       level_number: Number(form.level_number),
@@ -86,7 +182,7 @@ export default function MainGameQuizManager() {
       question: form.question,
       options: form.options.length > 0 ? form.options : null,
       answer: form.answer,
-      image_urls: form.image_urls || null,
+      image_urls: imageUrls || null,
       letters: form.letters || null,
     };
 
@@ -97,11 +193,11 @@ export default function MainGameQuizManager() {
       ({ error } = await supabase.from("quiz").insert([payload]));
     }
 
-    if (error) {
-      alert("Error saving quiz: " + error.message);
-    } else {
+    if (!error) {
       resetForm();
       fetchQuizzes();
+    } else {
+      alert("Error saving quiz: " + error.message);
     }
   };
 
@@ -122,136 +218,268 @@ export default function MainGameQuizManager() {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this quiz?")) return;
     const { error } = await supabase.from("quiz").delete().eq("id", id);
-    if (error) alert("Error deleting quiz");
-    else fetchQuizzes();
+    if (!error) fetchQuizzes();
+  };
+
+  const handleDeletePhase = async (phaseNumber) => {
+    const confirmPhrase = prompt(`You are ABOUT TO DELETE ALL QUIZZES IN PHASE ${phaseNumber}! If you're certain, type "burn" to confirm deleting ALL quizzes from Phase ${phaseNumber}:`);
+    if (confirmPhrase !== "burn") {
+      alert("❌ Deletion cancelled. Incorrect confirmation phrase.");
+      return;
+    }
+    const { error } = await supabase.from("quiz").delete().eq("phase_number", phaseNumber);
+    if (!error) fetchQuizzes();
+  };
+
+  const handleDeleteAll = async () => {
+    const confirmPhrase = prompt(`You are ABOUT TO DELETE ALL QUIZZES! If you're certain, type "burn down" to confirm deleting ALL quizzes from ALL phases:`);
+    if (confirmPhrase !== "burn down") {
+      alert("❌ Deletion cancelled. Incorrect confirmation phrase.");
+      return;
+    }
+    const { error } = await supabase.from("quiz").delete();
+    if (!error) fetchQuizzes();
+  };
+
+  const togglePhaseCollapse = (phase) => {
+    setCollapsedPhases((prev) => {
+      const updated = { ...prev, [phase]: !prev[phase] };
+      localStorage.setItem("collapsedPhases", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Group quizzes by phase
+  const phases = Array.from(new Set(quizzes.map((q) => q.phase_number))).sort((a, b) => a - b);
+
+  // Pagination logic
+  const totalPages = Math.ceil(phases.length / phasesPerPage);
+  const displayedPhases = phases.slice(
+    (currentPage - 1) * phasesPerPage,
+    currentPage * phasesPerPage
+  );
+
+  const handlePageJump = (e) => {
+    if (e.key === "Enter") {
+      const page = parseInt(e.target.value, 10);
+      if (!isNaN(page) && page >= 1 && page <= totalPages) {
+        setCurrentPage(page);
+      }
+      e.target.value = "";
+    }
   };
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-bold mb-4">
-        {editingId ? "Edit Quiz" : "Add New Quiz"}
-      </h2>
+      {/* Collapsible Add Quiz */}
+      <Button className="mb-4" onClick={() => setShowAddQuiz((prev) => !prev)}>
+        {showAddQuiz ? "Hide Add New Quiz" : "Show Add New Quiz"}
+      </Button>
 
-      {/* Form */}
-      <div className="grid gap-3 mb-6">
-        <input
-          type="number"
-          value={form.phase_number}
-          onChange={(e) => updateForm("phase_number", e.target.value)}
-          placeholder="Phase Number"
-          className="border p-2 rounded"
-        />
-        <input
-          type="number"
-          value={form.level_number}
-          onChange={(e) => updateForm("level_number", e.target.value)}
-          placeholder="Level Number"
-          className="border p-2 rounded"
-        />
-        <select
-          value={form.mode}
-          onChange={(e) => updateForm("mode", e.target.value)}
-          className="border p-2 rounded"
-        >
-          <option value="trivia">Trivia</option>
-          <option value="word-fill">Word Fill</option>
-          <option value="scripture-match">Scripture Match</option>
-          <option value="four-pics">Four Pics</option>
-        </select>
-        <textarea
-          value={form.question}
-          onChange={(e) => updateForm("question", e.target.value)}
-          placeholder="Question"
-          className="border p-2 rounded"
-        />
-        <input
-          value={form.answer}
-          onChange={(e) => updateForm("answer", e.target.value)}
-          placeholder="Answer"
-          className="border p-2 rounded"
-        />
+      {showAddQuiz && (
+        <div className="grid gap-3 mb-6">
+          <h2 className="text-lg font-bold">{editingId ? "Edit Quiz" : "Add New Quiz"}</h2>
+          <label>Phase Number</label>
+          <input
+            type="number"
+            value={form.phase_number}
+            onChange={(e) => updateForm("phase_number", e.target.value)}
+            className="border p-2 rounded"
+          />
+          <label>Level Number</label>
+          <input
+            type="number"
+            value={form.level_number}
+            onChange={(e) => updateForm("level_number", e.target.value)}
+            className="border p-2 rounded"
+          />
+          <label>Game Mode</label>
+          <select
+            value={form.mode}
+            onChange={(e) => updateForm("mode", e.target.value)}
+            className="border p-2 rounded"
+          >
+            <option value="trivia">Trivia</option>
+            <option value="word-fill">Word Fill</option>
+            <option value="scripture-match">Scripture Match</option>
+            <option value="four-pics">Four Pics</option>
+          </select>
 
-        {/* Multiple Choice Options */}
-        {form.mode === "trivia" && (
-          <div>
-            <h4 className="font-medium mb-2">Options</h4>
-            {form.options.map((opt, idx) => (
-              <div key={idx} className="flex gap-2 mb-2">
+          {form.mode === "trivia" && (
+            <>
+              <label>Question</label>
+              <textarea
+                value={form.question}
+                onChange={(e) => updateForm("question", e.target.value)}
+                className="border p-2 rounded"
+              />
+              <label>Answer</label>
+              <input
+                value={form.answer}
+                onChange={(e) => updateForm("answer", e.target.value)}
+                className="border p-2 rounded"
+              />
+              <label>Options</label>
+              {form.options.map((opt, idx) => (
+                <div key={idx} className="flex gap-2 mb-2">
+                  <input
+                    value={opt}
+                    onChange={(e) => handleOptionChange(idx, e.target.value)}
+                    className="border p-2 rounded flex-1"
+                  />
+                  <Button variant="destructive" onClick={() => handleRemoveOption(idx)}>❌</Button>
+                </div>
+              ))}
+              <Button onClick={handleAddOption}>+ Add Option</Button>
+            </>
+          )}
+
+          {form.mode === "word-fill" && (
+            <>
+              <label>Question</label>
+              <textarea
+                value={form.question}
+                onChange={(e) => updateForm("question", e.target.value)}
+                className="border p-2 rounded"
+              />
+              <label>Answer</label>
+              <input
+                value={form.answer}
+                onChange={(e) => updateForm("answer", e.target.value)}
+                className="border p-2 rounded"
+              />
+            </>
+          )}
+
+          {form.mode === "scripture-match" && (
+            <>
+              <label>Question</label>
+              <textarea
+                value={form.question}
+                onChange={(e) => updateForm("question", e.target.value)}
+                className="border p-2 rounded"
+                rows={8}
+              />
+            </>
+          )}
+
+          {form.mode === "four-pics" && (
+            <>
+              <label>Answer</label>
+              <input
+                value={form.answer}
+                onChange={(e) => updateForm("answer", e.target.value)}
+                className="border p-2 rounded"
+              />
+              <label>Letters</label>
+              <input
+                value={form.letters}
+                onChange={(e) => updateForm("letters", e.target.value)}
+                className="border p-2 rounded"
+              />
+              <label>Upload 4 Images</label>
+              {[0, 1, 2, 3].map((i) => (
                 <input
-                  value={opt}
-                  onChange={(e) => handleOptionChange(idx, e.target.value)}
-                  placeholder={`Option ${idx + 1}`}
-                  className="border p-2 rounded flex-1"
+                  key={i}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const files = [...imageFiles];
+                    files[i] = e.target.files[0];
+                    setImageFiles(files);
+                  }}
                 />
-                <Button
-                  variant="destructive"
-                  onClick={() => handleRemoveOption(idx)}
-                >
-                  ❌
-                </Button>
-              </div>
-            ))}
-            <Button onClick={handleAddOption}>+ Add Option</Button>
+              ))}
+            </>
+          )}
+
+          <div className="flex gap-2">
+            <Button onClick={handleSave}>{editingId ? "Update Quiz" : "Add Quiz"}</Button>
+            {editingId && <Button onClick={resetForm}>Cancel</Button>}
           </div>
-        )}
-
-        {/* Word Fill letters */}
-        {form.mode === "word-fill" && (
-          <input
-            value={form.letters}
-            onChange={(e) => updateForm("letters", e.target.value)}
-            placeholder="Letters (comma-separated)"
-            className="border p-2 rounded"
-          />
-        )}
-
-        {/* Four Pics image URLs */}
-        {form.mode === "four-pics" && (
-          <input
-            value={form.image_urls}
-            onChange={(e) => updateForm("image_urls", e.target.value)}
-            placeholder="Image URLs (comma-separated)"
-            className="border p-2 rounded"
-          />
-        )}
-
-        <div className="flex gap-2">
-          <Button onClick={handleSave}>
-            {editingId ? "Update Quiz" : "Add Quiz"}
-          </Button>
-          {editingId && <Button onClick={resetForm}>Cancel</Button>}
         </div>
-      </div>
+      )}
 
-      {/* Quiz List */}
-      <h2 className="text-lg font-bold mb-2">Existing Quizzes</h2>
+      <Button variant="destructive" className="mb-4 bg-red-700" onClick={handleDeleteAll}>
+        🚨 Delete ALL Quizzes (All Phases)
+      </Button>
+
       {loading ? (
         <p>Loading quizzes...</p>
       ) : (
-        <div className="space-y-4">
-          {quizzes.map((quiz) => (
-            <div
-              key={quiz.id}
-              className="border p-3 rounded flex justify-between items-center"
-            >
-              <div>
-                <p className="font-semibold">
-                  Phase {quiz.phase_number} - Level {quiz.level_number} ({quiz.mode})
-                </p>
-                <p>{quiz.question}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={() => handleEdit(quiz)}>Edit</Button>
+        <>
+          {displayedPhases.map((phase) => (
+            <div key={phase} className="mb-4 border rounded">
+              <div
+                className="flex justify-between p-2 bg-gray-200 cursor-pointer"
+                onClick={() => togglePhaseCollapse(phase)}
+              >
+                <span className="font-bold">Phase {phase}</span>
                 <Button
                   variant="destructive"
-                  onClick={() => handleDelete(quiz.id)}
+                  className="bg-red-500"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeletePhase(phase);
+                  }}
                 >
-                  Delete
+                  Delete Phase
                 </Button>
               </div>
+              {!collapsedPhases[phase] && (
+                <div className="p-2">
+                  {quizzes
+                    .filter((q) => q.phase_number === phase)
+                    .map((quiz) => (
+                      <div
+                        key={quiz.id}
+                        className="border p-3 rounded flex justify-between items-center mb-2"
+                      >
+                        <div>
+                          <p className="font-semibold">
+                            Level {quiz.level_number} ({quiz.mode})
+                          </p>
+                          <p>{quiz.question}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={() => handleEdit(quiz)}>Edit</Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => handleDelete(quiz.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
           ))}
-        </div>
+
+          <div className="flex items-center gap-2 mt-4">
+            <Button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>
+              Prev
+            </Button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <input
+              type="number"
+              min="1"
+              max={totalPages}
+              placeholder="Go to page"
+              onKeyDown={handlePageJump}
+              className="border p-1 rounded w-20"
+            />
+            <Button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
