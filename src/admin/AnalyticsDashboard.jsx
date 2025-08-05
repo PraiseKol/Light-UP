@@ -14,6 +14,8 @@ export default function AnalyticsDashboard() {
     mostPlayedMode: "-",
     avgScorePerMode: [],
     retentionRate: 0,
+    highestPhase: "-",
+    highestLevel: "-",
   });
 
   useEffect(() => {
@@ -37,16 +39,42 @@ export default function AnalyticsDashboard() {
     setLoading(false);
   };
 
+  const fetchHighestPhaseLevel = async () => {
+    const { data, error } = await supabase
+      .from("highest_phase_level") // <-- query the view
+      .select("highest_phase, highest_level")
+      .single();
+
+    if (error) {
+      console.error("Error fetching highest phase/level:", error);
+      return { phase: "-", level: "-" };
+    }
+
+    if (data) {
+      return {
+        phase: data.highest_phase || "-",
+        level: data.highest_level || "-",
+      };
+    }
+
+    return { phase: "-", level: "-" };
+  };
+
   const fetchStats = async () => {
     try {
       const { data, error } = await supabase.rpc("get_admin_analytics");
       if (error) throw error;
+
+      const { phase, level } = await fetchHighestPhaseLevel();
+
       if (data) {
         setStats({
           activePlayers: data.active_players || 0,
           mostPlayedMode: data.most_played_mode || "-",
           avgScorePerMode: data.avg_score_per_mode || [],
           retentionRate: data.retention_rate || 0,
+          highestPhase: phase,
+          highestLevel: level,
         });
       }
     } catch (err) {
@@ -73,6 +101,26 @@ export default function AnalyticsDashboard() {
         <CardContent className="p-4">
           <h2 className="text-lg font-bold">Most Played Mode</h2>
           <p className="text-3xl">{stats.mostPlayedMode}</p>
+        </CardContent>
+      </Card>
+
+      {/* Highest Phase */}
+      <Card>
+        <CardContent className="p-4">
+          <h2 className="text-lg font-bold">Highest Phase Reached</h2>
+          <p className="text-3xl">
+            Phase {stats.highestPhase} 
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Highest Level */}
+      <Card>
+        <CardContent className="p-4">
+          <h2 className="text-lg font-bold">Highest Level Reached</h2>
+          <p className="text-3xl">
+         Level {stats.highestLevel}
+          </p>
         </CardContent>
       </Card>
 
