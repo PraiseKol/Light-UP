@@ -45,7 +45,7 @@ export default function MapAndGame() {
   const [countdownText, setCountdownText] = useState("");
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState([]);
   const [totalLeaderboard, setTotalLeaderboard] = useState([]);
-  const [showTotalLeaderboard, setShowTotalLeaderboard] = useState(false);
+  const [showTotalLeaderboard, setShowTotalLeaderboard] = useState(true);
   const [showStore, setShowStore] = useState(false);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false); // accordion toggle
 
@@ -268,23 +268,23 @@ export default function MapAndGame() {
   {/* Row 1 */}
   <div className="flex gap-2 mb-2">
     <button onClick={() => setShowSettings(true)} className="flex-1 text-xs bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-2 py-1 shadow hover:bg-blue-50">
-      Settings
+    ⚙️  Settings
     </button>
-    <button onClick={() => setShowStore(true)} className="flex-1 text-xs bg-purple-500 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-purple-600">
-      🛒 Store
+    <button onClick={() => setShowStore(true)} className="flex-1 text-xs bg-yellow-800 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-yellow-900">
+      🛒 🎁 Store
     </button>
     <button onClick={() => navigate("/multiplayer/create")} className="flex-1 text-xs bg-green-500 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-green-600">
-      Multiplayer
+    🎮  Multiplayer
     </button>
   </div>
   {/* Row 2 */}
   <div className="flex gap-2">
     <button onClick={handleWeeklyChallengeClick} disabled={!challengeAllowed} className="flex-1 text-xs bg-yellow-500 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-yellow-600">
       {challengeAllowed && !challengePlayed
-        ? "Weekly Challenge"
+        ? "🥊 Weekly Challenge"
         : challengePlayed
-        ? "Played"
-        : `Quiz: ${countdownText}`}
+        ? "🥊 Played"
+        : `🥊 Quiz: ${countdownText}`}
     </button>
     <button onClick={() => setMobileActionsOpen(!mobileActionsOpen)} className="flex-1 text-xs bg-gray-700 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-gray-600">
       {mobileActionsOpen ? "Hide" : "Leaderboard"}
@@ -299,7 +299,7 @@ export default function MapAndGame() {
     {/* Total Leaderboard */}
     {totalLeaderboard.length > 0 && (
       <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-3 overflow-y-auto max-h-64">
-        <h2 className="text-sm font-bold text-blue-700 mb-2">🌟 Top Players</h2>
+        <h2 className="text-sm font-bold text-blue-700 mb-2">🏆 Top Players</h2>
         <ol className="space-y-1 text-xs">
           {totalLeaderboard.map((entry, index) => (
             <li key={index} className="flex justify-between">
@@ -335,13 +335,13 @@ export default function MapAndGame() {
         {/* LEFT SIDEBAR (desktop) */}
         <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-r border-gray-300">
           <button onClick={() => setShowSettings(true)} className="bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50">
-            Settings
+          ⚙️ Settings
           </button>
-          <button onClick={() => setShowStore(true)} className="bg-purple-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-purple-600">
-            🛒 Store
+          <button onClick={() => setShowStore(true)} className="bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900">
+            🛒 🎁  Store
           </button>
           <button onClick={() => navigate("/multiplayer/create")} className="bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600">
-            Create Multiplayer Game
+          🎮  Multiplayer
           </button>
         </div>
 
@@ -402,17 +402,17 @@ export default function MapAndGame() {
         <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-l border-gray-300">
           <button onClick={handleWeeklyChallengeClick} disabled={!challengeAllowed} className="bg-yellow-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-600">
             {challengeAllowed && !challengePlayed
-              ? "Weekly Challenge"
+              ? "🥊 Weekly Challenge"
               : challengePlayed
-              ? "Weekly Challenge: Played"
-              : `Weekly Quiz: ${countdownText}`}
+              ? " 🥊 Weekly Challenge: Played"
+              : `🥊 Weekly Quiz: ${countdownText}`}
           </button>
           <button onClick={() => setShowTotalLeaderboard(!showTotalLeaderboard)} className="bg-gray-700 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-gray-600">
-            {showTotalLeaderboard ? "Hide Leaderboard" : "Leaderboard"}
+            {showTotalLeaderboard ? "🌟 Hide Leaderboard" : " 🌟 Leaderboard"}
           </button>
           {showTotalLeaderboard && totalLeaderboard.length > 0 && (
             <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-4 overflow-y-auto max-h-full">
-              <h2 className="text-lg font-bold text-blue-700 mb-2">🌟 Top Players</h2>
+              <h2 className="text-lg font-bold text-blue-700 mb-2">🏆 Top Players</h2>
               <ol className="space-y-1 text-sm">
                 {totalLeaderboard.map((entry, index) => (
                   <li key={index} className="flex justify-between">
