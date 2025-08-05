@@ -33,6 +33,8 @@ export function useGameUser(userId) {
             lives: 5,
             last_life_lost_at: null,
             player_name: null,
+            talents: 20, // Default starting talents
+            powerups_inventory: {}, // Default empty power-up inventory
           })
           .select()
           .single();
@@ -99,9 +101,25 @@ export function useGameUser(userId) {
     };
   }, [userId, fetchGameUser]);
 
+  // 🛠 Update game user helper (for talents, inventory, etc.)
+  const updateGameUser = async (updates) => {
+    if (!userId) return;
+    const { error } = await supabase
+      .from('game_users')
+      .update(updates)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error("❌ Failed to update game user:", error);
+    } else {
+      await fetchGameUser();
+    }
+  };
+
   return {
     gameUser,
     loading,
-    refetch: fetchGameUser, // 👈 Can be used to trigger manual refresh
+    refetch: fetchGameUser,
+    updateGameUser, // 👈 can update talents, inventory, etc.
   };
 }
