@@ -47,9 +47,7 @@ export default function MapAndGame() {
   const [totalLeaderboard, setTotalLeaderboard] = useState([]);
   const [showTotalLeaderboard, setShowTotalLeaderboard] = useState(false);
   const [showStore, setShowStore] = useState(false);
-
-  const [leftOpen, setLeftOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(false);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false); // accordion toggle
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
@@ -58,21 +56,17 @@ export default function MapAndGame() {
 
   useEffect(() => {
     let leaderboardTimeout;
-
     const loadLeaderboards = async () => {
       const weekly = await fetchLeaderboard();
       const total = await fetchMainLeaderboard();
       setWeeklyLeaderboard(weekly);
       setTotalLeaderboard(total);
     };
-
     const loadLeaderboardsDebounced = () => {
       clearTimeout(leaderboardTimeout);
       leaderboardTimeout = setTimeout(loadLeaderboards, 200);
     };
-
     loadLeaderboards();
-
     const weeklyChannel = supabase
       .channel("weekly_leaderboard_updates")
       .on(
@@ -81,7 +75,6 @@ export default function MapAndGame() {
         () => loadLeaderboardsDebounced()
       )
       .subscribe();
-
     let totalChannel;
     if (showTotalLeaderboard) {
       totalChannel = supabase
@@ -93,7 +86,6 @@ export default function MapAndGame() {
         )
         .subscribe();
     }
-
     return () => {
       supabase.removeChannel(weeklyChannel);
       if (totalChannel) supabase.removeChannel(totalChannel);
@@ -191,7 +183,6 @@ export default function MapAndGame() {
     setSelectedLevel(null);
     setUnlockedPhases(determineUnlockedPhases(updatedCompleted));
     setUserScore(await fetchTotalScore(user.id));
-
     const currentPhase = levelPhases.find(
       (p) => p.phaseNumber === selectedLevel.phaseNumber
     );
@@ -199,7 +190,6 @@ export default function MapAndGame() {
       (l) => l.id === selectedLevel.id
     );
     const nextLevel = currentPhase.levels[currentIdx + 1];
-
     if (nextLevel) {
       setShowUnlockAnimation(true);
       setPendingNextLevel({
@@ -271,168 +261,113 @@ export default function MapAndGame() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <AnimatedBackground />
-      <div className="flex min-h-screen">
-        {/* LEFT SIDEBAR */}
-        <div
-          className={`${
-            leftOpen ? "translate-x-0" : "-translate-x-full"
-          } lg:translate-x-0 transition-transform fixed lg:static lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-r border-gray-300 z-50`}
-        >
-          <button
-            onClick={() => setShowSettings(true)}
-            className="bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
-          >
+      <div className="flex flex-col lg:flex-row min-h-screen">
+
+       {/* MOBILE TOP BAR (Sticky) */}
+<div className="lg:hidden w-full bg-white/80 backdrop-blur-md p-2 border-b border-gray-300 sticky top-0 z-50">
+  {/* Row 1 */}
+  <div className="flex gap-2 mb-2">
+    <button onClick={() => setShowSettings(true)} className="flex-1 text-xs bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-2 py-1 shadow hover:bg-blue-50">
+      Settings
+    </button>
+    <button onClick={() => setShowStore(true)} className="flex-1 text-xs bg-purple-500 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-purple-600">
+      🛒 Store
+    </button>
+    <button onClick={() => navigate("/multiplayer/create")} className="flex-1 text-xs bg-green-500 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-green-600">
+      Multiplayer
+    </button>
+  </div>
+  {/* Row 2 */}
+  <div className="flex gap-2">
+    <button onClick={handleWeeklyChallengeClick} disabled={!challengeAllowed} className="flex-1 text-xs bg-yellow-500 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-yellow-600">
+      {challengeAllowed && !challengePlayed
+        ? "Weekly Challenge"
+        : challengePlayed
+        ? "Played"
+        : `Quiz: ${countdownText}`}
+    </button>
+    <button onClick={() => setMobileActionsOpen(!mobileActionsOpen)} className="flex-1 text-xs bg-gray-700 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-gray-600">
+      {mobileActionsOpen ? "Hide" : "Leaderboard"}
+    </button>
+    <FeedbackButton small />
+  </div>
+</div>
+
+{/* MOBILE LEADERBOARD & FEEDBACK CONTENT */}
+{mobileActionsOpen && (
+  <div className="lg:hidden w-full bg-white/90 backdrop-blur-md p-3 border-b border-gray-300 space-y-4">
+    {/* Total Leaderboard */}
+    {totalLeaderboard.length > 0 && (
+      <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-3 overflow-y-auto max-h-64">
+        <h2 className="text-sm font-bold text-blue-700 mb-2">🌟 Top Players</h2>
+        <ol className="space-y-1 text-xs">
+          {totalLeaderboard.map((entry, index) => (
+            <li key={index} className="flex justify-between">
+              <span>{index + 1}. {entry.player_name || "Unnamed"}</span>
+              <span>{entry.total_score} pts</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    )}
+    {/* Weekly Leaderboard */}
+    {weeklyLeaderboard.length > 0 && (
+      <div className="bg-white border border-yellow-400 rounded-lg shadow-lg p-3 overflow-y-auto max-h-64">
+        <h2 className="text-sm font-bold text-yellow-600 mb-2">🏆 Weekly Top 10</h2>
+        <ol className="space-y-1 text-xs">
+          {weeklyLeaderboard.map((entry, index) => (
+            <li key={index} className="flex justify-between">
+              <span>{index + 1}. {entry.player_name || "Unnamed"}</span>
+              <span>{entry.score} pts</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    )}
+    {/* Feedback Button */}
+    <div className="w-full">
+      <FeedbackButton fullWidth />
+    </div>
+  </div>
+)}
+
+
+        {/* LEFT SIDEBAR (desktop) */}
+        <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-r border-gray-300">
+          <button onClick={() => setShowSettings(true)} className="bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50">
             Settings
           </button>
-          <button
-            onClick={() => setShowStore(true)}
-            className="bg-purple-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-purple-600"
-          >
+          <button onClick={() => setShowStore(true)} className="bg-purple-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-purple-600">
             🛒 Store
           </button>
-          <button
-            onClick={() => navigate("/multiplayer/create")}
-            className="bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600"
-          >
+          <button onClick={() => navigate("/multiplayer/create")} className="bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600">
             Create Multiplayer Game
           </button>
         </div>
 
-        {/* CENTER */}
+        {/* CENTER CONTENT */}
         <div className="flex-1 overflow-y-auto max-h-screen p-4">
-          {/* Mobile Sidebar Toggles */}
-          <div className="flex justify-between mb-4 lg:hidden">
-            <button
-              onClick={() => setLeftOpen(!leftOpen)}
-              className="bg-blue-500 text-white px-3 py-1 rounded"
-            >
-              ☰ Menu
-            </button>
-            <button
-              onClick={() => setRightOpen(!rightOpen)}
-              className="bg-yellow-500 text-white px-3 py-1 rounded"
-            >
-              ☰ Actions
-            </button>
-          </div>
-
           {/* Sticky Header */}
           <div className="sticky top-0 z-40 bg-white py-2 px-4 shadow-sm flex flex-wrap justify-between items-center text-sm md:text-base font-semibold text-blue-700 gap-4">
             <div className="truncate">{gameUser.player_name || "Unnamed"}</div>
-            <div className="flex items-center gap-1">
-              💎 Talents: {gameUser.talents ?? 0}
-            </div>
+            <div className="flex items-center gap-1">💎 Talents: {gameUser.talents ?? 0}</div>
             <div>Total Score: {userScore}</div>
-            <LivesDisplay
-              lives={gameUser.lives}
-              lastLostAt={gameUser.last_life_lost_at}
-            />
+            <LivesDisplay lives={gameUser.lives} lastLostAt={gameUser.last_life_lost_at} />
             <div className="flex gap-4">
-              {Object.entries(gameUser.powerups_inventory || {}).map(
-                ([key, count]) => (
-                  <div key={key} className="flex items-center gap-1">
-                    {getPowerUpIcon(key)} {count}
-                  </div>
-                )
-              )}
+              {Object.entries(gameUser.powerups_inventory || {}).map(([key, count]) => (
+                <div key={key} className="flex items-center gap-1">{getPowerUpIcon(key)} {count}</div>
+              ))}
             </div>
           </div>
 
-          {/* Mobile Left Sidebar Content */}
-          {leftOpen && (
-            <div className="bg-white p-4 shadow mb-4 lg:hidden space-y-4">
-              <button
-                onClick={() => setShowSettings(true)}
-                className="bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50 w-full"
-              >
-                Settings
-              </button>
-              <button
-                onClick={() => setShowStore(true)}
-                className="bg-purple-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-purple-600 w-full"
-              >
-                🛒 Store
-              </button>
-              <button
-                onClick={() => navigate("/multiplayer/create")}
-                className="bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600 w-full"
-              >
-                Create Multiplayer Game
-              </button>
-            </div>
-          )}
-
-          {/* Mobile Right Sidebar Content */}
-          {rightOpen && (
-            <div className="bg-white p-4 shadow mb-4 lg:hidden space-y-4">
-              <button
-                onClick={handleWeeklyChallengeClick}
-                disabled={!challengeAllowed}
-                className="bg-yellow-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-600 w-full"
-              >
-                {challengeAllowed && !challengePlayed
-                  ? "Weekly Challenge"
-                  : challengePlayed
-                  ? "Weekly Challenge: Already Played"
-                  : `Weekly Quiz: ${countdownText}`}
-              </button>
-              <button
-                onClick={() => setShowTotalLeaderboard(!showTotalLeaderboard)}
-                className="bg-gray-700 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-gray-600 w-full"
-              >
-                {showTotalLeaderboard ? "Hide Leaderboard" : "Total Leaderboard"}
-              </button>
-              {showTotalLeaderboard && totalLeaderboard.length > 0 && (
-                <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-4">
-                  <h2 className="text-lg font-bold text-blue-700 mb-2">
-                    🌟 Top Players
-                  </h2>
-                  <ol className="space-y-1 text-sm">
-                    {totalLeaderboard.map((entry, index) => (
-                      <li key={index} className="flex justify-between">
-                        <span>{index + 1}. {entry.player_name || "Unnamed"}</span>
-                        <span>{entry.total_score} pts</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-              {weeklyLeaderboard.length > 0 && (
-                <div className="bg-white border border-yellow-400 rounded-lg shadow-lg p-4">
-                  <h2 className="text-lg font-bold text-yellow-600 mb-2">
-                    🏆 Weekly Top 10
-                  </h2>
-                  <ol className="space-y-1 text-sm">
-                    {weeklyLeaderboard.map((entry, index) => (
-                      <li key={index} className="flex justify-between">
-                        <span>{index + 1}. {entry.player_name || "Unnamed"}</span>
-                        <span>{entry.score} pts</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-              <FeedbackButton />
-            </div>
-          )}
-
-          {/* Main Map */}
           {!selectedLevel ? (
             <div className="flex flex-col gap-8">
               {levelPhases.map((phase, index) => {
                 const isUnlocked = unlockedPhases.includes(index);
-                const wrappedLevels = wrapLevelsWithStatus(
-                  index,
-                  phase,
-                  completedLevels
-                );
+                const wrappedLevels = wrapLevelsWithStatus(index, phase, completedLevels);
                 const currentPhaseId = getCurrentLevelId(phase);
                 return (
-                  <div
-                    key={index}
-                    ref={(el) => (phaseRefs.current[index] = el)}
-                    className="relative"
-                  >
+                  <div key={index} ref={(el) => (phaseRefs.current[index] = el)} className="relative">
                     <LevelMap
                       phase={{ ...phase, levels: wrappedLevels }}
                       phaseIndex={index}
@@ -441,10 +376,7 @@ export default function MapAndGame() {
                       isLocked={!isUnlocked}
                       onSelectLevel={(level) => {
                         if (gameUser.lives > 0) setSelectedLevel(level);
-                        else
-                          toast.error(
-                            "You're out of lives! Please wait to get more."
-                          );
+                        else toast.error("You're out of lives! Please wait to get more.");
                       }}
                     />
                   </div>
@@ -467,33 +399,20 @@ export default function MapAndGame() {
         </div>
 
         {/* RIGHT SIDEBAR (desktop) */}
-        <div
-          className={`${
-            rightOpen ? "translate-x-0" : "translate-x-full"
-          } lg:translate-x-0 transition-transform fixed lg:static lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-l border-gray-300 z-50`}
-        >
-          <button
-            onClick={handleWeeklyChallengeClick}
-            disabled={!challengeAllowed}
-            className="bg-yellow-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-600"
-          >
+        <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-l border-gray-300">
+          <button onClick={handleWeeklyChallengeClick} disabled={!challengeAllowed} className="bg-yellow-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-600">
             {challengeAllowed && !challengePlayed
               ? "Weekly Challenge"
               : challengePlayed
-              ? "Weekly Challenge: Already Played"
+              ? "Weekly Challenge: Played"
               : `Weekly Quiz: ${countdownText}`}
           </button>
-          <button
-            onClick={() => setShowTotalLeaderboard(!showTotalLeaderboard)}
-            className="bg-gray-700 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-gray-600"
-          >
-            {showTotalLeaderboard ? "Hide Leaderboard" : "Total Leaderboard"}
+          <button onClick={() => setShowTotalLeaderboard(!showTotalLeaderboard)} className="bg-gray-700 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-gray-600">
+            {showTotalLeaderboard ? "Hide Leaderboard" : "Leaderboard"}
           </button>
           {showTotalLeaderboard && totalLeaderboard.length > 0 && (
             <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-4 overflow-y-auto max-h-full">
-              <h2 className="text-lg font-bold text-blue-700 mb-2">
-                🌟 Top Players
-              </h2>
+              <h2 className="text-lg font-bold text-blue-700 mb-2">🌟 Top Players</h2>
               <ol className="space-y-1 text-sm">
                 {totalLeaderboard.map((entry, index) => (
                   <li key={index} className="flex justify-between">
@@ -506,9 +425,7 @@ export default function MapAndGame() {
           )}
           {weeklyLeaderboard.length > 0 && (
             <div className="bg-white border border-yellow-400 rounded-lg shadow-lg p-4 overflow-y-auto max-h-full">
-              <h2 className="text-lg font-bold text-yellow-600 mb-2">
-                🏆 Weekly Top 10
-              </h2>
+              <h2 className="text-lg font-bold text-yellow-600 mb-2">🏆 Weekly Top 10</h2>
               <ol className="space-y-1 text-sm">
                 {weeklyLeaderboard.map((entry, index) => (
                   <li key={index} className="flex justify-between">
@@ -526,18 +443,11 @@ export default function MapAndGame() {
       </div>
 
       {/* Modals */}
-      <SettingsModal
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        gameUser={gameUser}
-        onSave={handleSavePlayerName}
-      />
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} gameUser={gameUser} onSave={handleSavePlayerName} />
       <Modal isOpen={showStore} onClose={() => setShowStore(false)} title="">
         <PowerUpStore gameUser={gameUser} onPurchase={refetch} />
       </Modal>
-      {showScriptureModal && (
-        <ScriptureModal text={scriptureText} onNext={handleNextPhaseScroll} />
-      )}
+      {showScriptureModal && <ScriptureModal text={scriptureText} onNext={handleNextPhaseScroll} />}
       <AppToaster />
     </div>
   );

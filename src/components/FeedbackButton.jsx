@@ -3,7 +3,7 @@ import { supabase } from "lib/supabaseClient";
 import { Button } from "components/ui/button";
 import { useAuth } from "auth/AuthProvider";
 
-export default function FeedbackButton() {
+export default function FeedbackButton({ small, fullWidth }) {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -49,9 +49,11 @@ export default function FeedbackButton() {
 
   return (
     <>
-      {/* Floating Feedback Button */}
+      {/* Feedback Button */}
       <Button
-        className="fixed bottom-4 right-4 z-50 rounded-full shadow-lg"
+        className={`${fullWidth ? "w-full" : ""} ${
+          small ? "text-xs px-2 py-1" : "fixed bottom-4 right-4 z-50 rounded-full shadow-lg"
+        }`}
         onClick={() => setIsOpen(true)}
       >
         💬 Feedback
@@ -59,8 +61,17 @@ export default function FeedbackButton() {
 
       {/* Modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+          onClick={() => {
+            setIsOpen(false);
+            setStatusMessage("");
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()} // Prevent click from closing modal
+          >
             <h2 className="text-lg font-bold mb-4">Send Feedback</h2>
 
             <textarea
