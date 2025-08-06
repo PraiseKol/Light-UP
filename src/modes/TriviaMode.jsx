@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "components/ui/card";
 import ProgressBar from "components/ui/progress";
 import RightAnswerModal from "components/ui/RightAnswerModal";
@@ -29,6 +29,7 @@ export default function TriviaMode({
   onCorrect,
   onScore,
   onIncorrect,
+  activePowerups, // ✅ Added
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
@@ -41,9 +42,9 @@ export default function TriviaMode({
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
 
   const hasAnswered = useRef(false);
-  const lifeLostRef = useRef(false); // ✅
+  const lifeLostRef = useRef(false);
 
-  const { timeLeft, reset, setIsRunning } = useTimer(30, () => {
+  const { timeLeft, reset, setIsRunning, setTimeLeft } = useTimer(30, () => {
     if (hasAnswered.current) return;
 
     if (selected) {
@@ -54,10 +55,19 @@ export default function TriviaMode({
       setShowTimeUpModal(true);
       if (!lifeLostRef.current && onIncorrect) {
         lifeLostRef.current = true;
-        onIncorrect(); // ✅ life lost on timeout
+        onIncorrect();
       }
     }
   });
+
+  // ✅ Apply Grace Period at start
+  useEffect(() => {
+    if (activePowerups?.grace_period) {
+      console.log("⏳ Grace Period active — adding 10 seconds");
+      setTimeLeft((prev) => prev + 10);
+      activePowerups?.setGraceUsed?.(); // clear flag
+    }
+  }, [activePowerups, setTimeLeft]);
 
   const resetLevel = useResetLevel({
     setModals: {
@@ -72,7 +82,7 @@ export default function TriviaMode({
     hasAnsweredRef: hasAnswered,
     onIncorrect,
     forceIncorrectLifeLoss: true,
-    lifeLostRef, // ✅
+    lifeLostRef,
   });
 
   const saveScore = async (newScore) => {
@@ -132,7 +142,7 @@ export default function TriviaMode({
       } else {
         if (!lifeLostRef.current && onIncorrect) {
           lifeLostRef.current = true;
-          onIncorrect(); // ✅ life lost on wrong answer
+          onIncorrect();
         }
         setShowWrongModal(true);
       }

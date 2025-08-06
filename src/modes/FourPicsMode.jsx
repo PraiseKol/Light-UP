@@ -8,7 +8,6 @@ import { Button } from "components/ui/button";
 import { useResetLevel } from "hooks/useResetLevel";
 import ProgressBar from "components/ui/progress";
 import { supabase } from "lib/supabaseClient";
-import { useUser } from "@supabase/auth-helpers-react";
 import { loseLife } from "utils/loseLife";
 
 export default function FourPicsMode({
@@ -16,6 +15,7 @@ export default function FourPicsMode({
   onBack,
   onCorrect = () => {},
   onScore = () => {},
+  activePowerups, // ✅ Added
 }) {
   const INITIAL_TIME = 30;
 
@@ -30,7 +30,7 @@ export default function FourPicsMode({
   const [score, setscore] = useState(null);
 
   const hasAnswered = useRef(false);
-  const lifeLostRef = useRef(false); // ✅ prevent double life deduction
+  const lifeLostRef = useRef(false);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -75,12 +75,21 @@ export default function FourPicsMode({
 
   const { timeLeft, setTimeLeft, setIsRunning } = useTimer(INITIAL_TIME, () => {
     if (!input.trim()) {
-      handleLifeLoss(); // ⏰ timeout with no input
+      handleLifeLoss();
       setShowTimeUpModal(true);
     } else {
       checkAnswer();
     }
   });
+
+  // ✅ Apply Grace Period once
+  useEffect(() => {
+    if (activePowerups?.grace_period) {
+      console.log("⏳ Grace Period active — adding 10 seconds");
+      setTimeLeft((prev) => prev + 10);
+      activePowerups?.setGraceUsed?.();
+    }
+  }, [activePowerups, setTimeLeft]);
 
   useEffect(() => {
     const load = async () => {
@@ -109,7 +118,7 @@ export default function FourPicsMode({
 
     const levelId = level.id || `P${level.phaseNumber}-L${level.number}`;
 
-    const { data: existingData, error: fetchError } = await supabase
+    const { data: existingData } = await supabase
       .from("progress")
       .select("id, score")
       .eq("user_id", user.id)
@@ -161,7 +170,7 @@ export default function FourPicsMode({
       saveScore(score);
       setShowRightModal(true);
     } else {
-      handleLifeLoss(); // ❌ wrong answer
+      handleLifeLoss();
       setShowWrongModal(true);
     }
   };
@@ -199,7 +208,7 @@ export default function FourPicsMode({
     setIsRunning,
     hasAnsweredRef: hasAnswered,
     onReset: () => {
-      lifeLostRef.current = false; // ✅ reset life deduction guard
+      lifeLostRef.current = false;
     },
     reshuffleLetters: () => {
       if (question?.letters) {

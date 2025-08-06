@@ -13,7 +13,7 @@ import TriviaMode from "modes/TriviaMode";
 import FourPicsMode from "modes/FourPicsMode";
 import ScriptureMatchMode from "modes/ScriptureMatchMode";
 
-import HolyShieldButton from "components/HolyShieldButton"; // ✅ Independent shield button
+import HolyShieldButton from "components/HolyShieldButton";
 
 export default function GameScreen({ level, onBack, onComplete, onScore }) {
   const maybeUser = useUser();
@@ -102,6 +102,11 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
     onPowerupUsed("grace_period");
   };
 
+  // ✅ Allow modes to reset Grace Period after applying it
+  const setGraceUsed = () => {
+    setActivePowerups((prev) => ({ ...prev, grace_period: false }));
+  };
+
   const handleHeavenlyMatch = () => {
     if (!gameUser?.powerups_inventory?.heavenly_match) return;
     handleScoreEarned(100);
@@ -126,7 +131,10 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
     onIncorrect: handleIncorrect,
     onScore: handleScoreEarned,
     disableIfNoLives: gameUser?.lives <= 0,
-    activePowerups,
+    activePowerups: {
+      ...activePowerups,
+      setGraceUsed, // ✅ pass to modes so they can clear it after use
+    },
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "components/ui/card";
 import { Input } from "components/ui/input";
 import RightAnswerModal from "components/ui/RightAnswerModal";
@@ -25,6 +25,7 @@ export default function WordFillMode({
   onScore,
   onIncorrect,
   disableIfNoLives,
+  activePowerups, // ✅ receives powerups from GameScreen
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
@@ -37,7 +38,7 @@ export default function WordFillMode({
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
 
   const hasAnsweredCorrectly = useRef(false);
-  const lifeLostRef = useRef(false); // ✅ NEW
+  const lifeLostRef = useRef(false);
 
   const { timeLeft, setTimeLeft, setIsRunning } = useTimer(30, () => {
     if (!hasAnsweredCorrectly.current && !userInput.trim()) {
@@ -47,10 +48,19 @@ export default function WordFillMode({
         lifeLostRef.current = true;
       }
     } else if (!hasAnsweredCorrectly.current) {
-      checkAnswer(); // Handle late submission
+      checkAnswer();
     }
     setIsRunning(false);
   });
+
+  // ✅ Grace Period: add +10 seconds once if active
+  useEffect(() => {
+    if (activePowerups?.grace_period) {
+      console.log("⏳ Grace Period active — adding 10 seconds");
+      setTimeLeft((prev) => prev + 10);
+      activePowerups?.setGraceUsed?.(); // mark it as used so it won't trigger again
+    }
+  }, [activePowerups?.grace_period, activePowerups, setTimeLeft]);
 
   const stopTimer = () => setIsRunning(false);
 
@@ -91,8 +101,6 @@ export default function WordFillMode({
   const checkAnswer = useCallback(() => {
     if (hasAnsweredCorrectly.current || disableIfNoLives) return;
 
-    console.log("[checkAnswer] Checking answer:", userInput);
-
     stopTimer();
 
     const isCorrect =
@@ -102,7 +110,6 @@ export default function WordFillMode({
 
     setTimeout(async () => {
       if (isCorrect) {
-        console.log("[checkAnswer] Correct answer!");
         hasAnsweredCorrectly.current = true;
         const earned = getScoreFromTime(timeLeft);
         setScore(earned);
@@ -110,10 +117,8 @@ export default function WordFillMode({
         if (onScore) onScore(earned);
         setShowRightModal(true);
       } else {
-        console.log("[checkAnswer] Incorrect answer.");
         if (onIncorrect && !lifeLostRef.current) {
-          console.log("[checkAnswer] Calling onIncorrect()");
-          onIncorrect(); // ✅ Life should be lost here
+          onIncorrect();
           lifeLostRef.current = true;
         }
         setShowWrongModal(true);
@@ -204,8 +209,7 @@ export default function WordFillMode({
       <WrongAnswerModal
         isOpen={showWrongModal}
         onRetry={() => {
-          console.log("[Modal] Retrying after wrong answer");
-          resetLevel({ skipIncorrect: true }); // ✅ Prevents second life loss
+          resetLevel({ skipIncorrect: true });
         }}
         onBack={() => window.location.reload()}
       />
@@ -213,8 +217,7 @@ export default function WordFillMode({
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={() => {
-          console.log("[Modal] Retrying after timeout");
-          resetLevel({ skipIncorrect: true }); // ✅ Prevents second life loss
+          resetLevel({ skipIncorrect: true });
         }}
         onGoToMap={() => window.location.reload()}
       />

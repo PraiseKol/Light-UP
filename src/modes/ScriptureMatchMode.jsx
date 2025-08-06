@@ -20,6 +20,7 @@ export default function ScriptureMatchMode({
   onCorrect,
   onScore,
   onIncorrect,
+  activePowerups, // ✅ Added
 }) {
   const [pairs, setPairs] = useState([]);
   const [shuffledVerses, setShuffledVerses] = useState([]);
@@ -28,16 +29,25 @@ export default function ScriptureMatchMode({
   const [status, setStatus] = useState("idle");
   const [score, setScore] = useState(null);
   const hasAnswered = useRef(false);
-  const lifeLostRef = useRef(false); // 🛡 Prevent multiple life loss
+  const lifeLostRef = useRef(false);
 
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
 
-  const { timeLeft, setIsRunning, reset } = useTimer(30, () => {
+  const { timeLeft, setIsRunning, reset, setTimeLeft } = useTimer(30, () => {
     if (!hasAnswered.current) {
-      checkAnswer(); // ✅ Handles all cases: full, partial, or empty
+      checkAnswer();
     }
   });
+
+  // ✅ Apply Grace Period once
+  useEffect(() => {
+    if (activePowerups?.grace_period) {
+      console.log("⏳ Grace Period active — adding 10 seconds");
+      setTimeLeft((prev) => prev + 10);
+      activePowerups?.setGraceUsed?.();
+    }
+  }, [activePowerups, setTimeLeft]);
 
   const resetLevel = useResetLevel({
     setModals: {
@@ -73,20 +83,19 @@ export default function ScriptureMatchMode({
   }, [question]);
 
   const handleLifeLoss = async () => {
-    if (lifeLostRef.current) return; // 🛡 only once
+    if (lifeLostRef.current) return;
     lifeLostRef.current = true;
 
     if (!user?.id) return;
 
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("game_users")
         .select("lives")
         .eq("user_id", user.id)
         .maybeSingle();
 
       const currentLives = data?.lives;
-
       if (currentLives > 0) {
         await loseLife(user.id, currentLives);
         console.log("💔 Life lost");
@@ -103,7 +112,9 @@ export default function ScriptureMatchMode({
     hasAnswered.current = true;
     setIsRunning(false);
 
-    const isCorrect = pairs.every((pair) => matches[pair.reference] === pair.verse);
+    const isCorrect = pairs.every(
+      (pair) => matches[pair.reference] === pair.verse
+    );
     if (isCorrect) {
       const calculated = calculateScore();
       setScore(calculated);
@@ -111,9 +122,9 @@ export default function ScriptureMatchMode({
       if (onScore) onScore(calculated);
       setStatus("correct");
     } else {
-      await handleLifeLoss(); // ❌ wrong or partial match
+      await handleLifeLoss();
       if (onIncorrect) onIncorrect();
-      setStatus("timeup"); // Covers both manual submit or timeout
+      setStatus("timeup");
     }
   };
 
