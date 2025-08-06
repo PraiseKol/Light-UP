@@ -279,7 +279,7 @@ export default function MapAndGame() {
   </div>
   {/* Row 2 */}
   <div className="flex gap-2">
-    <button onClick={handleWeeklyChallengeClick} disabled={!challengeAllowed} className="flex-1 text-xs bg-yellow-500 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-yellow-600">
+    <button onClick={handleWeeklyChallengeClick} disabled={!challengeAllowed} className="flex-1 text-xs bg-blue-500 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-blue-600">
       {challengeAllowed && !challengePlayed
         ? "🥊 Weekly Challenge"
         : challengePlayed
@@ -400,7 +400,7 @@ export default function MapAndGame() {
 
         {/* RIGHT SIDEBAR (desktop) */}
         <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-l border-gray-300">
-          <button onClick={handleWeeklyChallengeClick} disabled={!challengeAllowed} className="bg-yellow-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-600">
+          <button onClick={handleWeeklyChallengeClick} disabled={!challengeAllowed} className="bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600">
             {challengeAllowed && !challengePlayed
               ? "🥊 Weekly Challenge"
               : challengePlayed
