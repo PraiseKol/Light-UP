@@ -1,14 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "lib/supabaseClient";
 import { useMultiplayerStore } from "store/useMultiplayerStore";
 import { useAuth } from "auth/AuthProvider";
+import Switch from "components/ui/Switch"; // shadcn/ui switch
 
 export default function MultiplayerLobby() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { game, players = [], setPlayers, setGame } = useMultiplayerStore();
+
+  const [allowPowerups, setAllowPowerups] = useState(true);
+  const isCreator = user?.id === game?.creator_id;
 
   const joinUrl = game
     ? `${window.location.origin}/multiplayer/join/${game.token}`
@@ -40,7 +44,10 @@ export default function MultiplayerLobby() {
         .select("*")
         .eq("id", gameId)
         .single();
-      if (gameData) setGame(gameData);
+      if (gameData) {
+        setGame(gameData);
+        setAllowPowerups(gameData.allow_powerups ?? true); // set initial toggle
+      }
 
       const { data: playerData } = await supabase
         .from("multiplayer_players")
@@ -90,6 +97,8 @@ export default function MultiplayerLobby() {
         (payload) => {
           const updatedGame = payload.new;
           setGame(updatedGame);
+          setAllowPowerups(updatedGame.allow_powerups ?? true); // always trust Supabase
+
           if (
             updatedGame.status === "in_progress" ||
             updatedGame.status === "starting"
@@ -105,6 +114,16 @@ export default function MultiplayerLobby() {
 
     return () => supabase.removeChannel(gameChannel);
   }, [gameId, setGame, navigate]);
+
+  const handleTogglePowerups = async (newValue) => {
+    if (!isCreator) return;
+    setAllowPowerups(newValue);
+    const { error } = await supabase
+      .from("multiplayer_games")
+      .update({ allow_powerups: newValue })
+      .eq("id", gameId);
+    if (error) console.error("Failed to toggle power-ups:", error);
+  };
 
   const handleJoinSlot = async (slot) => {
     const filledSlots = Array.isArray(players)
@@ -162,12 +181,13 @@ export default function MultiplayerLobby() {
   const handleBack = async () => {
     try {
       if (user?.id === game?.creator_id) {
-        // Creator: delete whole game & players, go back one step
-        await supabase.from("multiplayer_players").delete().eq("game_id", gameId);
+        await supabase
+          .from("multiplayer_players")
+          .delete()
+          .eq("game_id", gameId);
         await supabase.from("multiplayer_games").delete().eq("id", gameId);
         navigate(-1);
       } else {
-        // Non-creator: delete only self, go to Create Multiplayer Game page
         await supabase
           .from("multiplayer_players")
           .delete()
@@ -180,13 +200,13 @@ export default function MultiplayerLobby() {
     }
   };
 
-  if (!game) return <div className="text-center mt-20">Preparing your lobby...</div>;
+  if (!game)
+    return <div className="text-center mt-20">Preparing your lobby...</div>;
 
   const renderSlots = () => {
     if (game.mode === "2v2") {
       return (
         <div className="grid grid-cols-2 gap-6">
-          {/* Team A */}
           <div className="bg-blue-900/30 p-4 rounded-xl">
             <h3 className="text-blue-300 font-semibold mb-3 text-center">
               Team A
@@ -195,7 +215,6 @@ export default function MultiplayerLobby() {
               {[1, 2].map((slotNum) => renderSlotButton(slotNum))}
             </div>
           </div>
-          {/* Team B */}
           <div className="bg-red-900/30 p-4 rounded-xl">
             <h3 className="text-red-300 font-semibold mb-3 text-center">
               Team B
@@ -250,7 +269,6 @@ export default function MultiplayerLobby() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
       <div className="max-w-xl w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20">
-        
         {/* Back Button */}
         <button
           onClick={handleBack}
@@ -264,7 +282,7 @@ export default function MultiplayerLobby() {
           {game.mode} Lobby • {game.duration_seconds / 60} min
         </h2>
         <p className="text-center text-sm text-gray-300 mb-4">
-          Match Code: <span className="font-mono">{game.token}</span> 
+          Match Code: <span className="font-mono">{game.token}</span>
         </p>
 
         {/* Join Link */}
@@ -283,6 +301,22 @@ export default function MultiplayerLobby() {
           </button>
         </div>
 
+        {/* Power-ups Toggle */}
+        <div className="flex items-center gap-3 mb-6">
+          <span className="text-sm font-medium text-gray-300">
+            Allow Power-ups
+          </span>
+          <Switch
+            checked={allowPowerups}
+            onChange={handleTogglePowerups}
+            disabled={!isCreator}
+          />
+
+          {!allowPowerups && (
+            <span className="text-xs text-red-400">Disabled by creator</span>
+          )}
+        </div>
+
         {/* Slots */}
         {renderSlots()}
 
@@ -290,9 +324,7 @@ export default function MultiplayerLobby() {
         {game.creator_id === user?.id && (
           <button
             onClick={handleStartGame}
-            disabled={
-              players.filter((p) => p.slot_number).length < totalSlots
-            }
+            disabled={players.filter((p) => p.slot_number).length < totalSlots}
             className={`w-full mt-6 py-3 rounded-lg font-semibold transition-all ${
               players.filter((p) => p.slot_number).length >= totalSlots
                 ? "bg-green-500 hover:bg-green-400"
