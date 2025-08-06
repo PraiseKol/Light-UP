@@ -17,7 +17,11 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
   const maybeUser = useUser();
   const user = maybeUser ?? null;
 
-  const { gameUser, loading: loadingGameUser, refetch } = useGameUser(user?.id ?? null);
+  const {
+    gameUser,
+    loading: loadingGameUser,
+    refetch,
+  } = useGameUser(user?.id ?? null);
 
   const [questionData, setQuestionData] = useState(null);
   const [loadingQuestion, setLoadingQuestion] = useState(true);
@@ -108,12 +112,21 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
 
   const handleHeavenlyMatch = () => {
     if (!gameUser?.powerups_inventory?.heavenly_match) return;
+  
+    // Award max points (100) for this level
+    handleScoreEarned(100);
+  
+    // Deduct from inventory
     onPowerupUsed("heavenly_match");
-    onComplete(); // auto-complete current question
+  
+    // Complete the level
+    onComplete();
   };
+  
 
   if (!user) return <div className="p-6">Loading user...</div>;
-  if (loadingQuestion || loadingGameUser) return <div className="p-6">Loading game...</div>;
+  if (loadingQuestion || loadingGameUser)
+    return <div className="p-6">Loading game...</div>;
   if (!questionData) return <div className="p-6">No question found.</div>;
 
   const { mode } = questionData;
@@ -130,7 +143,9 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
   };
 
   return (
-    <div className="pb-20 p-4 space-y-4 relative"> {/* pb-20 leaves space for bottom bar */}
+    <div className="pb-20 p-4 space-y-4 relative">
+      {" "}
+      {/* pb-20 leaves space for bottom bar */}
       {/* Top bar */}
       <div className="flex justify-between items-center text-sm font-medium text-gray-800">
         <span>Level: {level?.number}</span>
@@ -138,24 +153,40 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
           Score: {userScore} | Lives: ❤️ {gameUser?.lives ?? "?"}
         </span>
       </div>
-
       {/* Game mode rendering */}
       {mode === "word-fill" && (
-        <WordFillMode {...commonProps} question={questionData.question} answer={questionData.answer} />
+        <WordFillMode
+          {...commonProps}
+          question={questionData.question}
+          answer={questionData.answer}
+        />
       )}
       {mode === "trivia" && (
-        <TriviaMode {...commonProps} question={questionData.question} options={questionData.options} answer={questionData.answer} />
+        <TriviaMode
+          {...commonProps}
+          question={questionData.question}
+          options={questionData.options}
+          answer={questionData.answer}
+        />
       )}
       {mode === "four-pics" && (
-        <FourPicsMode {...commonProps} answer={questionData.answer} imageUrls={questionData.image_urls} letters={questionData.letters} />
+        <FourPicsMode
+          {...commonProps}
+          answer={questionData.answer}
+          imageUrls={questionData.image_urls}
+          letters={questionData.letters}
+        />
       )}
       {mode === "scripture-match" && (
         <ScriptureMatchMode {...commonProps} question={questionData.question} />
       )}
-      {!["word-fill", "trivia", "four-pics", "scripture-match"].includes(mode) && (
-        <div className="p-6">Mode not supported yet: <strong>{mode}</strong></div>
+      {!["word-fill", "trivia", "four-pics", "scripture-match"].includes(
+        mode
+      ) && (
+        <div className="p-6">
+          Mode not supported yet: <strong>{mode}</strong>
+        </div>
       )}
-
       {/* Bottom-fixed Power‑Up Bar */}
       {gameUser?.powerups_inventory && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 p-2 flex justify-around items-center z-50">
@@ -164,7 +195,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             disabled={!gameUser.powerups_inventory.divine_hint}
             className="flex flex-col items-center text-xs"
           >
-            💡<span>Hint</span>
+            💡<span>Divine Hint</span>
             <span>{gameUser.powerups_inventory.divine_hint ?? 0}</span>
           </button>
           <button
@@ -172,7 +203,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             disabled={!gameUser.powerups_inventory.grace_period}
             className="flex flex-col items-center text-xs"
           >
-            ⏳<span>+10s</span>
+            ⏳<span>Grace Period (+10s)</span>
             <span>{gameUser.powerups_inventory.grace_period ?? 0}</span>
           </button>
           <button
@@ -180,7 +211,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             disabled={!gameUser.powerups_inventory.holy_shield}
             className="flex flex-col items-center text-xs"
           >
-            🛡️<span>Shield</span>
+            🛡️<span>Holy Shield (5 mins)</span>
             <span>{gameUser.powerups_inventory.holy_shield ?? 0}</span>
           </button>
           <button
@@ -188,7 +219,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             disabled={!gameUser.powerups_inventory.heavenly_match}
             className="flex flex-col items-center text-xs"
           >
-            ✨<span>Auto</span>
+            ✨<span>Heavenly Match</span>
             <span>{gameUser.powerups_inventory.heavenly_match ?? 0}</span>
           </button>
         </div>
