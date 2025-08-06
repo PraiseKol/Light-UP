@@ -13,31 +13,25 @@ import TriviaMode from "modes/TriviaMode";
 import FourPicsMode from "modes/FourPicsMode";
 import ScriptureMatchMode from "modes/ScriptureMatchMode";
 
+import HolyShieldButton from "components/HolyShieldButton"; // ✅ Independent shield button
+
 export default function GameScreen({ level, onBack, onComplete, onScore }) {
   const maybeUser = useUser();
   const user = maybeUser ?? null;
 
-  const {
-    gameUser,
-    loading: loadingGameUser,
-    refetch,
-  } = useGameUser(user?.id ?? null);
+  const { gameUser, loading: loadingGameUser, refetch } = useGameUser(user?.id ?? null);
 
   const [questionData, setQuestionData] = useState(null);
   const [loadingQuestion, setLoadingQuestion] = useState(true);
   const [userScore, setUserScore] = useState(0);
-
-  // Power‑Up states
   const [activePowerups, setActivePowerups] = useState({});
-  const [holyShieldActiveUntil, setHolyShieldActiveUntil] = useState(null);
 
-  // Load the current question
+  // Load current question
   useEffect(() => {
     const load = async () => {
       try {
         setLoadingQuestion(true);
         if (!level?.phaseNumber || !level?.number) return;
-
         const q = await getQuestion(level.phaseNumber, level.number);
         setQuestionData(q || null);
       } catch (err) {
@@ -46,7 +40,6 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
         setLoadingQuestion(false);
       }
     };
-
     if (level) load();
   }, [level]);
 
@@ -68,17 +61,22 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
 
   const handleIncorrect = async () => {
     if (!user?.id || gameUser?.lives <= 0) return;
-    if (holyShieldActiveUntil && Date.now() < holyShieldActiveUntil) {
+
+    // ✅ Block life loss if Holy Shield is active
+    if (
+      gameUser?.holy_shield_until &&
+      new Date(gameUser.holy_shield_until).getTime() > Date.now()
+    ) {
       console.log("🛡️ Holy Shield active – no life lost");
       return;
     }
+
     await loseLife(user.id, gameUser.lives);
     await refetch();
   };
 
   const onPowerupUsed = async (key) => {
     if (!gameUser?.powerups_inventory?.[key]) return;
-    // Deduct from inventory
     await supabase
       .from("game_users")
       .update({
@@ -104,32 +102,22 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
     onPowerupUsed("grace_period");
   };
 
-  const handleHolyShield = () => {
-    if (!gameUser?.powerups_inventory?.holy_shield) return;
-    setHolyShieldActiveUntil(Date.now() + 5 * 60 * 1000);
-    onPowerupUsed("holy_shield");
-  };
-
   const handleHeavenlyMatch = () => {
     if (!gameUser?.powerups_inventory?.heavenly_match) return;
-  
-    // Award max points (100) for this level
     handleScoreEarned(100);
-  
-    // Deduct from inventory
     onPowerupUsed("heavenly_match");
-  
-    // Complete the level
     onComplete();
   };
-  
 
   if (!user) return <div className="p-6">Loading user...</div>;
-  if (loadingQuestion || loadingGameUser)
-    return <div className="p-6">Loading game...</div>;
+  if (loadingQuestion || loadingGameUser) return <div className="p-6">Loading game...</div>;
   if (!questionData) return <div className="p-6">No question found.</div>;
 
   const { mode } = questionData;
+
+  const isHolyShieldActive =
+    gameUser?.holy_shield_until &&
+    new Date(gameUser.holy_shield_until).getTime() > Date.now();
 
   const commonProps = {
     level,
@@ -139,88 +127,78 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
     onScore: handleScoreEarned,
     disableIfNoLives: gameUser?.lives <= 0,
     activePowerups,
-    holyShieldActiveUntil,
   };
 
   return (
-    <div className="pb-20 p-4 space-y-4 relative">
-      {" "}
-      {/* pb-20 leaves space for bottom bar */}
+    <div className="pb-24 p-4 space-y-4 relative">
       {/* Top bar */}
       <div className="flex justify-between items-center text-sm font-medium text-gray-800">
         <span>Level: {level?.number}</span>
         <span>
-          Score: {userScore} | Lives: ❤️ {gameUser?.lives ?? "?"}
+          Score: {userScore} | Lives:{" "}
+          <span
+            className={`${
+              isHolyShieldActive
+                ? "animate-pulse text-yellow-500 font-bold drop-shadow-[0_0_6px_rgba(255,223,0,0.8)]"
+                : ""
+            }`}
+          >
+            ❤️ {gameUser?.lives ?? "?"}
+          </span>
         </span>
       </div>
+
       {/* Game mode rendering */}
       {mode === "word-fill" && (
-        <WordFillMode
-          {...commonProps}
-          question={questionData.question}
-          answer={questionData.answer}
-        />
+        <WordFillMode {...commonProps} question={questionData.question} answer={questionData.answer} />
       )}
       {mode === "trivia" && (
-        <TriviaMode
-          {...commonProps}
-          question={questionData.question}
-          options={questionData.options}
-          answer={questionData.answer}
-        />
+        <TriviaMode {...commonProps} question={questionData.question} options={questionData.options} answer={questionData.answer} />
       )}
       {mode === "four-pics" && (
-        <FourPicsMode
-          {...commonProps}
-          answer={questionData.answer}
-          imageUrls={questionData.image_urls}
-          letters={questionData.letters}
-        />
+        <FourPicsMode {...commonProps} answer={questionData.answer} imageUrls={questionData.image_urls} letters={questionData.letters} />
       )}
       {mode === "scripture-match" && (
         <ScriptureMatchMode {...commonProps} question={questionData.question} />
       )}
-      {!["word-fill", "trivia", "four-pics", "scripture-match"].includes(
-        mode
-      ) && (
-        <div className="p-6">
-          Mode not supported yet: <strong>{mode}</strong>
-        </div>
+      {!["word-fill", "trivia", "four-pics", "scripture-match"].includes(mode) && (
+        <div className="p-6">Mode not supported yet: <strong>{mode}</strong></div>
       )}
+
       {/* Bottom-fixed Power‑Up Bar */}
       {gameUser?.powerups_inventory && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 p-2 flex justify-around items-center z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 p-3 flex justify-around items-center z-50 shadow-lg">
+          {/* Divine Hint */}
           <button
             onClick={handleDivineHint}
             disabled={!gameUser.powerups_inventory.divine_hint}
-            className="flex flex-col items-center text-xs"
+            className="flex flex-col items-center text-xs font-medium w-[23%] px-2 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 disabled:bg-gray-200 disabled:text-gray-400 transition"
           >
             💡<span>Divine Hint</span>
-            <span>{gameUser.powerups_inventory.divine_hint ?? 0}</span>
+            <span>x{gameUser.powerups_inventory.divine_hint ?? 0}</span>
           </button>
+
+          {/* Grace Period */}
           <button
             onClick={handleGracePeriod}
             disabled={!gameUser.powerups_inventory.grace_period}
-            className="flex flex-col items-center text-xs"
+            className="flex flex-col items-center text-xs font-medium w-[23%] px-2 py-1 rounded-lg bg-purple-100 hover:bg-purple-200 disabled:bg-gray-200 disabled:text-gray-400 transition"
           >
             ⏳<span>Grace Period (+10s)</span>
-            <span>{gameUser.powerups_inventory.grace_period ?? 0}</span>
+            <span>x{gameUser.powerups_inventory.grace_period ?? 0}</span>
           </button>
-          <button
-            onClick={handleHolyShield}
-            disabled={!gameUser.powerups_inventory.holy_shield}
-            className="flex flex-col items-center text-xs"
-          >
-            🛡️<span>Holy Shield (5 mins)</span>
-            <span>{gameUser.powerups_inventory.holy_shield ?? 0}</span>
-          </button>
+
+          {/* Holy Shield */}
+          <HolyShieldButton user={user} gameUser={gameUser} refetch={refetch} />
+
+          {/* Heavenly Match */}
           <button
             onClick={handleHeavenlyMatch}
             disabled={!gameUser.powerups_inventory.heavenly_match}
-            className="flex flex-col items-center text-xs"
+            className="flex flex-col items-center text-xs font-medium w-[23%] px-2 py-1 rounded-lg bg-yellow-100 hover:bg-yellow-200 disabled:bg-gray-200 disabled:text-gray-400 transition"
           >
-            ✨<span>Heavenly Match</span>
-            <span>{gameUser.powerups_inventory.heavenly_match ?? 0}</span>
+            👑<span>Heavenly Match</span>
+            <span>x{gameUser.powerups_inventory.heavenly_match ?? 0}</span>
           </button>
         </div>
       )}

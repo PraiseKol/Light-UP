@@ -248,7 +248,7 @@ export default function MapAndGame() {
       case "holy_shield":
         return "🛡️";
       case "heavenly_match":
-        return "✨";
+        return "👑";
       default:
         return "🎁";
     }
