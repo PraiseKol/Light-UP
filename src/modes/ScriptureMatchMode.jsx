@@ -20,7 +20,7 @@ export default function ScriptureMatchMode({
   onCorrect,
   onScore,
   onIncorrect,
-  activePowerups, // ✅ Added
+  activePowerups, // ✅ Powerups support
 }) {
   const [pairs, setPairs] = useState([]);
   const [shuffledVerses, setShuffledVerses] = useState([]);
@@ -48,6 +48,30 @@ export default function ScriptureMatchMode({
       activePowerups?.setGraceUsed?.();
     }
   }, [activePowerups, setTimeLeft]);
+
+  // ✅ Divine Hint: Auto-match 1 random pair
+  useEffect(() => {
+    if (pairs.length > 0 && activePowerups?.divine_hint) {
+      const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
+      setMatches((prev) => ({
+        ...prev,
+        [randomPair.reference]: randomPair.verse,
+      }));
+
+      // Move matched verse out of the draggable list
+      setShuffledVerses((prev) => {
+        return prev.map((v) =>
+          v.verse === randomPair.verse
+            ? { ...v, matchedByHint: true }
+            : v
+        );
+      });
+
+      console.log("✨ Divine Hint matched:", randomPair.reference, "→", randomPair.verse);
+
+      activePowerups?.setDivineHintUsed?.();
+    }
+  }, [pairs, activePowerups]);
 
   const resetLevel = useResetLevel({
     setModals: {
@@ -161,7 +185,12 @@ export default function ScriptureMatchMode({
     }
   };
 
-  const isMatched = (verse) => Object.values(matches).includes(verse);
+  const isMatched = (verse) => {
+    return (
+      Object.values(matches).includes(verse) ||
+      shuffledVerses.find((v) => v.verse === verse)?.matchedByHint
+    );
+  };
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
@@ -204,14 +233,14 @@ export default function ScriptureMatchMode({
 
               <div>
                 <h3 className="font-semibold mb-2">📜 Verses</h3>
-                {shuffledVerses.map(({ verse }) => (
+                {shuffledVerses.map(({ verse, matchedByHint }) => (
                   <div
                     key={verse}
                     draggable={!isMatched(verse)}
                     onDragStart={() => setDraggedVerse({ verse })}
                     className={`cursor-move border p-3 rounded-lg mb-3 transition ${
                       isMatched(verse)
-                        ? "bg-gray-200 text-gray-500"
+                        ? "bg-green-200 text-gray-700"
                         : "bg-yellow-100 hover:bg-yellow-200 text-black"
                     }`}
                   >

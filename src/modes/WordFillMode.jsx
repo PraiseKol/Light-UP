@@ -1,3 +1,4 @@
+// WordFillMode.jsx
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "components/ui/card";
 import { Input } from "components/ui/input";
@@ -25,12 +26,14 @@ export default function WordFillMode({
   onScore,
   onIncorrect,
   disableIfNoLives,
-  activePowerups, // ✅ receives powerups from GameScreen
+  activePowerups,
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
 
   const [userInput, setUserInput] = useState("");
+  const [divineHint, setDivineHint] = useState("");
+  const [originalHint, setOriginalHint] = useState(""); // store hint to restore
   const [status, setStatus] = useState("idle");
   const [score, setScore] = useState(null);
   const [showRightModal, setShowRightModal] = useState(false);
@@ -53,14 +56,29 @@ export default function WordFillMode({
     setIsRunning(false);
   });
 
-  // ✅ Grace Period: add +10 seconds once if active
+  // ✅ Grace Period
   useEffect(() => {
     if (activePowerups?.grace_period) {
-      console.log("⏳ Grace Period active — adding 10 seconds");
       setTimeLeft((prev) => prev + 10);
-      activePowerups?.setGraceUsed?.(); // mark it as used so it won't trigger again
+      activePowerups?.setGraceUsed?.();
     }
   }, [activePowerups?.grace_period, activePowerups, setTimeLeft]);
+
+  // ✅ Divine Hint logic
+  useEffect(() => {
+    if (activePowerups?.divine_hint && answer) {
+      const cleanAnswer = answer.trim();
+      if (cleanAnswer.length >= 2) {
+        const hint =
+          cleanAnswer[0] +
+          "_".repeat(cleanAnswer.length - 2) +
+          cleanAnswer[cleanAnswer.length - 1];
+        setDivineHint(hint);
+        setOriginalHint(hint);
+        activePowerups?.setDivineHintUsed?.();
+      }
+    }
+  }, [activePowerups?.divine_hint, answer, activePowerups]);
 
   const stopTimer = () => setIsRunning(false);
 
@@ -100,7 +118,6 @@ export default function WordFillMode({
 
   const checkAnswer = useCallback(() => {
     if (hasAnsweredCorrectly.current || disableIfNoLives) return;
-
     stopTimer();
 
     const isCorrect =
@@ -155,13 +172,23 @@ export default function WordFillMode({
           <CardContent>
             <Input
               value={userInput}
+              onFocus={() => {
+                if (divineHint) setDivineHint(""); // hide hint on focus
+              }}
+              onBlur={() => {
+                if (!userInput.trim() && originalHint) {
+                  setDivineHint(originalHint); // restore hint if empty
+                }
+              }}
               onChange={(e) => {
                 setUserInput(e.target.value);
                 setStatus("idle");
               }}
               disabled={hasAnsweredCorrectly.current || disableIfNoLives}
               placeholder={
-                disableIfNoLives
+                divineHint
+                  ? divineHint
+                  : disableIfNoLives
                   ? "Out of lives. Please wait..."
                   : "Type your answer..."
               }
@@ -208,17 +235,13 @@ export default function WordFillMode({
 
       <WrongAnswerModal
         isOpen={showWrongModal}
-        onRetry={() => {
-          resetLevel({ skipIncorrect: true });
-        }}
+        onRetry={() => resetLevel({ skipIncorrect: true })}
         onBack={() => window.location.reload()}
       />
 
       <TimeUpModal
         isOpen={showTimeUpModal}
-        onTryAgain={() => {
-          resetLevel({ skipIncorrect: true });
-        }}
+        onTryAgain={() => resetLevel({ skipIncorrect: true })}
         onGoToMap={() => window.location.reload()}
       />
     </div>

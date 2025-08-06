@@ -15,13 +15,14 @@ export default function FourPicsMode({
   onBack,
   onCorrect = () => {},
   onScore = () => {},
-  activePowerups, // ✅ Added
+  activePowerups,
 }) {
   const INITIAL_TIME = 30;
 
   const [input, setInput] = useState("");
   const [usedIndexes, setUsedIndexes] = useState([]);
   const [shuffledLetters, setShuffledLetters] = useState([]);
+  const [lockedIndexes, setLockedIndexes] = useState([]); // ✅ new: divine hint locks
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showRightModal, setShowRightModal] = useState(false);
@@ -54,7 +55,7 @@ export default function FourPicsMode({
     lifeLostRef.current = true;
 
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("game_users")
         .select("lives")
         .eq("user_id", user.id)
@@ -104,6 +105,47 @@ export default function FourPicsMode({
     };
     load();
   }, [level]);
+
+  
+/// ✅ Divine Hint logic - always reveal LAST 2 letters & lock them
+useEffect(() => {
+  if (question?.answer && activePowerups?.divine_hint) {
+    const answer = question.answer.split("");
+    const answerLength = answer.length;
+
+    // Always target last 2 positions
+    const positions = [answerLength - 2, answerLength - 1];
+
+    let revealed = Array(answerLength).fill("");
+    let updatedUsedIndexes = [...usedIndexes];
+    let locked = [];
+
+    positions.forEach((pos) => {
+      revealed[pos] = answer[pos]; // put correct letter in slot
+
+      // lock letter in shuffled grid
+      const idxInShuffled = shuffledLetters.findIndex(
+        (ltr, i) =>
+          ltr === answer[pos] &&
+          !updatedUsedIndexes.includes(i) &&
+          !locked.includes(i)
+      );
+      if (idxInShuffled !== -1) {
+        updatedUsedIndexes.push(idxInShuffled);
+        locked.push(idxInShuffled);
+      }
+    });
+
+    setInput(revealed.join("")); // <-- full string with hints already in place
+    setUsedIndexes(updatedUsedIndexes);
+    setLockedIndexes(locked);
+
+    console.log("✨ Divine Hint filled LAST 2 letters & locked them");
+    activePowerups?.setDivineHintUsed?.();
+  }
+}, [question, activePowerups, shuffledLetters]);
+
+
 
   const calculateScore = () => {
     const elapsed = INITIAL_TIME - timeLeft;
@@ -175,27 +217,49 @@ export default function FourPicsMode({
     }
   };
 
-  const handleLetterClick = useCallback(
-    (letter, idx) => {
-      if (hasAnswered.current || usedIndexes.includes(idx)) return;
-      setInput((prev) => prev + letter);
-      setUsedIndexes((prev) => [...prev, idx]);
-    },
-    [usedIndexes]
-  );
+  // ✅ Update letter click to place in first empty non-locked slot
+const handleLetterClick = useCallback(
+  (letter, idx) => {
+    if (hasAnswered.current || usedIndexes.includes(idx) || lockedIndexes.includes(idx)) return;
 
-  const handleBackspace = () => {
-    if (input.length === 0 || hasAnswered.current) return;
-    const lastChar = input[input.length - 1];
-    const reverseUsed = [...usedIndexes].reverse();
-    const idxToRemove = reverseUsed.find(
-      (idx) => shuffledLetters[idx] === lastChar
-    );
-    if (idxToRemove !== undefined) {
-      setInput((prev) => prev.slice(0, -1));
-      setUsedIndexes((prev) => prev.filter((i) => i !== idxToRemove));
+    setInput((prev) => {
+      let arr = prev.split("");
+      const firstEmpty = arr.findIndex((ch, i) => ch === "" && !lockedIndexes.includes(i));
+      if (firstEmpty !== -1) arr[firstEmpty] = letter;
+      return arr.join("");
+    });
+
+    setUsedIndexes((prev) => [...prev, idx]);
+  },
+  [usedIndexes, lockedIndexes]
+);
+  // ✅ Prevent backspace from removing locked hints
+const handleBackspace = () => {
+  if (hasAnswered.current) return;
+
+  setInput((prev) => {
+    let arr = prev.split("");
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (arr[i] !== "" && !lockedIndexes.includes(i)) {
+        const letterToRemove = arr[i];
+        arr[i] = "";
+        // also free this letter in usedIndexes
+        setUsedIndexes((prev) => {
+          const reverseUsed = [...prev].reverse();
+          const idxToRemove = reverseUsed.find(
+            (idx) => shuffledLetters[idx] === letterToRemove && !lockedIndexes.includes(idx)
+          );
+          if (idxToRemove !== undefined) {
+            return prev.filter((p) => p !== idxToRemove);
+          }
+          return prev;
+        });
+        break;
+      }
     }
-  };
+    return arr.join("");
+  });
+};
 
   const resetLevel = useResetLevel({
     setModals: {
@@ -209,6 +273,7 @@ export default function FourPicsMode({
     hasAnsweredRef: hasAnswered,
     onReset: () => {
       lifeLostRef.current = false;
+      setLockedIndexes([]); // reset locked on retry
     },
     reshuffleLetters: () => {
       if (question?.letters) {
@@ -270,9 +335,13 @@ export default function FourPicsMode({
           <button
             key={idx}
             onClick={() => handleLetterClick(ltr, idx)}
-            disabled={usedIndexes.includes(idx) || hasAnswered.current}
+            disabled={
+              usedIndexes.includes(idx) || hasAnswered.current || lockedIndexes.includes(idx)
+            }
             className={`w-10 h-10 text-lg font-bold rounded-lg transition shadow ${
-              usedIndexes.includes(idx)
+              lockedIndexes.includes(idx)
+                ? "bg-green-300 text-black cursor-not-allowed" // locked looks different
+                : usedIndexes.includes(idx)
                 ? "bg-gray-300 text-gray-500"
                 : "bg-gold text-black hover:bg-yellow-400"
             }`}

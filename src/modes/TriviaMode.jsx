@@ -29,12 +29,13 @@ export default function TriviaMode({
   onCorrect,
   onScore,
   onIncorrect,
-  activePowerups, // ✅ Added
+  activePowerups,
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
 
   const [selected, setSelected] = useState(null);
+  const [displayOptions, setDisplayOptions] = useState(options || []);
   const [status, setStatus] = useState("idle");
   const [score, setscore] = useState(0);
   const [showRightModal, setShowRightModal] = useState(false);
@@ -60,14 +61,33 @@ export default function TriviaMode({
     }
   });
 
-  // ✅ Apply Grace Period at start
+  // ✅ Apply Grace Period
   useEffect(() => {
     if (activePowerups?.grace_period) {
       console.log("⏳ Grace Period active — adding 10 seconds");
       setTimeLeft((prev) => prev + 10);
-      activePowerups?.setGraceUsed?.(); // clear flag
+      activePowerups?.setGraceUsed?.();
     }
   }, [activePowerups, setTimeLeft]);
+
+  // ✅ Apply Divine Hint: Remove two wrong answers
+  useEffect(() => {
+    if (activePowerups?.divine_hint && Array.isArray(options) && options.length > 2) {
+      const wrongOptions = options.filter(
+        (opt) => opt.trim().toLowerCase() !== answer.trim().toLowerCase()
+      );
+
+      if (wrongOptions.length >= 2) {
+        // Pick 1 wrong answer to keep alongside correct
+        const keepWrong = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+        const newOptions = [answer, keepWrong].sort(() => Math.random() - 0.5);
+
+        setDisplayOptions(newOptions);
+        console.log("✨ Divine Hint applied — reduced options:", newOptions);
+        activePowerups?.setDivineHintUsed?.();
+      }
+    }
+  }, [activePowerups?.divine_hint, options, answer, activePowerups]);
 
   const resetLevel = useResetLevel({
     setModals: {
@@ -174,7 +194,7 @@ export default function TriviaMode({
 
           <CardContent>
             <div className="space-y-3 mb-6">
-              {options.map((opt, i) => {
+              {displayOptions.map((opt, i) => {
                 const isSelected = selected === opt;
                 const isDisabled = hasAnswered.current;
 
