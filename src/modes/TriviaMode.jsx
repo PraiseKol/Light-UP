@@ -15,9 +15,8 @@ const triviaBackground =
 
 const getScoreFromTime = (timeLeft) => {
   if (timeLeft > 20) return 100;
-  if (timeLeft > 10) return 75;
-  if (timeLeft > 0) return 50;
-  return 0;
+    if (timeLeft > 10) return 75;
+    return 50;
 };
 
 export default function TriviaMode({

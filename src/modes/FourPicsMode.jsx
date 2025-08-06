@@ -19,16 +19,17 @@ export default function FourPicsMode({
 }) {
   const INITIAL_TIME = 30;
 
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState([]);
   const [usedIndexes, setUsedIndexes] = useState([]);
   const [shuffledLetters, setShuffledLetters] = useState([]);
-  const [lockedIndexes, setLockedIndexes] = useState([]); // ✅ new: divine hint locks
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showRightModal, setShowRightModal] = useState(false);
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
-  const [score, setscore] = useState(null);
+  const [score, setScore] = useState(null);
+
+  const [divineHintApplied, setDivineHintApplied] = useState(false);
 
   const hasAnswered = useRef(false);
   const lifeLostRef = useRef(false);
@@ -40,12 +41,7 @@ export default function FourPicsMode({
         data: { user },
         error,
       } = await supabase.auth.getUser();
-
-      if (error) {
-        console.error("❌ Failed to load user:", error.message);
-      } else {
-        setUser(user);
-      }
+      if (!error) setUser(user);
     };
     getUser();
   }, []);
@@ -53,21 +49,15 @@ export default function FourPicsMode({
   const handleLifeLoss = async () => {
     if (lifeLostRef.current || !user?.id) return;
     lifeLostRef.current = true;
-
     try {
       const { data } = await supabase
         .from("game_users")
         .select("lives")
         .eq("user_id", user.id)
         .maybeSingle();
-
       const currentLives = data?.lives;
-
       if (currentLives > 0) {
         await loseLife(user.id, currentLives);
-        console.log("💔 Life lost");
-      } else {
-        console.log("🚫 No lives left");
       }
     } catch (err) {
       console.error("❌ Error reducing life:", err.message);
@@ -75,7 +65,7 @@ export default function FourPicsMode({
   };
 
   const { timeLeft, setTimeLeft, setIsRunning } = useTimer(INITIAL_TIME, () => {
-    if (!input.trim()) {
+    if (input.every((slot) => slot === "")) {
       handleLifeLoss();
       setShowTimeUpModal(true);
     } else {
@@ -83,83 +73,68 @@ export default function FourPicsMode({
     }
   });
 
-  // ✅ Apply Grace Period once
+  // Grace Period powerup
   useEffect(() => {
     if (activePowerups?.grace_period) {
-      console.log("⏳ Grace Period active — adding 10 seconds");
       setTimeLeft((prev) => prev + 10);
       activePowerups?.setGraceUsed?.();
     }
   }, [activePowerups, setTimeLeft]);
 
+  // Load question
   useEffect(() => {
+    setLoading(true);
     const load = async () => {
-      setLoading(true);
       const data = await getQuestion(level.phaseNumber, level.number);
       if (data) {
         setQuestion(data);
         const letters = data.letters?.split("") || [];
         setShuffledLetters(letters.sort(() => Math.random() - 0.5));
+        setInput(Array(data.answer.length).fill(""));
+        setUsedIndexes([]);
+        setDivineHintApplied(false); // allow hint on first load
+        setTimeLeft(INITIAL_TIME); // reset timer at load
+        setIsRunning(true);
       }
       setLoading(false);
     };
     load();
-  }, [level]);
+  }, [level, setIsRunning, setTimeLeft]);
 
-  
-/// ✅ Divine Hint logic - always reveal LAST 2 letters & lock them
-useEffect(() => {
-  if (question?.answer && activePowerups?.divine_hint) {
-    const answer = question.answer.split("");
-    const answerLength = answer.length;
+  // Divine Hint — just fill last N slots, no locking
+  const applyDivineHint = useCallback(() => {
+    if (!question?.hint_letters || divineHintApplied) return;
+    const hintArr = question.hint_letters.toUpperCase().split("");
+    const answerLength = question.answer.length;
 
-    // Always target last 2 positions
-    const positions = [answerLength - 2, answerLength - 1];
-
-    let revealed = Array(answerLength).fill("");
-    let updatedUsedIndexes = [...usedIndexes];
-    let locked = [];
-
-    positions.forEach((pos) => {
-      revealed[pos] = answer[pos]; // put correct letter in slot
-
-      // lock letter in shuffled grid
-      const idxInShuffled = shuffledLetters.findIndex(
-        (ltr, i) =>
-          ltr === answer[pos] &&
-          !updatedUsedIndexes.includes(i) &&
-          !locked.includes(i)
-      );
-      if (idxInShuffled !== -1) {
-        updatedUsedIndexes.push(idxInShuffled);
-        locked.push(idxInShuffled);
+    setInput((prev) => {
+      const newInput = [...prev];
+      for (let i = 0; i < hintArr.length; i++) {
+        newInput[answerLength - hintArr.length + i] = hintArr[i];
       }
+      return newInput;
     });
 
-    setInput(revealed.join("")); // <-- full string with hints already in place
-    setUsedIndexes(updatedUsedIndexes);
-    setLockedIndexes(locked);
-
-    console.log("✨ Divine Hint filled LAST 2 letters & locked them");
+    setDivineHintApplied(true);
     activePowerups?.setDivineHintUsed?.();
-  }
-}, [question, activePowerups, shuffledLetters]);
+  }, [question, divineHintApplied, activePowerups]);
 
-
+  // Auto-apply on first load if active
+  useEffect(() => {
+    if (activePowerups?.divine_hint && !divineHintApplied) {
+      applyDivineHint();
+    }
+  }, [activePowerups, divineHintApplied, applyDivineHint]);
 
   const calculateScore = () => {
-    const elapsed = INITIAL_TIME - timeLeft;
-    const third = INITIAL_TIME / 3;
-    if (elapsed <= third) return 100;
-    if (elapsed <= 2 * third) return 75;
+    if (timeLeft > 20) return 100;
+    if (timeLeft > 10) return 75;
     return 50;
   };
 
   const saveScore = async (newScore) => {
     if (!user || !level) return;
-
     const levelId = level.id || `P${level.phaseNumber}-L${level.number}`;
-
     const { data: existingData } = await supabase
       .from("progress")
       .select("id, score")
@@ -178,12 +153,7 @@ useEffect(() => {
         score: newScore,
         updated_at: new Date().toISOString(),
       });
-      setscore(newScore);
-      onScore(newScore);
-      return;
-    }
-
-    if (newScore > existingScore) {
+    } else if (newScore > existingScore) {
       await supabase
         .from("progress")
         .update({
@@ -192,24 +162,23 @@ useEffect(() => {
         })
         .eq("user_id", user.id)
         .eq("level_id", levelId);
-      setscore(newScore);
-      onScore(newScore);
-    } else {
-      setscore(existingScore);
     }
+
+    // ✅ Always show current attempt's score in modal
+    setScore(newScore);
+    onScore(newScore);
   };
 
   const checkAnswer = () => {
     if (!question?.answer || hasAnswered.current) return;
     hasAnswered.current = true;
     setIsRunning(false);
-
     const correct =
-      input.trim().toLowerCase() === question.answer.toLowerCase();
-
+      input.join("").toLowerCase() === question.answer.toLowerCase();
     if (correct) {
-      const score = calculateScore();
-      saveScore(score);
+      const earned = calculateScore();
+      setScore(earned); // ✅ set state
+      saveScore(earned);
       setShowRightModal(true);
     } else {
       handleLifeLoss();
@@ -217,49 +186,42 @@ useEffect(() => {
     }
   };
 
-  // ✅ Update letter click to place in first empty non-locked slot
-const handleLetterClick = useCallback(
-  (letter, idx) => {
-    if (hasAnswered.current || usedIndexes.includes(idx) || lockedIndexes.includes(idx)) return;
+  const handleLetterClick = useCallback(
+    (letter, idx) => {
+      if (hasAnswered.current || usedIndexes.includes(idx)) return;
+      const emptyIndex = input.findIndex((ch) => ch === "");
+      if (emptyIndex !== -1) {
+        setInput((prev) => {
+          const arr = [...prev];
+          arr[emptyIndex] = letter;
+          return arr;
+        });
+        setUsedIndexes((prev) => [...prev, idx]);
+      }
+    },
+    [usedIndexes, input]
+  );
 
-    setInput((prev) => {
-      let arr = prev.split("");
-      const firstEmpty = arr.findIndex((ch, i) => ch === "" && !lockedIndexes.includes(i));
-      if (firstEmpty !== -1) arr[firstEmpty] = letter;
-      return arr.join("");
-    });
-
-    setUsedIndexes((prev) => [...prev, idx]);
-  },
-  [usedIndexes, lockedIndexes]
-);
-  // ✅ Prevent backspace from removing locked hints
-const handleBackspace = () => {
-  if (hasAnswered.current) return;
-
-  setInput((prev) => {
-    let arr = prev.split("");
-    for (let i = arr.length - 1; i >= 0; i--) {
-      if (arr[i] !== "" && !lockedIndexes.includes(i)) {
-        const letterToRemove = arr[i];
-        arr[i] = "";
-        // also free this letter in usedIndexes
+  const handleBackspace = () => {
+    if (hasAnswered.current) return;
+    for (let i = input.length - 1; i >= 0; i--) {
+      if (input[i] !== "") {
+        const removedLetter = input[i];
+        setInput((prev) => {
+          const arr = [...prev];
+          arr[i] = "";
+          return arr;
+        });
         setUsedIndexes((prev) => {
-          const reverseUsed = [...prev].reverse();
-          const idxToRemove = reverseUsed.find(
-            (idx) => shuffledLetters[idx] === letterToRemove && !lockedIndexes.includes(idx)
+          const idxToRemove = prev.find(
+            (uIdx) => shuffledLetters[uIdx] === removedLetter
           );
-          if (idxToRemove !== undefined) {
-            return prev.filter((p) => p !== idxToRemove);
-          }
-          return prev;
+          return prev.filter((p) => p !== idxToRemove);
         });
         break;
       }
     }
-    return arr.join("");
-  });
-};
+  };
 
   const resetLevel = useResetLevel({
     setModals: {
@@ -267,13 +229,18 @@ const handleBackspace = () => {
       setShowWrongModal,
       setShowTimeUpModal,
     },
-    setUserInput: setInput,
-    setTimeLeft,
-    setIsRunning,
+    setUserInput: () => {
+      setInput(Array(question?.answer?.length || 0).fill(""));
+      setUsedIndexes([]);
+      setDivineHintApplied(false); // allow hint after retry
+    },
+    setTimeLeft: () => {
+      setTimeLeft(INITIAL_TIME);
+      setIsRunning(true);
+    },
     hasAnsweredRef: hasAnswered,
     onReset: () => {
       lifeLostRef.current = false;
-      setLockedIndexes([]); // reset locked on retry
     },
     reshuffleLetters: () => {
       if (question?.letters) {
@@ -286,27 +253,29 @@ const handleBackspace = () => {
     },
   });
 
-  if (loading) return <div className="p-6 text-center">Loading question...</div>;
-  if (!question?.answer || !question?.image_urls) {
+  if (loading)
+    return <div className="p-6 text-center">Loading question...</div>;
+  if (!question?.answer || !question?.image_urls)
     return (
       <div className="p-6 text-center text-red-600">
         ❌ Invalid question data.
       </div>
     );
-  }
   if (!user) return <div className="p-6 text-center">Loading user...</div>;
 
   const images = question.image_urls.split(",").map((url) => url.trim());
-  const answerLength = question.answer.length;
 
   return (
     <div className="p-6 bg-gradient-to-br from-yellow-50 to-orange-100 rounded-xl shadow-lg max-w-2xl mx-auto animate-fadeInUp">
       <div className="space-y-1 mb-4">
         <div className="flex justify-between items-center">
           <div className="text-xs text-gray-500 mb-2">
-            Phase {level?.phaseNumber} • Level {level?.number} Four Pics One Word
+            Phase {level?.phaseNumber} • Level {level?.number} Four Pics One
+            Word
           </div>
-          <span className="text-sm text-gray-600 font-semibold">{timeLeft}s</span>
+          <span className="text-sm text-gray-600 font-semibold">
+            {timeLeft}s
+          </span>
         </div>
         <ProgressBar value={timeLeft} max={INITIAL_TIME} />
       </div>
@@ -323,9 +292,9 @@ const handleBackspace = () => {
       </div>
 
       <div className="flex justify-center gap-2 mb-4 text-xl font-semibold tracking-wide">
-        {Array.from({ length: answerLength }).map((_, i) => (
+        {input.map((ch, i) => (
           <div key={i} className="w-10 h-10 border-b-4 border-gold text-center">
-            {input[i] || ""}
+            {ch || ""}
           </div>
         ))}
       </div>
@@ -335,13 +304,9 @@ const handleBackspace = () => {
           <button
             key={idx}
             onClick={() => handleLetterClick(ltr, idx)}
-            disabled={
-              usedIndexes.includes(idx) || hasAnswered.current || lockedIndexes.includes(idx)
-            }
+            disabled={usedIndexes.includes(idx) || hasAnswered.current}
             className={`w-10 h-10 text-lg font-bold rounded-lg transition shadow ${
-              lockedIndexes.includes(idx)
-                ? "bg-green-300 text-black cursor-not-allowed" // locked looks different
-                : usedIndexes.includes(idx)
+              usedIndexes.includes(idx)
                 ? "bg-gray-300 text-gray-500"
                 : "bg-gold text-black hover:bg-yellow-400"
             }`}
@@ -354,17 +319,26 @@ const handleBackspace = () => {
       <div className="flex justify-center gap-4">
         <Button
           onClick={handleBackspace}
-          disabled={input.length === 0 || hasAnswered.current}
+          disabled={input.every((slot) => slot === "") || hasAnswered.current}
           className="bg-gray-200 hover:bg-gray-300 text-black"
         >
           ⌫
         </Button>
         <Button
           onClick={checkAnswer}
-          disabled={hasAnswered.current || input.length !== answerLength}
+          disabled={hasAnswered.current || input.includes("")}
         >
           ✅ Submit
         </Button>
+        {activePowerups?.divine_hint && (
+          <Button
+            onClick={applyDivineHint}
+            disabled={divineHintApplied}
+            className="bg-purple-500 hover:bg-purple-600 text-white"
+          >
+            ✨ Divine Hint
+          </Button>
+        )}
       </div>
 
       <RightAnswerModal
@@ -374,10 +348,16 @@ const handleBackspace = () => {
         onBackToMap={() => window.location.reload()}
         score={score}
       />
-
-      <WrongAnswerModal isOpen={showWrongModal} onRetry={resetLevel} onBack={onBack} />
-
-      <TimeUpModal isOpen={showTimeUpModal} onTryAgain={resetLevel} onGoToMap={onBack} />
+      <WrongAnswerModal
+        isOpen={showWrongModal}
+        onRetry={resetLevel}
+        onBack={onBack}
+      />
+      <TimeUpModal
+        isOpen={showTimeUpModal}
+        onTryAgain={resetLevel}
+        onGoToMap={onBack}
+      />
     </div>
   );
 }
