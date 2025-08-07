@@ -1,4 +1,3 @@
-// components/PowerUpStore.jsx
 import { useState } from "react";
 import { adjustTalents, adjustPowerupInventory } from "utils/talentUtils";
 
@@ -9,25 +8,29 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
     {
       key: "divine_hint",
       name: "Divine Hint",
-      description: "Reveals a hint in the current question",
+      description: "Reveals a helpful hint in your current challenge.",
+      icon: "🧩",
       costs: { one: 5, three: 12 }
     },
     {
       key: "grace_period",
       name: "Grace Period",
-      description: "+10 seconds to the timer",
+      description: "Adds +10 seconds to the timer.",
+      icon: "⏳",
       costs: { one: 8, three: 20 }
     },
     {
       key: "holy_shield",
       name: "Holy Shield",
-      description: "5 minutes without life loss (Main Game only)",
+      description: "Protects from life loss for 5 mins (Main Game only).",
+      icon: "🛡️",
       costs: { one: 10, three: 26 }
     },
     {
       key: "heavenly_match",
       name: "Heavenly Match",
-      description: "Instantly solves the current question",
+      description: "Automatically solves the current question.",
+      icon: "✨",
       costs: { one: 15, three: 40 }
     }
   ];
@@ -43,52 +46,59 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
 
     setLoading(true);
     try {
-      // Deduct talents
       await adjustTalents(gameUser.user_id, -cost);
-
-      // Add to inventory
       await adjustPowerupInventory(gameUser.user_id, powerup.key, quantity);
-
-      alert(`Purchased ${quantity}x ${powerup.name}!`);
-      if (onPurchase) onPurchase(); // refresh parent state
+      alert(`You bought ${quantity}x ${powerup.name}!`);
+      if (onPurchase) onPurchase();
     } catch (err) {
-      console.error("Error purchasing power-up:", err);
+      console.error("Purchase failed:", err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Power-Up Store</h2>
-      <div className="mb-4">
-        <span className="font-semibold">Your Talents:</span> {gameUser?.talents ?? 0}
+    <div className="p-6 max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-blue-100">
+      <h2 className="text-2xl font-extrabold mb-3 text-blue-700 text-center">
+         Power-Up Store
+      </h2>
+      <p className="text-center text-sm text-gray-500 mb-6">
+        Exchange your talents for divine advantages (bonuses).
+      </p>
+
+      <div className="text-right text-sm mb-4">
+        <span className="font-semibold text-gray-700">Your Talents:</span>{" "}
+        <span className="text-blue-600 font-bold">{gameUser?.talents ?? 0}</span>
       </div>
 
       <div className="space-y-4">
         {powerUps.map((pu) => (
           <div
             key={pu.key}
-            className="border p-3 rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between"
+            className="flex justify-between items-center bg-blue-50 border border-blue-200 p-4 rounded-xl shadow-sm"
           >
-            <div>
-              <div className="font-bold">{pu.name}</div>
-              <div className="text-sm text-gray-600">{pu.description}</div>
+            <div className="flex flex-col gap-1">
+              <div className="text-lg font-semibold text-blue-900 flex items-center gap-2">
+                <span className="text-xl">{pu.icon}</span>
+                {pu.name}
+              </div>
+              <p className="text-sm text-gray-600">{pu.description}</p>
             </div>
-            <div className="flex gap-2 mt-2 sm:mt-0">
+
+            <div className="flex gap-2">
               <button
                 disabled={loading || gameUser.talents < pu.costs.one}
                 onClick={() => handlePurchase(pu, "one")}
-                className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-400"
+                className="px-3 py-1 text-sm rounded-full bg-blue-600 hover:bg-blue-500 text-white disabled:bg-gray-300"
               >
-                1x ({pu.costs.one} Talents)
+                1x - {pu.costs.one} 💡
               </button>
               <button
                 disabled={loading || gameUser.talents < pu.costs.three}
                 onClick={() => handlePurchase(pu, "three")}
-                className="px-3 py-1 bg-green-500 text-white rounded disabled:bg-gray-400"
+                className="px-3 py-1 text-sm rounded-full bg-green-600 hover:bg-green-500 text-white disabled:bg-gray-300"
               >
-                3x ({pu.costs.three} Talents)
+                3x - {pu.costs.three} 💡
               </button>
             </div>
           </div>

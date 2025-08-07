@@ -255,8 +255,24 @@ export default function MapAndGame() {
   };
 
   if (!user || gameUserLoading || !completedLevels) {
-    return <div className="text-center p-6">Loading map...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100 text-gray-800">
+        <div className="text-4xl font-extrabold mb-4 animate-pulse text-blue-600 drop-shadow-md">
+          Light UP
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 bg-yellow-300 rounded-full animate-bounce [animation-delay:-0.3s]" />
+          <div className="w-4 h-4 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+          <div className="w-4 h-4 bg-yellow-500 rounded-full animate-bounce" />
+        </div>
+        <p className="mt-6 text-sm text-gray-600 tracking-wide">
+          Preparing your journey...
+        </p>
+      </div>
+    );
   }
+  
+  
 
   return (
     <div className="relative min-h-screen overflow-hidden">

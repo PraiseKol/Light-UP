@@ -1,4 +1,5 @@
 // src/screens/GameScreen.jsx
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import { useGameUser } from "hooks/useGameUser";
@@ -25,6 +26,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
   const [loadingQuestion, setLoadingQuestion] = useState(true);
   const [userScore, setUserScore] = useState(0);
   const [activePowerups, setActivePowerups] = useState({});
+  const navigate = useNavigate();
 
   // Load current question
   useEffect(() => {
@@ -114,9 +116,52 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
     onComplete();
   };
 
-  if (!user) return <div className="p-6">Loading user...</div>;
-  if (loadingQuestion || loadingGameUser) return <div className="p-6">Loading game...</div>;
-  if (!questionData) return <div className="p-6">No question found.</div>;
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100 text-gray-700">
+        <div className="text-2xl font-semibold mb-2 animate-pulse">Loading user...</div>
+        <p className="text-sm text-gray-500">Hang tight while we get you started ⚡</p>
+      </div>
+    );
+  }
+  
+  if (loadingQuestion || loadingGameUser) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100 text-gray-700">
+        <div className="text-2xl font-semibold mb-2 animate-pulse">Loading game...</div>
+        <p className="text-sm text-gray-500">Setting the stage for your next challenge 🎚️</p>
+      </div>
+    );
+  }
+  
+  if (!questionData) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100 text-gray-700 px-4">
+        {/* Icon or Emoji */}
+        <div className="text-6xl mb-4 animate-bounce">😢</div>
+  
+        {/* Title */}
+        <div className="text-2xl font-bold mb-2 text-blue-700">No Question Yet</div>
+  
+        {/* Subtext */}
+        <p className="text-sm text-gray-500 text-center max-w-xs">
+          It seems you're a pro, this level hasn't been fully lit up yet.
+          <br />
+          Please try a different challenge or check back later.
+        </p>
+  
+        {/* Action (optional) */}
+        <button
+          onClick={() => navigate("/map")} // or your preferred action
+          className="mt-6 px-5 py-2 rounded-full bg-yellow-600 hover:bg-yellow-700 text-white shadow-md transition-all"
+        >
+          Return to Map
+        </button>
+      </div>
+    );
+  }
+  
+  
 
   const { mode } = questionData;
 
