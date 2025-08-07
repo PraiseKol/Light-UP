@@ -20,6 +20,8 @@ export default function MultiplayerGame() {
   const [questionStartTime, setQuestionStartTime] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [textAnswer, setTextAnswer] = useState("");
+  const [placeholderHint, setPlaceholderHint] = useState(""); // NEW
+
   const [playerId, setPlayerId] = useState(null);
   const [lastAnswerStatus, setLastAnswerStatus] = useState(null); // NEW for bounce/shake
   const [showLeaderboard, setShowLeaderboard] = useState(true);
@@ -31,7 +33,6 @@ export default function MultiplayerGame() {
   const [powerupUsage, setPowerupUsage] = useState([]);
   const [inventory, setInventory] = useState({});
   const [isInputFocused, setIsInputFocused] = useState(false);
-
 
   // --- Fetch initial game + players ---
   useEffect(() => {
@@ -356,7 +357,7 @@ export default function MultiplayerGame() {
       if (currentQ.mode === "word-fill") {
         const first = currentQ.answer[0];
         const last = currentQ.answer[currentQ.answer.length - 1];
-        setTextAnswer(`${first}...${last}`);
+        setPlaceholderHint(`${first}...${last}`);
       } else if (
         currentQ.mode === "trivia" ||
         currentQ.mode === "scripture-match"
@@ -498,11 +499,6 @@ export default function MultiplayerGame() {
         <div className="flex-1 flex flex-col items-center justify-center p-6">
           <div className="text-lg mb-2">⏳ Time Left: {gameTimer}s</div>
 
-          
-
-
-
-
           {/* <div className="text-xl font-bold mb-6">
           Your Score: {players.find((p) => p.user_id === user.id)?.score || 0}
         </div> */}
@@ -543,12 +539,15 @@ export default function MultiplayerGame() {
                     type="text"
                     value={textAnswer}
                     onChange={(e) => setTextAnswer(e.target.value)}
-                    placeholder="Your answer"
+                    placeholder={placeholderHint || "Your answer"} // ✅ updated
                     className="border p-2 rounded-xl w-64 text-black"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleAnswer(textAnswer);
                     }}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
                   />
+
                   <button
                     onClick={() => handleAnswer(textAnswer)}
                     className="px-4 py-2 bg-green-500 rounded-xl hover:bg-green-400 shadow-lg transition"
@@ -558,33 +557,27 @@ export default function MultiplayerGame() {
                 </div>
               ) : null}
 
-              
-
-
               {["trivia", "scripture-match", "word-fill"].includes(
-            currentQ.mode
-          ) && (
-            <div className="mt-4 flex gap-4 justify-center">
-              <button
-                onClick={() => handleUsePowerup("divine_hint")}
-                disabled={!canUsePowerup("divine_hint")}
-                className="px-4 py-2 rounded-lg bg-purple-600 disabled:bg-gray-600 hover:bg-purple-500 transition"
-              >
-                ✨ Divine Hint
-              </button>
+                currentQ.mode
+              ) && (
+                <div className="mt-4 flex gap-4 justify-center">
+                  <button
+                    onClick={() => handleUsePowerup("divine_hint")}
+                    disabled={!canUsePowerup("divine_hint")}
+                    className="px-4 py-2 rounded-lg bg-purple-600 disabled:bg-gray-600 hover:bg-purple-500 transition"
+                  >
+                    ✨ Divine Hint
+                  </button>
 
-              <button
-                onClick={() => handleUsePowerup("heavenly_match")}
-                disabled={!canUsePowerup("heavenly_match")}
-                className="px-4 py-2 rounded-lg bg-yellow-400 text-black disabled:bg-gray-600 hover:bg-yellow-300 transition"
-              >
-                🔥 Heavenly Match
-              </button>
-            </div>
-          )}
-
-
-
+                  <button
+                    onClick={() => handleUsePowerup("heavenly_match")}
+                    disabled={!canUsePowerup("heavenly_match")}
+                    className="px-4 py-2 rounded-lg bg-yellow-400 text-black disabled:bg-gray-600 hover:bg-yellow-300 transition"
+                  >
+                    🔥 Heavenly Match
+                  </button>
+                </div>
+              )}
             </motion.div>
           ) : (
             <p className="text-gray-400 mt-4">
