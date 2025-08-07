@@ -30,7 +30,7 @@ export default function MultiplayerGame() {
   const gameTimerRef = useRef(null);
   const leaderboardRef = useRef(null);
 
-  const [powerupUsage, setPowerupUsage] = useState([]);
+  
   const [inventory, setInventory] = useState({});
   const [isInputFocused, setIsInputFocused] = useState(false);
 
@@ -76,14 +76,7 @@ export default function MultiplayerGame() {
         if (gameUserData?.powerups_inventory) {
           setInventory(gameUserData.powerups_inventory);
         }
-
-        const { data: usedPowerups } = await supabase
-          .from("multiplayer_powerups")
-          .select("*")
-          .eq("game_id", gameId)
-          .eq("player_id", myPlayer.id);
-
-        setPowerupUsage(usedPowerups || []);
+        
 
         const { data: answers } = await supabase
           .from("multiplayer_answers")
@@ -139,43 +132,12 @@ export default function MultiplayerGame() {
     gameTimerRef.current = setInterval(updateTimer, 1000);
   };
 
-  useEffect(() => {
-    const channel = supabase
-      .channel(`powerups-${gameId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "multiplayer_powerups",
-          filter: `game_id=eq.${gameId}`,
-        },
-        async () => {
-          const { data: updated } = await supabase
-            .from("multiplayer_powerups")
-            .select("*")
-            .eq("game_id", gameId)
-            .eq("player_id", playerId);
-
-          setPowerupUsage(updated || []);
-        }
-      )
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
-  }, [gameId, playerId]);
-
   const canUsePowerup = (type) => {
     if (!game?.allow_powerups) return false;
-
-    const maxUsage = type === "divine_hint" ? 3 : 1;
-    const usedCount = powerupUsage.filter(
-      (p) => p.powerup_type === type
-    ).length;
     const available = inventory[type] || 0;
-
-    return usedCount < maxUsage && available > 0;
+    return available > 0;
   };
+  
 
   // --- Leaderboard subscription ---
   useEffect(() => {
@@ -334,16 +296,9 @@ export default function MultiplayerGame() {
 
   const handleUsePowerup = async (type) => {
     if (!canUsePowerup(type) || !currentQ) return;
-
-    // 1. Insert usage record
-    await supabase.from("multiplayer_powerups").insert({
-      game_id: gameId,
-      player_id: playerId,
-      powerup_type: type,
-      used_at: new Date().toISOString(),
-    });
-
-    // 2. Update inventory in game_users
+  
+    // ❌ REMOVE the insert into multiplayer_powerups
+    // ✅ Only update inventory
     const updatedInventory = { ...inventory };
     updatedInventory[type] = (updatedInventory[type] || 0) - 1;
     setInventory(updatedInventory);
@@ -351,8 +306,8 @@ export default function MultiplayerGame() {
       .from("game_users")
       .update({ powerups_inventory: updatedInventory })
       .eq("user_id", user.id);
-
-    // 3. Apply effect
+  
+    // ✅ Power-up effect logic remains the same
     if (type === "divine_hint") {
       if (currentQ.mode === "word-fill") {
         const first = currentQ.answer[0];
@@ -372,11 +327,12 @@ export default function MultiplayerGame() {
         setCurrentQ({ ...currentQ, options: reducedOptions });
       }
     }
-
+  
     if (type === "heavenly_match") {
       handleAnswer(currentQ.answer); // auto-submit correct answer
     }
   };
+  
 
   // --- Pre-countdown screen ---
   if (preCountdown !== null && preCountdown > 0) {
