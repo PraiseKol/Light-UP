@@ -30,9 +30,14 @@ export default function MultiplayerGame() {
   const gameTimerRef = useRef(null);
   const leaderboardRef = useRef(null);
 
-  
   const [inventory, setInventory] = useState({});
   const [isInputFocused, setIsInputFocused] = useState(false);
+
+  const [powerupUsage, setPowerupUsage] = useState({
+    divine_hint: 0,
+    heavenly_match: 0,
+  });
+  const [allPowerupUsage, setAllPowerupUsage] = useState({});
 
   // --- Fetch initial game + players ---
   useEffect(() => {
@@ -76,7 +81,6 @@ export default function MultiplayerGame() {
         if (gameUserData?.powerups_inventory) {
           setInventory(gameUserData.powerups_inventory);
         }
-        
 
         const { data: answers } = await supabase
           .from("multiplayer_answers")
@@ -137,7 +141,6 @@ export default function MultiplayerGame() {
     const available = inventory[type] || 0;
     return available > 0;
   };
-  
 
   // --- Leaderboard subscription ---
   useEffect(() => {
@@ -168,6 +171,12 @@ export default function MultiplayerGame() {
     return () => supabase.removeChannel(channel);
   }, [gameId]);
 
+
+  useEffect(() => {
+    // Reset hint when question changes
+    setPlaceholderHint("");
+  }, [currentQ?.id]);
+  
   // --- Fetch questions ---
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -194,6 +203,43 @@ export default function MultiplayerGame() {
     }
     return () => clearTimeout(countdownRef.current);
   }, [preCountdown]);
+
+  useEffect(() => {
+    const fetchAllPowerupUsage = async () => {
+      const { data, error } = await supabase
+        .from("multiplayer_answers")
+        .select("player_id, meta")
+        .eq("game_id", gameId);
+
+      if (error) {
+        console.error("Failed to fetch power-up usage:", error);
+        return;
+      }
+
+      const usageMap = {};
+
+      data?.forEach((row) => {
+        const player = row.player_id;
+        const used = row.meta?.powerups_used || [];
+
+        if (!usageMap[player]) {
+          usageMap[player] = { divine_hint: 0, heavenly_match: 0 };
+        }
+
+        used.forEach((type) => {
+          if (usageMap[player][type] !== undefined) {
+            usageMap[player][type]++;
+          }
+        });
+      });
+
+      setAllPowerupUsage(usageMap);
+    };
+
+    if (game?.status === "finished") {
+      fetchAllPowerupUsage();
+    }
+  }, [game?.status, gameId]);
 
   const startGame = async () => {
     const endAt = new Date(
@@ -294,11 +340,21 @@ export default function MultiplayerGame() {
     }
   };
 
+  const logPowerupUsage = async (type) => {
+    if (!gameId || !playerId) return;
+
+    await supabase.from("multiplayer_answers").insert({
+      game_id: gameId,
+      player_id: playerId,
+      question_id: currentQ?.id || null,
+      meta: { powerups_used: [type] },
+    });
+  };
+
   const handleUsePowerup = async (type) => {
     if (!canUsePowerup(type) || !currentQ) return;
-  
-    // ❌ REMOVE the insert into multiplayer_powerups
-    // ✅ Only update inventory
+
+    // ✅ Update inventory
     const updatedInventory = { ...inventory };
     updatedInventory[type] = (updatedInventory[type] || 0) - 1;
     setInventory(updatedInventory);
@@ -306,8 +362,16 @@ export default function MultiplayerGame() {
       .from("game_users")
       .update({ powerups_inventory: updatedInventory })
       .eq("user_id", user.id);
-  
-    // ✅ Power-up effect logic remains the same
+
+    // 🧩 Log power-up usage in multiplayer_answers.meta
+    await supabase.from("multiplayer_answers").insert({
+      game_id: gameId,
+      player_id: playerId,
+      question_id: currentQ.id,
+      meta: { powerups_used: [type] },
+    });
+
+    // ✅ Power-up effect logic
     if (type === "divine_hint") {
       if (currentQ.mode === "word-fill") {
         const first = currentQ.answer[0];
@@ -327,12 +391,11 @@ export default function MultiplayerGame() {
         setCurrentQ({ ...currentQ, options: reducedOptions });
       }
     }
-  
+
     if (type === "heavenly_match") {
       handleAnswer(currentQ.answer); // auto-submit correct answer
     }
   };
-  
 
   // --- Pre-countdown screen ---
   if (preCountdown !== null && preCountdown > 0) {
@@ -400,6 +463,11 @@ export default function MultiplayerGame() {
           <AnimatePresence>
             {leaderboard.map((p, idx) => {
               const isMe = p.user_id === user.id;
+              const powerups = allPowerupUsage[p.id] || {
+                divine_hint: 0,
+                heavenly_match: 0,
+              };
+
               return (
                 <motion.div
                   key={p.id}
@@ -421,7 +489,13 @@ export default function MultiplayerGame() {
                       <span className="text-xs text-green-300">(You)</span>
                     )}
                   </div>
-                  <span className="font-semibold">{p.score} pts</span>
+
+                  <div className="text-right text-sm leading-tight">
+                    <div className="text-yellow-300">
+                      💡 {powerups.divine_hint} | 👑 {powerups.heavenly_match}
+                    </div>
+                    <div className="font-semibold text-base">{p.score} pts</div>
+                  </div>
                 </motion.div>
               );
             })}
@@ -520,9 +594,9 @@ export default function MultiplayerGame() {
                   <button
                     onClick={() => handleUsePowerup("divine_hint")}
                     disabled={!canUsePowerup("divine_hint")}
-                    className="px-4 py-2 rounded-lg bg-purple-600 disabled:bg-gray-600 hover:bg-purple-500 transition"
+                    className="px-4 py-2 rounded-lg bg-purple-600 text-black disabled:bg-gray-600 hover:bg-purple-500 transition"
                   >
-                    ✨ Divine Hint
+                    💡 Divine Hint
                   </button>
 
                   <button
@@ -530,7 +604,7 @@ export default function MultiplayerGame() {
                     disabled={!canUsePowerup("heavenly_match")}
                     className="px-4 py-2 rounded-lg bg-yellow-400 text-black disabled:bg-gray-600 hover:bg-yellow-300 transition"
                   >
-                    🔥 Heavenly Match
+                    👑 Heavenly Match
                   </button>
                 </div>
               )}
