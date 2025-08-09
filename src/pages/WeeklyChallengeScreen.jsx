@@ -223,30 +223,45 @@ export default function WeeklyChallengeScreen() {
 
   // Active challenge screen
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white p-6">
-      {/* Top progress section */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-700 font-medium">⏳ {timeLeft}s left</span>
-          <span className="text-gray-700 font-medium">
-            Question {currentIndex + 1}/{questions.length}
-          </span>
+    <div className="min-h-screen bg-gradient-to-b from-yellow-50 via-white to-blue-50 relative overflow-hidden">
+      {/* Floating bubbles background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-10 left-10 w-24 h-24 bg-blue-100 rounded-full blur-2xl opacity-50" />
+        <div className="absolute bottom-20 right-20 w-32 h-32 bg-pink-100 rounded-full blur-2xl opacity-50" />
+        <div className="absolute top-1/3 right-10 w-20 h-20 bg-yellow-100 rounded-full blur-2xl opacity-40" />
+      </div>
+  
+      {/* Top HUD */}
+      <div className="sticky top-0 z-10 flex justify-between items-center px-6 py-4 bg-white/80 backdrop-blur-md shadow-md rounded-b-2xl">
+        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow">
+          ⏳ <span className="font-bold text-gray-800">{timeLeft}s</span>
         </div>
-        {/* Question Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+        <div className="text-lg font-bold text-indigo-700">
+          Score: <span className="text-orange-500">{score}</span>
+        </div>
+        <div className="bg-white px-4 py-2 rounded-full shadow">
+          Q {currentIndex + 1}/{questions.length}
+        </div>
+      </div>
+  
+      {/* Progress bar */}
+      <div className="px-6 mt-4">
+        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
           <div
-            className="bg-indigo-500 h-full transition-all duration-500 ease-out"
+            className="bg-gradient-to-r from-orange-400 to-pink-500 h-full transition-all duration-500 ease-out"
             style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
           />
         </div>
       </div>
-
-      {/* Question Card */}
-      <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 animate-fadeIn">
-        {renderMode()}
+  
+      {/* Main Question Card */}
+      <div className="p-6 flex justify-center">
+        <div className="bg-white rounded-3xl shadow-xl p-6 w-full max-w-3xl space-y-6 border border-yellow-100 animate-[fadeIn_0.5s_ease]">
+          {renderMode()}
+        </div>
       </div>
-
-      {/* Score feedback */}
+  
+      {/* Score feedback badges */}
       <div className="mt-6 flex justify-center gap-4">
         <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full shadow-sm">
           ✅ Correct: <span className="font-bold">{correctCount}</span>
@@ -257,4 +272,4 @@ export default function WeeklyChallengeScreen() {
       </div>
     </div>
   );
-}
+  }
