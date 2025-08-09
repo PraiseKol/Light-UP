@@ -23,6 +23,8 @@ import { toast } from "sonner";
 
 import PowerUpStore from "components/PowerUpStore";
 import Modal from "components/ui/modal";
+import { determineUnlockedPhases, wrapLevelsWithStatus, getPowerUpIcon } from "utils/gameHelpers";
+
 
 import {
   getWeeklyChallengeStatus,
@@ -102,7 +104,7 @@ export default function MapAndGame({ sound, setSound }) {
     const loadProgressAndScore = async () => {
       const completed = await fetchProgress(user.id);
       setCompletedLevels(completed);
-      const unlocked = determineUnlockedPhases(completed);
+      const unlocked = determineUnlockedPhases(completed, levelPhases);
       setUnlockedPhases(unlocked);
       setUserScore(await fetchTotalScore(user.id));
       if (unlocked.length > 0) {
@@ -148,23 +150,6 @@ export default function MapAndGame({ sound, setSound }) {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  const determineUnlockedPhases = (completedIds) => {
-    const unlocked = [];
-    for (let i = 0; i < levelPhases.length; i++) {
-      const isFirst = i === 0;
-      const lastLevelId = !isFirst ? levelPhases[i - 1].levels.at(-1).id : null;
-      if (isFirst || completedIds.includes(lastLevelId)) unlocked.push(i);
-    }
-    return unlocked;
-  };
-
-  const wrapLevelsWithStatus = (phaseIndex, phase, completedIds) =>
-    phase.levels.map((level, index) => ({
-      ...level,
-      number: index + 1,
-      completed: completedIds.includes(level.id),
-      phaseNumber: levelPhases[phaseIndex].phaseNumber,
-    }));
 
   const getCurrentLevelId = (phase) => {
     const firstIncomplete = phase.levels.find(
@@ -192,7 +177,7 @@ export default function MapAndGame({ sound, setSound }) {
     const updatedCompleted = await fetchProgress(user.id);
     setCompletedLevels(updatedCompleted);
     setSelectedLevel(null);
-    setUnlockedPhases(determineUnlockedPhases(updatedCompleted));
+    setUnlockedPhases(determineUnlockedPhases(updatedCompleted, levelPhases));
     setUserScore(await fetchTotalScore(user.id));
     const currentPhase = levelPhases.find(
       (p) => p.phaseNumber === selectedLevel.phaseNumber
@@ -251,20 +236,6 @@ export default function MapAndGame({ sound, setSound }) {
     toast.success("Settings saved!");
   };
 
-  const getPowerUpIcon = (key) => {
-    switch (key) {
-      case "divine_hint":
-        return "🧩";
-      case "grace_period":
-        return "⏳";
-      case "holy_shield":
-        return "🛡️";
-      case "heavenly_match":
-        return "👑";
-      default:
-        return "🎁";
-    }
-  };
 
   if (!user || gameUserLoading || !completedLevels) {
     return (
@@ -430,11 +401,7 @@ export default function MapAndGame({ sound, setSound }) {
             <div className="flex flex-col gap-8">
               {levelPhases.map((phase, index) => {
                 const isUnlocked = unlockedPhases.includes(index);
-                const wrappedLevels = wrapLevelsWithStatus(
-                  index,
-                  phase,
-                  completedLevels
-                );
+                const wrappedLevels = wrapLevelsWithStatus(index, phase, completedLevels, levelPhases);
                 const currentPhaseId = getCurrentLevelId(phase);
                 return (
                   <div
