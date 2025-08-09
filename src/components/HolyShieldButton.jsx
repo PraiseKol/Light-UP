@@ -86,8 +86,8 @@ export default function HolyShieldButton({ user, gameUser, refetch }) {
       <span className="text-lg">🛡️</span>
       <span className="mt-1 text-center">
         {isActive
-          ? `Holy Shield (${formatTime(timeLeft)})`
-          : "Holy Shield (5 mins)"}
+          ? `🛡️Holy Shield (${formatTime(timeLeft)})`
+          : "🛡️Holy Shield (5 mins)"}
       </span>
       <span className="mt-0.5 text-[10px]">
         x{gameUser?.powerups_inventory?.holy_shield ?? 0}

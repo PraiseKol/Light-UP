@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 export default function WordFillWeekly({ quiz, onAnswer }) {
   const [input, setInput] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(null);
   const startTimeRef = useRef(Date.now());
   const timeoutRef = useRef(null);
 
@@ -10,6 +11,7 @@ export default function WordFillWeekly({ quiz, onAnswer }) {
     timeoutRef.current = setTimeout(() => {
       if (!submitted) {
         setSubmitted(true);
+        setIsCorrect(false);
         onAnswer(false, 30); // Auto-fallback after 30 seconds
       }
     }, 30000);
@@ -21,12 +23,19 @@ export default function WordFillWeekly({ quiz, onAnswer }) {
     if (submitted || !quiz?.answer) return;
 
     const timeTaken = Math.floor((Date.now() - startTimeRef.current) / 1000);
-    const isCorrect =
+    const correct =
       input.trim().toLowerCase() === quiz.answer.trim().toLowerCase();
 
     setSubmitted(true);
+    setIsCorrect(correct);
     clearTimeout(timeoutRef.current);
-    onAnswer(isCorrect, timeTaken);
+    onAnswer(correct, timeTaken);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && input.trim() !== "" && !submitted) {
+      handleSubmit();
+    }
   };
 
   // 🛡️ Defensive check
@@ -39,26 +48,43 @@ export default function WordFillWeekly({ quiz, onAnswer }) {
   }
 
   return (
-    <div className="p-4 text-center">
-      <h2 className="text-lg font-semibold mb-4">{quiz.question}</h2>
+    <div className="bg-white shadow-lg rounded-xl p-6 max-w-lg mx-auto text-center animate-fadeIn">
+      {/* Question */}
+      <h2 className="text-xl font-bold text-gray-800 mb-6">{quiz.question}</h2>
 
+      {/* Input */}
       <input
-        className="border border-gray-300 rounded px-3 py-2 mb-4 w-full max-w-md"
+        className="border-2 border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 rounded-lg px-4 py-2 w-full max-w-md mb-4 transition"
         placeholder="Type the missing word"
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
         disabled={submitted}
       />
 
-      <br />
-
+      {/* Submit Button */}
       <button
         onClick={handleSubmit}
         disabled={submitted || input.trim() === ""}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+        className={`px-6 py-2 rounded-lg text-white font-semibold shadow-md transition-transform transform hover:scale-105 ${
+          submitted || input.trim() === ""
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-indigo-600 hover:bg-indigo-700"
+        }`}
       >
         Submit
       </button>
+
+      {/* Feedback */}
+      {submitted && (
+        <div
+          className={`mt-4 text-lg font-semibold ${
+            isCorrect ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {isCorrect ? "✅ Correct!" : `❌ Incorrect. Answer: ${quiz.answer}`}
+        </div>
+      )}
     </div>
   );
 }

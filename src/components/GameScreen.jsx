@@ -118,21 +118,32 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100 text-gray-700">
-        <div className="text-2xl font-semibold mb-2 animate-pulse">Loading user...</div>
-        <p className="text-sm text-gray-500">Hang tight while we get you started ⚡</p>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100">
+        <div className="flex flex-col items-center bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-8 max-w-sm w-full animate-fadeIn">
+          <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-1">Loading user...</h2>
+          <p className="text-sm text-gray-500 text-center">
+            Hang tight while we get you started ⚡
+          </p>
+        </div>
       </div>
     );
   }
   
   if (loadingQuestion || loadingGameUser) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100 text-gray-700">
-        <div className="text-2xl font-semibold mb-2 animate-pulse">Loading game...</div>
-        <p className="text-sm text-gray-500">Setting the stage for your next challenge 🎚️</p>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100">
+        <div className="flex flex-col items-center bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-8 max-w-sm w-full animate-fadeIn">
+          <div className="w-10 h-10 border-4 border-green-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-1">Loading game...</h2>
+          <p className="text-sm text-gray-500 text-center">
+            Setting the stage for your next challenge 🎚️
+          </p>
+        </div>
       </div>
     );
   }
+  
   
   if (!questionData) {
     return (
@@ -227,7 +238,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             disabled={!gameUser.powerups_inventory.divine_hint}
             className="flex flex-col items-center text-xs font-medium w-[23%] px-2 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 disabled:bg-gray-200 disabled:text-gray-400 transition"
           >
-            💡<span>Divine Hint</span>
+            🧩<span>Divine Hint</span>
             <span>x{gameUser.powerups_inventory.divine_hint ?? 0}</span>
           </button>
 

@@ -145,16 +145,17 @@ export default function WeeklyChallengeScreen() {
     }
   };
 
-  // UI Feedback
-
+  // UI States
   if (error) {
     return <div className="p-6 text-center text-red-600">{error}</div>;
   }
 
   if (!questions) {
     return (
-      <div className="p-6 text-center text-gray-700">
-        Loading Weekly Challenge...
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="text-gray-700 text-lg font-medium animate-pulse">
+          Loading Weekly Challenge...
+        </div>
       </div>
     );
   }
@@ -162,49 +163,46 @@ export default function WeeklyChallengeScreen() {
   if (isFinished) {
     console.log("🏁 Final score:", score);
     return (
-      <div className="p-6 text-center space-y-6 bg-white shadow-md rounded-lg max-w-xl mx-auto mt-12">
-        <div className="text-4xl">🎉</div>
-        <h2 className="text-3xl font-bold text-green-700">
-          Challenge Complete!
-        </h2>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-green-50 to-white p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center space-y-6 animate-fadeIn">
+          <div className="text-5xl">🎉</div>
+          <h2 className="text-3xl font-bold text-green-700">
+            Challenge Complete!
+          </h2>
 
-        <p className="text-xl font-semibold text-gray-800">
-          You scored <span className="text-blue-600">{score} pts</span>
-        </p>
+          <p className="text-xl font-semibold text-gray-800">
+            You scored <span className="text-blue-600">{score} pts</span>
+          </p>
 
-        <div className="grid grid-cols-2 gap-4 justify-center text-sm text-gray-700">
-          <div className="bg-gray-50 p-4 rounded shadow-inner">
-            ✅ <strong>Correct Answers:</strong>
-            <div className="text-lg font-bold">{correctCount}</div>
+          <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+            <div className="bg-green-50 p-4 rounded-xl shadow-inner">
+              ✅ <strong>Correct:</strong>
+              <div className="text-lg font-bold">{correctCount}</div>
+            </div>
+            <div className="bg-red-50 p-4 rounded-xl shadow-inner">
+              ❌ <strong>Incorrect:</strong>
+              <div className="text-lg font-bold">{incorrectCount}</div>
+            </div>
+            <div className="col-span-2 bg-indigo-50 p-4 rounded-xl shadow-inner">
+              📋 <strong>Total:</strong>
+              <div className="text-lg font-bold">{questions.length}</div>
+            </div>
           </div>
-          <div className="bg-gray-50 p-4 rounded shadow-inner">
-            ❌ <strong>Incorrect Answers:</strong>
-            <div className="text-lg font-bold">{incorrectCount}</div>
-          </div>
-          <div className="col-span-2 bg-gray-50 p-4 rounded shadow-inner">
-            📋 <strong>Total Answered:</strong>
-            <div className="text-lg font-bold">{questions.length}</div>
-          </div>
+
+          <button
+            onClick={() => navigate("/map")}
+            className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-xl shadow transition-transform transform hover:scale-105"
+          >
+            Back to Map
+          </button>
         </div>
-
-        <button
-          onClick={() => {
-            console.log("🔙 Returning to /map");
-            navigate("/map");
-          }}
-          className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded shadow"
-        >
-          Back to Map
-        </button>
       </div>
     );
   }
 
-  const current = questions[currentIndex];
-
   const renderMode = () => {
     const current = questions[currentIndex];
-    const key = `${current.mode}-${current.id}`; // 👈 unique per question
+    const key = `${current.mode}-${current.id}`;
 
     console.log(
       `🎮 Rendering mode: ${current.mode} (Question ${currentIndex + 1})`
@@ -212,34 +210,51 @@ export default function WeeklyChallengeScreen() {
 
     switch (current.mode) {
       case "word-fill":
-        return (
-          <WordFillWeekly key={key} quiz={current} onAnswer={handleAnswer} />
-        );
+        return <WordFillWeekly key={key} quiz={current} onAnswer={handleAnswer} />;
       case "scripture-match":
-        return (
-          <ScriptureMatchWeekly
-            key={key}
-            quiz={current}
-            onAnswer={handleAnswer}
-          />
-        );
+        return <ScriptureMatchWeekly key={key} quiz={current} onAnswer={handleAnswer} />;
       case "trivia":
-        return (
-          <TriviaWeekly key={key} quiz={current} onAnswer={handleAnswer} />
-        );
+        return <TriviaWeekly key={key} quiz={current} onAnswer={handleAnswer} />;
       default:
         console.warn("⚠️ Unknown mode:", current.mode);
         return <div>Unknown mode</div>;
     }
   };
 
+  // Active challenge screen
   return (
-    <div className="p-4 max-w-xl mx-auto text-center space-y-4">
-      <div className="text-gray-600">⏳ Time Left: {timeLeft}s</div>
-      <div className="text-gray-800 font-semibold">
-        Question {currentIndex + 1} of {questions.length}
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white p-6">
+      {/* Top progress section */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-700 font-medium">⏳ {timeLeft}s left</span>
+          <span className="text-gray-700 font-medium">
+            Question {currentIndex + 1}/{questions.length}
+          </span>
+        </div>
+        {/* Question Progress Bar */}
+        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div
+            className="bg-indigo-500 h-full transition-all duration-500 ease-out"
+            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+          />
+        </div>
       </div>
-      <div>{renderMode()}</div>
+
+      {/* Question Card */}
+      <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 animate-fadeIn">
+        {renderMode()}
+      </div>
+
+      {/* Score feedback */}
+      <div className="mt-6 flex justify-center gap-4">
+        <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full shadow-sm">
+          ✅ Correct: <span className="font-bold">{correctCount}</span>
+        </div>
+        <div className="bg-red-100 text-red-800 px-4 py-2 rounded-full shadow-sm">
+          ❌ Incorrect: <span className="font-bold">{incorrectCount}</span>
+        </div>
+      </div>
     </div>
   );
 }

@@ -254,7 +254,7 @@ export default function MapAndGame({ sound, setSound }) {
   const getPowerUpIcon = (key) => {
     switch (key) {
       case "divine_hint":
-        return "💡";
+        return "🧩";
       case "grace_period":
         return "⏳";
       case "holy_shield":
@@ -392,7 +392,7 @@ export default function MapAndGame({ sound, setSound }) {
             onClick={() => setShowStore(true)}
             className="bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
           >
-            🛒 🎁 Store
+             🎁 Store
           </button>
           <button
             onClick={() => navigate("/multiplayer/create")}

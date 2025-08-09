@@ -30,7 +30,7 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
       key: "heavenly_match",
       name: "Heavenly Match",
       description: "Automatically solves the current question.",
-      icon: "✨",
+      icon: "👑",
       costs: { one: 15, three: 40 }
     }
   ];
@@ -91,14 +91,14 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
                 onClick={() => handlePurchase(pu, "one")}
                 className="px-2 py-1 text-sm  bg-blue-600 hover:bg-blue-500 text-white disabled:bg-gray-300"
               >
-                1x for {pu.costs.one} 💡
+                1x for {pu.costs.one} 💎
               </button>
               <button
                 disabled={loading || gameUser.talents < pu.costs.three}
                 onClick={() => handlePurchase(pu, "three")}
                 className="px-2 py-1 text-sm  bg-green-600 hover:bg-green-500 text-white disabled:bg-gray-300"
               >
-                3x for{pu.costs.three} 💡
+                3x for{pu.costs.three} 💎
               </button>
             </div>
           </div>

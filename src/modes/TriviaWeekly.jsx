@@ -39,10 +39,14 @@ export default function TriviaWeekly({ quiz, onAnswer }) {
   }
 
   return (
-    <div className="p-4 text-center">
-      <h2 className="text-lg font-semibold mb-4">{quiz.question}</h2>
+    <div className="bg-white shadow-xl rounded-2xl p-6 max-w-lg mx-auto text-center animate-fadeIn">
+      {/* Question */}
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        {quiz.question}
+      </h2>
 
-      <div className="grid gap-4 max-w-md mx-auto">
+      {/* Options */}
+      <div className="grid gap-4">
         {quiz.options.map((option, idx) => {
           const isCorrectAnswer =
             option.trim().toLowerCase() === quiz.answer.trim().toLowerCase();
@@ -53,15 +57,17 @@ export default function TriviaWeekly({ quiz, onAnswer }) {
               key={idx}
               onClick={() => handleSelect(option)}
               disabled={submitted}
-              className={`border px-4 py-2 rounded text-left transition-all duration-150 ${
-                submitted
-                  ? isCorrectAnswer
-                    ? "bg-green-200 border-green-600"
-                    : isSelectedWrong
-                    ? "bg-red-200 border-red-600"
-                    : "bg-gray-100"
-                  : "hover:bg-blue-100"
-              }`}
+              className={`px-5 py-3 rounded-xl text-left font-medium shadow-md transition-all transform duration-200
+                ${
+                  submitted
+                    ? isCorrectAnswer
+                      ? "bg-green-500 text-white border-2 border-green-700"
+                      : isSelectedWrong
+                      ? "bg-red-500 text-white border-2 border-red-700"
+                      : "bg-gray-200 text-gray-700"
+                    : "bg-white border-2 border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 hover:scale-[1.02]"
+                }
+                ${submitted ? "" : "cursor-pointer"}`}
             >
               {option}
             </button>
