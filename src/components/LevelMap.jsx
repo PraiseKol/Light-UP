@@ -11,7 +11,7 @@ export default function LevelMap({
   phaseIndex,
   completedLevels,
   currentLevelId,
-  isLocked
+  isLocked,
 }) {
   const totalCompleted = phase.levels.filter((lvl) =>
     completedLevels.includes(lvl.id)
@@ -22,7 +22,8 @@ export default function LevelMap({
     ? levelPhases[phaseIndex - 1].levels.slice(-1)[0].id
     : null;
 
-  const phaseUnlocked = isPhase1 || completedLevels.includes(prevPhaseLastLevelId);
+  const phaseUnlocked =
+    isPhase1 || completedLevels.includes(prevPhaseLastLevelId);
 
   const [unlocking, setUnlocking] = useState(false);
   const wasLocked = useRef(!phaseUnlocked);
@@ -83,12 +84,21 @@ export default function LevelMap({
         })}
       </div>
 
-      {/* 🔒 Overlay for locked phase */}
-      {!phaseUnlocked && (
-        <div className="absolute inset-0 bg-black/40 rounded-xl flex flex-col items-center justify-center z-20 text-white text-center px-4">
+      {/* 🔒 Overlay for locked phase OR no lives */}
+      {(!phaseUnlocked || (phaseUnlocked && isLocked)) && (
+        <div
+          className="absolute inset-0 bg-black/50 rounded-xl flex flex-col items-center justify-center z-20 text-white text-center px-4"
+          title={
+            !phaseUnlocked
+              ? "Complete the previous phase first."
+              : "You're out of lives! Please wait or get more from the store."
+          }
+        >
           <Lock className="w-10 h-10 mb-2" />
           <p className="text-sm font-medium">
-            Complete the Previous Phase to Light UP
+            {!phaseUnlocked
+              ? "Complete the Previous Phase to Light UP"
+              : "No lives left! Come back later."}
           </p>
         </div>
       )}
