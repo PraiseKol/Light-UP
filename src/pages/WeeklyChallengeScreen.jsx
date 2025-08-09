@@ -19,14 +19,20 @@ const SCORING_TIERS = [
   { maxSeconds: Infinity, points: 25 },
 ];
 
+const CHALLENGE_DURATION = 180; // seconds
+const STORAGE_KEY_TIME = "weeklyChallengeStartTime";
+const STORAGE_KEY_SCORE = "weeklyChallengeScore";
+const STORAGE_KEY_CORRECT = "weeklyChallengeCorrect";
+const STORAGE_KEY_INCORRECT = "weeklyChallengeIncorrect";
+
 export default function WeeklyChallengeScreen() {
   const [questions, setQuestions] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(() => parseInt(localStorage.getItem(STORAGE_KEY_SCORE) || "0", 10));
   const [isFinished, setIsFinished] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(180);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [incorrectCount, setIncorrectCount] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(CHALLENGE_DURATION);
+  const [correctCount, setCorrectCount] = useState(() => parseInt(localStorage.getItem(STORAGE_KEY_CORRECT) || "0", 10));
+  const [incorrectCount, setIncorrectCount] = useState(() => parseInt(localStorage.getItem(STORAGE_KEY_INCORRECT) || "0", 10));
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
@@ -59,21 +65,32 @@ export default function WeeklyChallengeScreen() {
     fetchQuestions();
   }, [navigate]);
 
-  // ✅ Countdown timer
+  // ✅ Countdown timer with persistence
   useEffect(() => {
     if (!questions) return;
 
-    console.log("⏳ Starting challenge timer...");
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          console.log("⏰ Timer finished");
-          setIsFinished(true);
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    let startTime = localStorage.getItem(STORAGE_KEY_TIME);
+    if (!startTime) {
+      startTime = Date.now();
+      localStorage.setItem(STORAGE_KEY_TIME, startTime);
+    } else {
+      startTime = parseInt(startTime, 10);
+    }
+
+    const updateTimer = () => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = CHALLENGE_DURATION - elapsed;
+      if (remaining <= 0) {
+        setTimeLeft(0);
+        setIsFinished(true);
+        clearInterval(timer);
+      } else {
+        setTimeLeft(remaining);
+      }
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
 
     return () => {
       console.log("🧹 Timer cleanup");
@@ -81,10 +98,29 @@ export default function WeeklyChallengeScreen() {
     };
   }, [questions]);
 
+  // ✅ Persist score, correct, incorrect in localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_SCORE, score.toString());
+  }, [score]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_CORRECT, correctCount.toString());
+  }, [correctCount]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_INCORRECT, incorrectCount.toString());
+  }, [incorrectCount]);
+
   // ✅ Submit score after challenge ends
   useEffect(() => {
     if (isFinished && !submittedRef.current && user) {
       submittedRef.current = true;
+
+      // Clear stored data when challenge ends
+      localStorage.removeItem(STORAGE_KEY_TIME);
+      localStorage.removeItem(STORAGE_KEY_SCORE);
+      localStorage.removeItem(STORAGE_KEY_CORRECT);
+      localStorage.removeItem(STORAGE_KEY_INCORRECT);
 
       const payload = {
         user_id: user.id,
@@ -118,9 +154,7 @@ export default function WeeklyChallengeScreen() {
   };
 
   const handleAnswer = (isCorrect, timeTaken) => {
-    console.log(
-      `📝 Answer received. Correct: ${isCorrect}, Time: ${timeTaken}s`
-    );
+    console.log(`📝 Answer received. Correct: ${isCorrect}, Time: ${timeTaken}s`);
 
     if (isCorrect) {
       const earned = getPoints(timeTaken);
@@ -204,9 +238,7 @@ export default function WeeklyChallengeScreen() {
     const current = questions[currentIndex];
     const key = `${current.mode}-${current.id}`;
 
-    console.log(
-      `🎮 Rendering mode: ${current.mode} (Question ${currentIndex + 1})`
-    );
+    console.log(`🎮 Rendering mode: ${current.mode} (Question ${currentIndex + 1})`);
 
     switch (current.mode) {
       case "word-fill":
@@ -230,7 +262,7 @@ export default function WeeklyChallengeScreen() {
         <div className="absolute bottom-20 right-20 w-32 h-32 bg-pink-100 rounded-full blur-2xl opacity-50" />
         <div className="absolute top-1/3 right-10 w-20 h-20 bg-yellow-100 rounded-full blur-2xl opacity-40" />
       </div>
-  
+
       {/* Top HUD */}
       <div className="sticky top-0 z-10 flex justify-between items-center px-6 py-4 bg-white/80 backdrop-blur-md shadow-md rounded-b-2xl">
         <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow">
@@ -243,7 +275,7 @@ export default function WeeklyChallengeScreen() {
           Q {currentIndex + 1}/{questions.length}
         </div>
       </div>
-  
+
       {/* Progress bar */}
       <div className="px-6 mt-4">
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
@@ -253,14 +285,14 @@ export default function WeeklyChallengeScreen() {
           />
         </div>
       </div>
-  
+
       {/* Main Question Card */}
       <div className="p-6 flex justify-center">
         <div className="bg-white rounded-3xl shadow-xl p-6 w-full max-w-3xl space-y-6 border border-yellow-100 animate-[fadeIn_0.5s_ease]">
           {renderMode()}
         </div>
       </div>
-  
+
       {/* Score feedback badges */}
       <div className="mt-6 flex justify-center gap-4">
         <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full shadow-sm">
@@ -272,4 +304,4 @@ export default function WeeklyChallengeScreen() {
       </div>
     </div>
   );
-  }
+}
