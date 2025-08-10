@@ -259,97 +259,100 @@ export default function MapAndGame({ sound, setSound }) {
     <div className="relative min-h-screen overflow-hidden">
       <AnimatedBackground />
       <div className="flex flex-col lg:flex-row min-h-screen">
-        {/* MOBILE TOP BAR (Sticky) */}
-        <div className="lg:hidden w-full bg-white/80 backdrop-blur-md p-2 border-b border-gray-300 sticky top-0 z-50">
-          {/* Row 1 */}
-          <div className="flex gap-2 mb-2">
-            <button
-              onClick={() => setShowSettings(true)}
-              className="flex-1 text-xs bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-2 py-1 shadow hover:bg-blue-50"
-            >
-              ⚙️ Settings
-            </button>
-            <button
-              onClick={() => setShowStore(true)}
-              className="flex-1 text-xs bg-yellow-800 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-yellow-900"
-            >
-              🛒 🎁 Store
-            </button>
-            <button
-              onClick={() => navigate("/multiplayer/create")}
-              className="flex-1 text-xs bg-green-500 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-green-600"
-            >
-              🎮 Multiplayer
-            </button>
-          </div>
-          {/* Row 2 */}
-          <div className="flex gap-2">
-            <button
-              onClick={handleWeeklyChallengeClick}
-              disabled={!challengeAllowed}
-              className="flex-1 text-xs bg-blue-500 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-blue-600"
-            >
-              {challengeAllowed && !challengePlayed
-                ? "🥊 Weekly Challenge"
-                : challengePlayed
-                ? "🥊 Played"
-                : `🥊 Quiz: ${countdownText}`}
-            </button>
-            <button
-              onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
-              className="flex-1 text-xs bg-gray-700 text-white font-semibold rounded-full px-2 py-1 shadow hover:bg-gray-600"
-            >
-              {mobileActionsOpen ? "Hide" : "Leaderboard"}
-            </button>
-            <FeedbackButton small />
-          </div>
-        </div>
 
-        {/* MOBILE LEADERBOARD & FEEDBACK CONTENT */}
-        {mobileActionsOpen && (
-          <div className="lg:hidden w-full bg-white/90 backdrop-blur-md p-3 border-b border-gray-300 space-y-4">
-            {/* Total Leaderboard */}
-            {totalLeaderboard.length > 0 && (
-              <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-3 overflow-y-auto max-h-64">
-                <h2 className="text-sm font-bold text-blue-700 mb-2">
-                  🏆 Top Players
-                </h2>
-                <ol className="space-y-1 text-xs">
-                  {totalLeaderboard.map((entry, index) => (
-                    <li key={index} className="flex justify-between">
-                      <span>
-                        {index + 1}. {entry.player_name || "Unnamed"}
-                      </span>
-                      <span>{entry.total_score} pts</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-            {/* Weekly Leaderboard */}
-            {weeklyLeaderboard.length > 0 && (
-              <div className="bg-white border border-yellow-400 rounded-lg shadow-lg p-3 overflow-y-auto max-h-64">
-                <h2 className="text-sm font-bold text-yellow-600 mb-2">
-                  🏆 Weekly Top 10
-                </h2>
-                <ol className="space-y-1 text-xs">
-                  {weeklyLeaderboard.map((entry, index) => (
-                    <li key={index} className="flex justify-between">
-                      <span>
-                        {index + 1}. {entry.player_name || "Unnamed"}
-                      </span>
-                      <span>{entry.score} pts</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-            {/* Feedback Button */}
-            <div className="w-full">
-              <FeedbackButton fullWidth />
-            </div>
-          </div>
-        )}
+
+        {/* Mobile Sidebar Toggle Button */}
+<div className="lg:hidden fixed top-2 left-2 z-50">
+  <button
+    onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
+    className="p-2 bg-blue-600 text-white rounded-md shadow-lg focus:outline-none"
+    aria-label="Toggle menu"
+  >
+    {mobileActionsOpen ? "✕" : "☰"}
+  </button>
+</div>
+
+{/* Mobile Sidebar */}
+<div
+  className={`fixed top-0 left-0 h-full w-64 bg-white/90 backdrop-blur-md p-4 border-r border-gray-300 z-40 transform transition-transform duration-300 ease-in-out
+    ${mobileActionsOpen ? "translate-x-0" : "-translate-x-full"}
+  `}
+>
+  <button
+    onClick={() => setShowSettings(true)}
+    className="w-full mb-2 text-left text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
+  >
+    ⚙️ Settings
+  </button>
+  <button
+    onClick={() => setShowStore(true)}
+    className="w-full mb-2 text-left bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
+  >
+    🛒 🎁 Store
+  </button>
+  <button
+    onClick={() => navigate("/multiplayer/create")}
+    className="w-full mb-2 text-left bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600"
+  >
+    🎮 Multiplayer
+  </button>
+
+  <button
+    onClick={handleWeeklyChallengeClick}
+    disabled={!challengeAllowed}
+    className="w-full mb-2 text-left bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600"
+  >
+    {challengeAllowed && !challengePlayed
+      ? "🥊 Weekly Challenge"
+      : challengePlayed
+      ? "🥊 Played"
+      : `🥊 Quiz: ${countdownText}`}
+  </button>
+
+  <div className="overflow-y-auto max-h-[50vh] mt-4">
+    {totalLeaderboard.length > 0 && (
+      <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-3 mb-4">
+        <h2 className="text-sm font-bold text-blue-700 mb-2">
+          🏆 Top Players
+        </h2>
+        <ol className="space-y-1 text-xs">
+          {totalLeaderboard.map((entry, index) => (
+            <li key={index} className="flex justify-between">
+              <span>
+                {index + 1}. {entry.player_name || "Unnamed"}
+              </span>
+              <span>{entry.total_score} pts</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    )}
+    {weeklyLeaderboard.length > 0 && (
+      <div className="bg-white border border-yellow-400 rounded-lg shadow-lg p-3">
+        <h2 className="text-sm font-bold text-yellow-600 mb-2">
+          🏆 Weekly Top 10
+        </h2>
+        <ol className="space-y-1 text-xs">
+          {weeklyLeaderboard.map((entry, index) => (
+            <li key={index} className="flex justify-between">
+              <span>
+                {index + 1}. {entry.player_name || "Unnamed"}
+              </span>
+              <span>{entry.score} pts</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    )}
+  </div>
+
+  <div className="mt-4">
+    <FeedbackButton fullWidth />
+  </div>
+</div>
+
+
+      
 
         {/* LEFT SIDEBAR (desktop) */}
         <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-r border-gray-300">
