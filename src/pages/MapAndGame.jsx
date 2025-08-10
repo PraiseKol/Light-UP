@@ -104,24 +104,30 @@ export default function MapAndGame({ sound, setSound }) {
       navigate("/login");
       return;
     }
+  
     const loadProgressAndScore = async () => {
       const completed = await fetchProgress(user.id);
       setCompletedLevels(completed);
+  
       const unlocked = determineUnlockedPhases(completed, levelPhases);
       setUnlockedPhases(unlocked);
+  
       setUserScore(await fetchTotalScore(user.id));
+  
       if (unlocked.length > 0) {
         const highestIndex = Math.max(...unlocked);
         setTimeout(() => {
           phaseRefs.current[highestIndex]?.scrollIntoView({
             behavior: "smooth",
-            block: "start",
+            block: "end", // so it aligns at the bottom
           });
         }, 500);
-      }
+      }      
     };
+  
     loadProgressAndScore();
-  }, [user, navigate]);
+  }, [user, navigate, levelPhases]);
+  
 
   useEffect(() => {
     if (showNextLevelModal) {
@@ -414,24 +420,28 @@ export default function MapAndGame({ sound, setSound }) {
           </div>
           {!selectedLevel ? (
             <div className="flex flex-col gap-8">
-              {levelPhases.map((phase, index) => {
-                const isUnlocked = unlockedPhases.includes(index);
+              {[...levelPhases].reverse().map((phase, reversedIndex) => {
+                const originalIndex = levelPhases.length - 1 - reversedIndex;
+                const isUnlocked = unlockedPhases.includes(originalIndex);
+
                 const wrappedLevels = wrapLevelsWithStatus(
-                  index,
+                  originalIndex,
                   phase,
                   completedLevels,
                   levelPhases
                 );
+
                 const currentPhaseId = getCurrentLevelId(phase);
+
                 return (
                   <div
-                    key={index}
-                    ref={(el) => (phaseRefs.current[index] = el)}
+                    key={originalIndex}
+                    ref={(el) => (phaseRefs.current[originalIndex] = el)}
                     className="relative"
                   >
                     <LevelMap
                       phase={{ ...phase, levels: wrappedLevels }}
-                      phaseIndex={index}
+                      phaseIndex={originalIndex}
                       completedLevels={completedLevels}
                       currentLevelId={currentPhaseId}
                       isLocked={gameUser.lives === 0}
