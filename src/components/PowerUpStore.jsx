@@ -98,7 +98,7 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
                 onClick={() => handlePurchase(pu, "three")}
                 className="px-2 py-1 text-sm  bg-green-600 hover:bg-green-500 text-white disabled:bg-gray-300"
               >
-                3x for{pu.costs.three} 💎
+                3x for {pu.costs.three} 💎
               </button>
             </div>
           </div>

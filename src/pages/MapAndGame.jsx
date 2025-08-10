@@ -23,8 +23,11 @@ import { toast } from "sonner";
 
 import PowerUpStore from "components/PowerUpStore";
 import Modal from "components/ui/modal";
-import { determineUnlockedPhases, wrapLevelsWithStatus, getPowerUpIcon } from "utils/gameHelpers";
-
+import {
+  determineUnlockedPhases,
+  wrapLevelsWithStatus,
+  getPowerUpIcon,
+} from "utils/gameHelpers";
 
 import {
   getWeeklyChallengeStatus,
@@ -150,7 +153,6 @@ export default function MapAndGame({ sound, setSound }) {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-
   const getCurrentLevelId = (phase) => {
     const firstIncomplete = phase.levels.find(
       (l) => !completedLevels.includes(l.id)
@@ -236,7 +238,6 @@ export default function MapAndGame({ sound, setSound }) {
     toast.success("Settings saved!");
   };
 
-
   if (!user || gameUserLoading || !completedLevels) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100 text-gray-800">
@@ -259,100 +260,111 @@ export default function MapAndGame({ sound, setSound }) {
     <div className="relative min-h-screen overflow-hidden">
       <AnimatedBackground />
       <div className="flex flex-col lg:flex-row min-h-screen">
-
-
         {/* Mobile Sidebar Toggle Button */}
-<div className="lg:hidden fixed top-2 left-2 z-50">
-  <button
-    onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
-    className="p-2 bg-blue-600 text-white rounded-md shadow-lg focus:outline-none"
-    aria-label="Toggle menu"
-  >
-    {mobileActionsOpen ? "✕" : "☰"}
-  </button>
-</div>
+        <div className="lg:hidden fixed top-2 left-2 z-50">
+          <br></br>
+          <button
+            onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
+            className="p-2 bg-blue-600 text-white rounded-md shadow-lg focus:outline-none"
+            aria-label="Toggle menu"
+          >
+            {mobileActionsOpen ? "✕" : "☰"}
+          </button>
+        </div>
 
-{/* Mobile Sidebar */}
-<div
-  className={`fixed top-0 left-0 h-full w-64 bg-white/90 backdrop-blur-md p-4 border-r border-gray-300 z-40 transform transition-transform duration-300 ease-in-out
-    ${mobileActionsOpen ? "translate-x-0" : "-translate-x-full"}
-  `}
->
-  <button
-    onClick={() => setShowSettings(true)}
-    className="w-full mb-2 text-left text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
-  >
-    ⚙️ Settings
-  </button>
-  <button
-    onClick={() => setShowStore(true)}
-    className="w-full mb-2 text-left bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
-  >
-    🛒 🎁 Store
-  </button>
-  <button
-    onClick={() => navigate("/multiplayer/create")}
-    className="w-full mb-2 text-left bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600"
-  >
-    🎮 Multiplayer
-  </button>
+        {/* Overlay (click outside to close) */}
+        {mobileActionsOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-40 z-40"
+            onClick={() => setMobileActionsOpen(false)}
+          />
+        )}
+        {/* Mobile Sidebar */}
+        <div
+          className={`fixed top-0 left-0 h-full w-64 bg-white/90 backdrop-blur-md p-4 border-r border-gray-300 z-50 transform transition-transform duration-300 ease-in-out
+          ${mobileActionsOpen ? "translate-x-0" : "-translate-x-full"}
+           `}
+        >
+          {/* Close button (optional) */}
+          <button
+            onClick={() => setMobileActionsOpen(false)}
+            className="mb-4 p-2 bg-red-500 text-white rounded-md"
+          >
+            ✕
+          </button>
 
-  <button
-    onClick={handleWeeklyChallengeClick}
-    disabled={!challengeAllowed}
-    className="w-full mb-2 text-left bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600"
-  >
-    {challengeAllowed && !challengePlayed
-      ? "🥊 Weekly Challenge"
-      : challengePlayed
-      ? "🥊 Played"
-      : `🥊 Quiz: ${countdownText}`}
-  </button>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="w-full mb-2 text-left text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
+          >
+            ⚙️ Settings
+          </button>
+          <button
+            onClick={() => setShowStore(true)}
+            className="w-full mb-2 text-left bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
+          >
+            🛒 🎁 Store
+          </button>
+          <button
+            onClick={() => navigate("/multiplayer/create")}
+            className="w-full mb-2 text-left bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600"
+          >
+            🎮 Multiplayer
+          </button>
 
-  <div className="overflow-y-auto max-h-[50vh] mt-4">
-    {totalLeaderboard.length > 0 && (
-      <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-3 mb-4">
-        <h2 className="text-sm font-bold text-blue-700 mb-2">
-          🏆 Top Players
-        </h2>
-        <ol className="space-y-1 text-xs">
-          {totalLeaderboard.map((entry, index) => (
-            <li key={index} className="flex justify-between">
-              <span>
-                {index + 1}. {entry.player_name || "Unnamed"}
-              </span>
-              <span>{entry.total_score} pts</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    )}
-    {weeklyLeaderboard.length > 0 && (
-      <div className="bg-white border border-yellow-400 rounded-lg shadow-lg p-3">
-        <h2 className="text-sm font-bold text-yellow-600 mb-2">
-          🏆 Weekly Top 10
-        </h2>
-        <ol className="space-y-1 text-xs">
-          {weeklyLeaderboard.map((entry, index) => (
-            <li key={index} className="flex justify-between">
-              <span>
-                {index + 1}. {entry.player_name || "Unnamed"}
-              </span>
-              <span>{entry.score} pts</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    )}
-  </div>
+          <button
+            onClick={handleWeeklyChallengeClick}
+            disabled={!challengeAllowed}
+            className="w-full mb-2 text-left bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600"
+          >
+            {challengeAllowed && !challengePlayed
+              ? "🥊 Weekly Challenge"
+              : challengePlayed
+              ? "🥊 Played"
+              : `🥊 Quiz: ${countdownText}`}
+          </button>
 
-  <div className="mt-4">
-    <FeedbackButton fullWidth />
-  </div>
-</div>
+          <div className="overflow-y-auto max-h-[50vh] mt-4">
+            {totalLeaderboard.length > 0 && (
+              <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-3 mb-4">
+                <h2 className="text-sm font-bold text-blue-700 mb-2">
+                  🏆 Top Players
+                </h2>
+                <ol className="space-y-1 text-xs">
+                  {totalLeaderboard.map((entry, index) => (
+                    <li key={index} className="flex justify-between">
+                      <span>
+                        {index + 1}. {entry.player_name || "Unnamed"}
+                      </span>
+                      <span>{entry.total_score} pts</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {weeklyLeaderboard.length > 0 && (
+              <div className="bg-white border border-yellow-400 rounded-lg shadow-lg p-3">
+                <h2 className="text-sm font-bold text-yellow-600 mb-2">
+                  🏆 Weekly Top 10
+                </h2>
+                <ol className="space-y-1 text-xs">
+                  {weeklyLeaderboard.map((entry, index) => (
+                    <li key={index} className="flex justify-between">
+                      <span>
+                        {index + 1}. {entry.player_name || "Unnamed"}
+                      </span>
+                      <span>{entry.score} pts</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
 
-
-      
+          <div className="mt-4">
+            <FeedbackButton fullWidth />
+          </div>
+        </div>
 
         {/* LEFT SIDEBAR (desktop) */}
         <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-r border-gray-300">
@@ -366,7 +378,7 @@ export default function MapAndGame({ sound, setSound }) {
             onClick={() => setShowStore(true)}
             className="bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
           >
-             🎁 Store
+            🎁 Store
           </button>
           <button
             onClick={() => navigate("/multiplayer/create")}
@@ -379,8 +391,9 @@ export default function MapAndGame({ sound, setSound }) {
         {/* CENTER CONTENT */}
         <div className="flex-1 overflow-y-auto max-h-screen p-4">
           {/* Sticky Header */}
+          <br></br> <br></br>
           <div className="sticky top-0 z-40 bg-white py-2 px-4 shadow-sm flex flex-wrap justify-between items-center text-sm md:text-base font-semibold text-blue-700 gap-4">
-            <div className="truncate">{gameUser.player_name || "Unnamed"}</div>
+            <div className="truncate"> {gameUser.player_name || "Unnamed"}</div>
             <div className="flex items-center gap-1">
               💎 Talents: {gameUser.talents ?? 0}
             </div>
@@ -399,12 +412,16 @@ export default function MapAndGame({ sound, setSound }) {
               )}
             </div>
           </div>
-
           {!selectedLevel ? (
             <div className="flex flex-col gap-8">
               {levelPhases.map((phase, index) => {
                 const isUnlocked = unlockedPhases.includes(index);
-                const wrappedLevels = wrapLevelsWithStatus(index, phase, completedLevels, levelPhases);
+                const wrappedLevels = wrapLevelsWithStatus(
+                  index,
+                  phase,
+                  completedLevels,
+                  levelPhases
+                );
                 const currentPhaseId = getCurrentLevelId(phase);
                 return (
                   <div
