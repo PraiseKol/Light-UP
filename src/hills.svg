@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="hillGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A3D977"/>
+      <stop offset="100%" stop-color="#4CAF50"/>
+    </linearGradient>
+  </defs>
+  <path d="M0,150 Q150,50 300,150 T600,150 T800,150 V200 H0 Z" fill="url(#hillGradient)"/>
+</svg>

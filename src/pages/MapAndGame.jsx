@@ -12,7 +12,7 @@ import { supabase } from "lib/supabaseClient";
 
 import { useGameUser } from "hooks/useGameUser";
 import { LivesDisplay } from "components/LivesDisplay";
-import AnimatedBackground from "components/AnimatedBackground";
+import SpiritualParallaxBackground from "components/SpiritualParallaxBackground";
 import LevelMap from "components/LevelMap";
 import GameScreen from "components/GameScreen";
 import AppToaster from "components/ui/toaster";
@@ -264,7 +264,8 @@ export default function MapAndGame({ sound, setSound }) {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <AnimatedBackground />
+      <SpiritualParallaxBackground />
+
       <div className="flex flex-col lg:flex-row min-h-screen">
         {/* Mobile Sidebar Toggle Button */}
         <div className="lg:hidden fixed top-2 left-2 z-50">

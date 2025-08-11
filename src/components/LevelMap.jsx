@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import LevelButton from "./LevelButton";
 import { Lock } from "lucide-react";
 import { levelPhases } from "data/levelData";
-import avatarIcon from "assets/avatar.png"; // Correct image import
+import SpiritualParallaxBackground from "./SpiritualParallaxBackground";
+import avatarIcon from "assets/avatar.png";
 
 export default function LevelMap({
   phase,
@@ -13,10 +14,6 @@ export default function LevelMap({
   currentLevelId,
   isLocked,
 }) {
-  const totalCompleted = phase.levels.filter((lvl) =>
-    completedLevels.includes(lvl.id)
-  ).length;
-
   const isPhase1 = phaseIndex === 0;
   const prevPhaseLastLevelId = !isPhase1
     ? levelPhases[phaseIndex - 1].levels.slice(-1)[0].id
@@ -37,54 +34,84 @@ export default function LevelMap({
   }, [phaseUnlocked]);
 
   return (
-    <div
-      className={`relative p-6 bg-gradient-to-br from-white via-gold/10 to-charcoal/5 rounded-xl shadow-lg transition-all duration-700 ${
-        unlocking ? "animate-fadeScale" : ""
-      }`}
-    >
-      <h2 className="text-2xl font-bold text-charcoal mb-2 text-center">
-        Phase {phase.phaseNumber}: {phase.title || "Untitled Phase"}
-      </h2>
-      <p className="text-center text-sm text-gray-700 mb-4">
-        {totalCompleted}/{phase.levels.length} Completed
-      </p>
+    <div className="relative w-full h-[500px] overflow-hidden rounded-xl shadow-lg">
+      {/* Background */}
+      <SpiritualParallaxBackground />
 
-      <div className="grid grid-cols-5 gap-6 place-items-center relative z-10">
+      {/* SVG path connections */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none">
         {phase.levels.map((level, i) => {
-          const isFirst = i === 0;
-          const prevCompleted = isFirst
-            ? phaseUnlocked
-            : completedLevels.includes(phase.levels[i - 1].id);
+          if (i === 0) return null;
+          const prev = phase.levels[i - 1];
+          const curr = level;
 
-          const isUnlocked = level.completed || prevCompleted;
-          const isCurrent = level.id === currentLevelId;
+          const prevCompleted = completedLevels.includes(prev.id);
+          const glowColor = prevCompleted ? "#FFD700" : "#888";
 
           return (
-            <div key={level.id} className="relative">
-              <LevelButton
-                level={level}
-                isUnlocked={isUnlocked}
-                onClick={() => {
-                  if (isUnlocked && phaseUnlocked) {
-                    onSelectLevel(level, i);
-                  }
-                }}
-              />
-
-              {/* ✅ Avatar icon on current level */}
-              {isCurrent && (
-                <img
-                  src={avatarIcon}
-                  alt="Avatar"
-                  className="w-10 h-10 absolute -top-4 -left-4 rounded-full border-2 border-gold shadow-md animate-bounce z-0"
-                />
-              )}
-            </div>
+            <line
+              key={`line-${prev.id}-${curr.id}`}
+              x1={`${prev.position.x}%`}
+              y1={`${prev.position.y}%`}
+              x2={`${curr.position.x}%`}
+              y2={`${curr.position.y}%`}
+              stroke={glowColor}
+              strokeWidth={prevCompleted ? 4 : 2}
+              strokeLinecap="round"
+              style={{
+                filter: prevCompleted
+                  ? "drop-shadow(0 0 6px rgba(255,215,0,0.8))"
+                  : "none",
+              }}
+            />
           );
         })}
-      </div>
+      </svg>
 
-      {/* 🔒 Overlay for locked phase OR no lives */}
+      {/* Levels */}
+      {phase.levels.map((level, i) => {
+        const isFirst = i === 0;
+        const prevCompleted = isFirst
+          ? phaseUnlocked
+          : completedLevels.includes(phase.levels[i - 1].id);
+
+        const isUnlocked = level.completed || prevCompleted;
+        const isCurrent = level.id === currentLevelId;
+
+        return (
+          <div
+            key={level.id}
+            className="absolute"
+            style={{
+              left: `${level.position.x}%`,
+              top: `${level.position.y}%`,
+              transform: "translate(-50%, -50%)",
+              zIndex: isCurrent ? 20 : 10,
+            }}
+          >
+            <LevelButton
+              level={level}
+              isUnlocked={isUnlocked}
+              onClick={() => {
+                if (isUnlocked && phaseUnlocked) {
+                  onSelectLevel(level, i);
+                }
+              }}
+            />
+
+            {/* Avatar */}
+            {isCurrent && (
+              <img
+                src={avatarIcon}
+                alt="Avatar"
+                className="w-10 h-10 absolute -top-12 left-1/2 -translate-x-1/2 rounded-full border-2 border-gold shadow-md animate-bounce"
+              />
+            )}
+          </div>
+        );
+      })}
+
+      {/* Lock overlay */}
       {(!phaseUnlocked || (phaseUnlocked && isLocked)) && (
         <div
           className="absolute inset-0 bg-black/50 rounded-xl flex flex-col items-center justify-center z-20 text-white text-center px-4"
