@@ -263,7 +263,7 @@ export default function MapAndGame({ sound, setSound }) {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden">
       <SpiritualParallaxBackground />
 
       <div className="flex flex-col lg:flex-row min-h-screen">
@@ -288,7 +288,7 @@ export default function MapAndGame({ sound, setSound }) {
         )}
         {/* Mobile Sidebar */}
         <div
-          className={`fixed top-0 left-0 h-full w-64 bg-white/90 backdrop-blur-md p-4 border-r border-gray-300 z-50 transform transition-transform duration-300 ease-in-out
+          className={`fixed top-0 left-0 h-full w-64 bg-white/60 backdrop-blur-md p-4 border-r border-gray-300 z-50 transform transition-transform duration-300 ease-in-out
           ${mobileActionsOpen ? "translate-x-0" : "-translate-x-full"}
            `}
         >
@@ -374,7 +374,7 @@ export default function MapAndGame({ sound, setSound }) {
         </div>
 
         {/* LEFT SIDEBAR (desktop) */}
-        <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-r border-gray-300">
+        <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/40 backdrop-blur-md border-r border-gray-300">
           <button
             onClick={() => setShowSettings(true)}
             className="bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
@@ -474,7 +474,7 @@ export default function MapAndGame({ sound, setSound }) {
         </div>
 
         {/* RIGHT SIDEBAR (desktop) */}
-        <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/70 backdrop-blur-md border-l border-gray-300">
+        <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/20 backdrop-blur-md border-l border-gray-300">
           <button
             onClick={handleWeeklyChallengeClick}
             disabled={!challengeAllowed}

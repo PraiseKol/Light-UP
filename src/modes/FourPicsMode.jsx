@@ -35,6 +35,8 @@ export default function FourPicsMode({
   const lifeLostRef = useRef(false);
   const [user, setUser] = useState(null);
 
+  
+
   useEffect(() => {
     const getUser = async () => {
       const {
@@ -223,6 +225,23 @@ export default function FourPicsMode({
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (
+        event.key === "Enter" &&
+        !hasAnswered.current &&
+        !input.includes("")
+      ) {
+        event.preventDefault();
+        checkAnswer();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [input, checkAnswer]);
+
   const resetLevel = useResetLevel({
     setModals: {
       setShowRightModal,
@@ -252,6 +271,8 @@ export default function FourPicsMode({
       }
     },
   });
+
+
 
   if (loading)
     return <div className="p-6 text-center">Loading question...</div>;

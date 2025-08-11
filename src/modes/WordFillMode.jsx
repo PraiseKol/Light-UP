@@ -13,8 +13,8 @@ import { useUser } from "@supabase/auth-helpers-react";
 
 const getScoreFromTime = (timeLeft) => {
   if (timeLeft > 20) return 100;
-    if (timeLeft > 10) return 75;
-    return 50;
+  if (timeLeft > 10) return 75;
+  return 50;
 };
 
 export default function WordFillMode({
@@ -182,6 +182,15 @@ export default function WordFillMode({
               onChange={(e) => {
                 setUserInput(e.target.value);
                 setStatus("idle");
+              }}
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" &&
+                  !hasAnsweredCorrectly.current &&
+                  !disableIfNoLives
+                ) {
+                  checkAnswer();
+                }
               }}
               disabled={hasAnsweredCorrectly.current || disableIfNoLives}
               placeholder={

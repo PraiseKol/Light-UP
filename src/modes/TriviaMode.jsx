@@ -15,8 +15,8 @@ const triviaBackground =
 
 const getScoreFromTime = (timeLeft) => {
   if (timeLeft > 20) return 100;
-    if (timeLeft > 10) return 75;
-    return 50;
+  if (timeLeft > 10) return 75;
+  return 50;
 };
 
 export default function TriviaMode({
@@ -43,6 +43,7 @@ export default function TriviaMode({
 
   const hasAnswered = useRef(false);
   const lifeLostRef = useRef(false);
+  const cardContentRef = useRef(null);
 
   const { timeLeft, reset, setIsRunning, setTimeLeft } = useTimer(30, () => {
     if (hasAnswered.current) return;
@@ -60,6 +61,10 @@ export default function TriviaMode({
     }
   });
 
+  useEffect(() => {
+    cardContentRef.current?.focus();
+  }, []);
+
   // ✅ Apply Grace Period
   useEffect(() => {
     if (activePowerups?.grace_period) {
@@ -71,14 +76,19 @@ export default function TriviaMode({
 
   // ✅ Apply Divine Hint: Remove two wrong answers
   useEffect(() => {
-    if (activePowerups?.divine_hint && Array.isArray(options) && options.length > 2) {
+    if (
+      activePowerups?.divine_hint &&
+      Array.isArray(options) &&
+      options.length > 2
+    ) {
       const wrongOptions = options.filter(
         (opt) => opt.trim().toLowerCase() !== answer.trim().toLowerCase()
       );
 
       if (wrongOptions.length >= 2) {
         // Pick 1 wrong answer to keep alongside correct
-        const keepWrong = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+        const keepWrong =
+          wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
         const newOptions = [answer, keepWrong].sort(() => Math.random() - 0.5);
 
         setDisplayOptions(newOptions);
@@ -123,17 +133,15 @@ export default function TriviaMode({
     const oldScore = existing?.score ?? 0;
 
     if (newScore > oldScore) {
-      const { error: updateError } = await supabase
-        .from("progress")
-        .upsert(
-          {
-            user_id: user.id,
-            level_id: level.id,
-            mode: "Trivia",
-            score: newScore,
-          },
-          { onConflict: ["user_id", "level_id"] }
-        );
+      const { error: updateError } = await supabase.from("progress").upsert(
+        {
+          user_id: user.id,
+          level_id: level.id,
+          mode: "Trivia",
+          score: newScore,
+        },
+        { onConflict: ["user_id", "level_id"] }
+      );
 
       if (updateError) {
         console.error("Failed to update score:", updateError);
@@ -191,7 +199,19 @@ export default function TriviaMode({
             {question}
           </CardHeader>
 
-          <CardContent>
+          <CardContent
+            ref={cardContentRef}
+            tabIndex={0} // make focusable to capture keyboard events
+            onKeyDown={(e) => {
+              if (
+                e.key === "Enter" &&
+                selected !== null &&
+                !hasAnswered.current
+              ) {
+                checkAnswer();
+              }
+            }}
+          >
             <div className="space-y-3 mb-6">
               {displayOptions.map((opt, i) => {
                 const isSelected = selected === opt;

@@ -4,9 +4,8 @@ import { Lightbulb } from "lucide-react";
 import { MdLightbulb } from "react-icons/md";
 
 export default function LevelButton({ level, isUnlocked, onClick }) {
-  const baseClass = `
-    w-16 h-16 rounded-full font-bold shadow-xl transition-all duration-300 flex items-center justify-center
-  `;
+  const baseClass =
+    "w-16 h-16 rounded-full font-bold shadow-xl transition-all duration-300 flex items-center justify-center";
 
   const completedStyle = "bg-black text-yellow-300 ring-4 ring-blue-400 ";
   const unlockedStyle = "bg-black text-white glow-ring";
@@ -19,16 +18,13 @@ export default function LevelButton({ level, isUnlocked, onClick }) {
       animate={{ scale: 1 }}
       whileHover={isUnlocked && !level.completed ? { scale: 1.1 } : {}}
       transition={{ type: "spring", stiffness: 200 }}
-      className={`
-        ${baseClass}
-        ${
-          level.completed
-            ? completedStyle
-            : isUnlocked
-            ? unlockedStyle
-            : lockedStyle
-        }
-      `}
+      className={`${baseClass} ${
+        level.completed
+          ? completedStyle
+          : isUnlocked
+          ? unlockedStyle
+          : lockedStyle
+      }`}
       disabled={!isUnlocked}
       onClick={() => isUnlocked && onClick(level)}
     >

@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import LevelButton from "./LevelButton";
 import { Lock } from "lucide-react";
 import { levelPhases } from "data/levelData";
-import SpiritualParallaxBackground from "./SpiritualParallaxBackground";
 import avatarIcon from "assets/avatar.png";
 
 export default function LevelMap({
@@ -14,6 +13,17 @@ export default function LevelMap({
   currentLevelId,
   isLocked,
 }) {
+  const containerRef = useRef(null);
+  const [svgSize, setSvgSize] = useState({ width: 0, height: 0 });
+
+  // Measure container size so SVG coordinates match pixel size
+  useEffect(() => {
+    if (containerRef.current) {
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      setSvgSize({ width, height });
+    }
+  }, []);
+
   const isPhase1 = phaseIndex === 0;
   const prevPhaseLastLevelId = !isPhase1
     ? levelPhases[phaseIndex - 1].levels.slice(-1)[0].id
@@ -34,11 +44,11 @@ export default function LevelMap({
   }, [phaseUnlocked]);
 
   return (
-    <div className="relative w-full h-[500px] overflow-hidden rounded-xl shadow-lg">
-      {/* Background */}
-      <SpiritualParallaxBackground />
-
-      {/* SVG path connections */}
+    <div
+      ref={containerRef}
+      className="relative w-full h-[200vh] overflow-hidden rounded-xl shadow-lg bg-transparent"
+    >
+      {/* SVG curved path connections */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none">
         {phase.levels.map((level, i) => {
           if (i === 0) return null;
@@ -46,23 +56,43 @@ export default function LevelMap({
           const curr = level;
 
           const prevCompleted = completedLevels.includes(prev.id);
-          const glowColor = prevCompleted ? "#FFD700" : "#888";
+          const glowColor = prevCompleted ? "#FFD700" : "#2c2c2c";
+          const strokeW = prevCompleted ? 16 : 12; // thicker path
+
+          // Map % to actual container pixel coordinates
+          const x1 = (prev.position.x / 100) * svgSize.width;
+          const y1 = (prev.position.y / 100) * svgSize.height;
+          const x2 = (curr.position.x / 100) * svgSize.width;
+          const y2 = (curr.position.y / 100) * svgSize.height;
+
+          // Keep horizontal swing near edges but not touching
+          const edgeMargin = svgSize.width * 0.05; // 5% margin
+          const minX = edgeMargin;
+          const maxX = svgSize.width - edgeMargin;
+
+          const adjX1 = Math.min(Math.max(x1, minX), maxX);
+          const adjX2 = Math.min(Math.max(x2, minX), maxX);
+
+          // Smooth Bézier control points for flowing curve
+          const cx1 = (adjX1 + adjX2) / 2;
+          const cy1 = y1;
+          const cx2 = (adjX1 + adjX2) / 2;
+          const cy2 = y2;
 
           return (
-            <line
-              key={`line-${prev.id}-${curr.id}`}
-              x1={`${prev.position.x}%`}
-              y1={`${prev.position.y}%`}
-              x2={`${curr.position.x}%`}
-              y2={`${curr.position.y}%`}
+            <path
+              key={`curve-${prev.id}-${curr.id}`}
+              d={`M ${adjX1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${adjX2} ${y2}`}
+              fill="none"
               stroke={glowColor}
-              strokeWidth={prevCompleted ? 4 : 2}
+              strokeWidth={strokeW}
               strokeLinecap="round"
               style={{
                 filter: prevCompleted
-                  ? "drop-shadow(0 0 6px rgba(255,215,0,0.8))"
+                  ? "drop-shadow(0 0 8px rgba(255,215,0,0.8))"
                   : "none",
               }}
+              vectorEffect="non-scaling-stroke"
             />
           );
         })}
@@ -99,12 +129,11 @@ export default function LevelMap({
               }}
             />
 
-            {/* Avatar */}
             {isCurrent && (
               <img
                 src={avatarIcon}
                 alt="Avatar"
-                className="w-10 h-10 absolute -top-12 left-1/2 -translate-x-1/2 rounded-full border-2 border-gold shadow-md animate-bounce"
+                className="w-12 h-12 absolute -top-5 left-1 -translate-x-1/2 rounded-full shadow-md animate-bounce"
               />
             )}
           </div>
