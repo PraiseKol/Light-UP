@@ -14,6 +14,7 @@ const scriptureMatchBackground =
   "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//ScriptureMatchBackground.png";
 
 export default function ScriptureMatchMode({
+  props,
   question,
   level,
   onBack,
@@ -184,6 +185,22 @@ export default function ScriptureMatchMode({
       }));
     }
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (
+        e.key === "Enter" &&
+        !hasAnswered.current &&
+        Object.keys(matches).length === pairs.length
+      ) {
+        e.preventDefault();
+        checkAnswer();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [matches, pairs, checkAnswer]); // careful with dependencies
 
   const isMatched = (verse) => {
     return (
