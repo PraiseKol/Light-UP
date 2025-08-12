@@ -10,6 +10,9 @@ export default function SpiritualParallaxBackground() {
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-[-1]">
+
+      
+
       {/* Golden Path */}
       <motion.img
         src={pathImg}
@@ -25,6 +28,7 @@ export default function SpiritualParallaxBackground() {
         className="absolute top-0 left-0 w-full h-[90vh] object-cover opacity-90"
         style={{ y: cloudsY }}
       />
+      
     </div>
   );
 }

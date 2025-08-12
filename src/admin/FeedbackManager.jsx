@@ -34,7 +34,15 @@ export default function FeedbackManager() {
     fetchFeedback();
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-gray-600 text-lg font-medium animate-pulse">
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
   const filteredFeedback = feedback.filter((f) => f.status === activeSubTab);
 

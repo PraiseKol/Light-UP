@@ -24,6 +24,7 @@ import CreateAdmin from "CreateAdmin";
 import AdminRoute from "components/AdminRoute";
 import AdminLogin from "pages/AdminLogin";
 import AdminDashboard from "pages/AdminDashboard";
+import PaymentSuccess from "pages/PaymentSuccess";
 
 import { useState, useEffect } from "react";
 
@@ -70,6 +71,9 @@ function AppContent() {
       <Routes>
         {/* Main Game Login */}
         <Route path="/login" element={<LoginPage />} />
+
+        {/* Payment success page — open to everyone for Paystack/Stripe redirects */}
+        <Route path="/payment-success" element={<PaymentSuccess />} />
 
         {/* Game Routes */}
         <Route

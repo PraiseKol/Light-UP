@@ -255,6 +255,9 @@ export default function MapAndGame({ sound, setSound }) {
           <div className="w-4 h-4 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
           <div className="w-4 h-4 bg-yellow-500 rounded-full animate-bounce" />
         </div>
+        <div className="text-2xl font-bold mb-4 animate-pulse text-blue-600 drop-shadow-md">
+          your Word!
+        </div>
         <p className="mt-6 text-sm text-gray-600 tracking-wide">
           Preparing your journey...
         </p>

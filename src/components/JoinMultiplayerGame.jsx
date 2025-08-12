@@ -59,8 +59,26 @@ export default function JoinMultiplayerGame() {
     loadGame();
   }, [token, user, navigate, setGame, setPlayers]);
 
-  if (loading) return <div className="p-6 text-center">Preparing your cave...</div>;
-  if (errorMessage) return <div className="p-6 text-center text-red-500">{errorMessage}</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-black via-gray-900 to-black">
+        <p className="text-white text-lg font-medium animate-pulse">
+          Preparing your cave...
+        </p>
+      </div>
+    );
+  }
+  
+  if (errorMessage) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-b from-black via-gray-900 to-black">
+        <p className="text-red-500 text-lg font-semibold border border-red-500 px-4 py-2 rounded-lg shadow-lg">
+          {errorMessage}
+        </p>
+      </div>
+    );
+  }
+  
 
   return null;
 }
