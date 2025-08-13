@@ -340,7 +340,7 @@ export default function MapAndGame({ sound, setSound }) {
                 <h2 className="text-sm font-bold text-blue-700 mb-2">
                   🏆 Top Players
                 </h2>
-                <ol className="space-y-1 text-xs">
+                <ol className="space-y-1 text-sm">
                   {totalLeaderboard.map((entry, index) => (
                     <li key={index} className="flex justify-between">
                       <span>

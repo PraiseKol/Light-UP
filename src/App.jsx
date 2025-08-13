@@ -18,7 +18,7 @@ import WeeklyChallengeScreen from "pages/WeeklyChallengeScreen";
 import CreateMultiplayerGame from "components/CreateMultiplayerGame";
 import MultiplayerLobby from "components/MultiplayerLobby";
 import JoinMultiplayerGame from "components/JoinMultiplayerGame";
-import MultiplayerGame from "./components/MultiplayerGame";
+import MultiplayerGame from "components/MultiplayerGame";
 
 import CreateAdmin from "CreateAdmin";
 import AdminRoute from "components/AdminRoute";
@@ -34,13 +34,7 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />;
 }
 
-function AdminProtectedRoute({ children }) {
-  const admin = JSON.parse(localStorage.getItem("adminSession") || "null");
-  return admin ? children : <Navigate to="/admin/login" replace />;
-}
-
 function AppContent() {
-  const supabaseClient = supabase;
   const { user } = useAuth();
   const [sound, setSound] = useState("default");
 
@@ -50,32 +44,28 @@ function AppContent() {
       return;
     }
     const fetchSettings = async () => {
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .from("game_users")
         .select("sound")
         .eq("user_id", user.id)
         .single();
 
-      if (!error && data?.sound) {
-        setSound(data.sound);
-      } else {
-        setSound("default");
-      }
+      setSound(!error && data?.sound ? data.sound : "default");
     };
     fetchSettings();
-  }, [user, supabaseClient]);
+  }, [user]);
 
   return (
     <>
       <BackgroundMusic sound={sound} />
       <Routes>
-        {/* Main Game Login */}
+        {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Payment success page — open to everyone for Paystack/Stripe redirects */}
+        {/* Payment redirect */}
         <Route path="/payment-success" element={<PaymentSuccess />} />
 
-        {/* Game Routes */}
+        {/* Game */}
         <Route
           path="/map"
           element={
@@ -84,7 +74,6 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/weekly-challenge"
           element={
@@ -93,7 +82,6 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/multiplayer/create"
           element={
@@ -102,7 +90,6 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/multiplayer/lobby/:gameId"
           element={
@@ -111,7 +98,6 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/multiplayer/join/:token"
           element={
@@ -120,7 +106,6 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/multiplayer/game/:gameId"
           element={
@@ -130,9 +115,8 @@ function AppContent() {
           }
         />
 
-        {/* Admin Routes */}
+        {/* Admin */}
         <Route path="/admin/login" element={<AdminLogin />} />
-
         <Route
           path="/admin/dashboard"
           element={
@@ -141,11 +125,9 @@ function AppContent() {
             </AdminRoute>
           }
         />
-
-        {/* One-time route to create first admin */}
         <Route path="/create-admin" element={<CreateAdmin />} />
 
-        {/* Default route */}
+        {/* Default */}
         <Route path="*" element={<Navigate to="/map" replace />} />
       </Routes>
     </>
@@ -153,10 +135,8 @@ function AppContent() {
 }
 
 export default function App() {
-  const supabaseClient = supabase;
-
   return (
-    <SessionContextProvider supabaseClient={supabaseClient}>
+    <SessionContextProvider supabaseClient={supabase}>
       <Router>
         <AuthProvider>
           <AppContent />

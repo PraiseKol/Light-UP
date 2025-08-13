@@ -46,7 +46,7 @@ export default function LevelMap({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[200vh] overflow-hidden rounded-xl shadow-lg bg-transparent"
+      className="relative w-full h-[150vh] overflow-hidden rounded-xl shadow-lg bg-transparent"
     >
       {/* SVG curved path connections */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none">
@@ -56,7 +56,7 @@ export default function LevelMap({
           const curr = level;
 
           const prevCompleted = completedLevels.includes(prev.id);
-          const glowColor = prevCompleted ? "#FFD700" : "#2c2c2c";
+          const glowColor = prevCompleted ? "#e0be12" : "#2c2c2c";
           const strokeW = prevCompleted ? 16 : 12; // thicker path
 
           // Map % to actual container pixel coordinates
@@ -66,7 +66,7 @@ export default function LevelMap({
           const y2 = (curr.position.y / 100) * svgSize.height;
 
           // Keep horizontal swing near edges but not touching
-          const edgeMargin = svgSize.width * 0.05; // 5% margin
+          const edgeMargin = svgSize.width * 0.07; // 5% margin
           const minX = edgeMargin;
           const maxX = svgSize.width - edgeMargin;
 
@@ -133,7 +133,7 @@ export default function LevelMap({
               <img
                 src={avatarIcon}
                 alt="Avatar"
-                className="w-12 h-12 absolute -top-5 left-1 -translate-x-1/2 rounded-full shadow-md animate-bounce"
+                className="w-12 h-12 absolute -top-9 left-1/4 -translate-x-1/2 rounded-full shadow-md animate-bounce"
               />
             )}
           </div>

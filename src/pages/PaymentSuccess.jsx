@@ -1,7 +1,7 @@
+// src/pages/PaymentSuccess.jsx
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { adjustTalents } from "utils/talentUtils";
-import { supabase } from "lib/supabaseClient";
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
@@ -9,6 +9,7 @@ export default function PaymentSuccess() {
 
   const talents = searchParams.get("talents");
   const userId = searchParams.get("userId");
+  const sessionId = searchParams.get("session_id");
 
   const [status, setStatus] = useState("Processing your purchase...");
   const [newBalance, setNewBalance] = useState(null);
@@ -17,30 +18,46 @@ export default function PaymentSuccess() {
   const [showText, setShowText] = useState(false);
 
   useEffect(() => {
-    if (!talents || !userId) return;
+    if (!talents || !userId) {
+      setStatus("❌ Missing payment details.");
+      setLoading(false);
+      return;
+    }
+
+    // Prevent duplicate crediting if refreshed
+    const processedKey = `payment-processed-${sessionId || `${userId}-${talents}`}`;
+    if (sessionStorage.getItem(processedKey)) {
+      setStatus(`✅ Payment already processed.`);
+      setLoading(false);
+      setSuccess(true);
+      return;
+    }
 
     const creditTalents = async () => {
       try {
-        await adjustTalents(userId, parseInt(talents, 10));
+        // ✅ Add talents via backend API
+        const result = await adjustTalents(userId, parseInt(talents, 10));
+        if (!result.success) throw new Error("Backend failed to adjust talents");
 
-        const { data, error } = await supabase
-          .from("game_users")
-          .select("talents")
-          .eq("user_id", userId)
-          .single();
+        // ✅ Get updated balance from backend API
+        const res = await fetch(`/api/get-talents?userId=${userId}`);
+        const balanceData = await res.json();
+        if (!res.ok || balanceData.error) throw new Error(balanceData.error || "Failed to fetch balance");
 
-        if (error) throw error;
-
-        setNewBalance(data.talents);
+        setNewBalance(balanceData.talents);
         setStatus(`🎉 Purchase successful! You received ${talents} talents.`);
         setSuccess(true);
+        setShowText(true);
 
-        setTimeout(() => setShowText(true), 600);
+        // Mark payment as processed for this session
+        sessionStorage.setItem(processedKey, "true");
       } catch (err) {
         console.error("Error crediting talents:", err);
         setStatus("❌ Something went wrong crediting your talents.");
       } finally {
         setLoading(false);
+
+        // Redirect after 5s
         setTimeout(() => {
           navigate("/store");
         }, 5000);
@@ -48,7 +65,7 @@ export default function PaymentSuccess() {
     };
 
     creditTalents();
-  }, [talents, userId, navigate]);
+  }, [talents, userId, sessionId, navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-gray-50">
@@ -97,7 +114,6 @@ export default function PaymentSuccess() {
                     className="checkmark-path"
                   />
                 </svg>
-
                 <style>
                   {`
                     .checkmark-path {

@@ -224,7 +224,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             disabled={!gameUser.powerups_inventory.divine_hint}
             className="flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-lg bg-gradient-to-b from-blue-200 to-blue-300 hover:from-blue-300 hover:to-blue-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition"
           >
-            🧩<span>Hint</span>
+            🧩<span>Divine Hint</span>
             <span>x{gameUser.powerups_inventory.divine_hint ?? 0}</span>
           </button>
           <button
@@ -232,7 +232,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             disabled={!gameUser.powerups_inventory.grace_period}
             className="flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-lg bg-gradient-to-b from-purple-200 to-purple-300 hover:from-purple-300 hover:to-purple-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition"
           >
-            ⏳<span>+10s</span>
+            ⏳<span> Grace Period +15s</span>
             <span>x{gameUser.powerups_inventory.grace_period ?? 0}</span>
           </button>
           <HolyShieldButton user={user} gameUser={gameUser} refetch={refetch} />
@@ -241,7 +241,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             disabled={!gameUser.powerups_inventory.heavenly_match}
             className="flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-lg bg-gradient-to-b from-yellow-200 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition"
           >
-            👑<span>Match</span>
+            👑<span>Heavenly Match</span>
             <span>x{gameUser.powerups_inventory.heavenly_match ?? 0}</span>
           </button>
         </div>

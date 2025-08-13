@@ -70,7 +70,7 @@ export default function HolyShieldButton({ user, gameUser, refetch }) {
     <button
       onClick={handleActivate}
       disabled={!hasInventory || isActive}
-      className={`flex flex-col items-center text-xs font-medium w-[23%] px-2 py-1 rounded-lg transition relative ${
+      className={`flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-lg bg-gradient-to-b from-green-200 to-green-300 hover:from-green-300 hover:to-green-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition ${
         hasInventory && !isActive
           ? "bg-yellow-100 hover:bg-yellow-200 text-gray-800 active:scale-95"
           : isActive
@@ -82,6 +82,8 @@ export default function HolyShieldButton({ user, gameUser, refetch }) {
           ? { boxShadow: "0 0 15px 3px rgba(255, 223, 0, 0.7)" }
           : {}
       }
+      // className="flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-lg bg-gradient-to-b from-purple-200 to-purple-300 hover:from-purple-300 hover:to-purple-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition"
+      
     >
       <span className="text-lg">🛡️</span>
       <span className="mt-1 text-center">

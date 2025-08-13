@@ -17,7 +17,7 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
     {
       key: "grace_period",
       name: "Grace Period",
-      description: "Adds +10 seconds to the timer.",
+      description: "Adds +15 seconds to the timer.",
       icon: "⏳",
       costs: { one: 8, three: 20 }
     },
@@ -40,24 +40,40 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
   const handlePurchase = async (powerup, bundle) => {
     const cost = powerup.costs[bundle];
     const quantity = bundle === "one" ? 1 : 3;
-
+  
     if (gameUser.talents < cost) {
       alert("Not enough talents to purchase this power-up.");
       return;
     }
-
+  
     setLoading(true);
     try {
-      await adjustTalents(gameUser.user_id, -cost);
+      // Deduct talents (calls backend API)
+      const newBalance = await adjustTalents(gameUser.user_id, -cost);
+  
+      if (newBalance === null) {
+        throw new Error("Failed to adjust talents.");
+      }
+  
+      // Update power-up inventory via Supabase RPC
       await adjustPowerupInventory(gameUser.user_id, powerup.key, quantity);
+  
       alert(`You bought ${quantity}x ${powerup.name}!`);
+  
+      // Update talents locally (important for UI)
+      gameUser.talents = newBalance;
+  
+      // Call parent's onPurchase to refetch user data if available
       if (onPurchase) onPurchase();
+  
     } catch (err) {
       console.error("Purchase failed:", err);
+      alert("Purchase failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <div>

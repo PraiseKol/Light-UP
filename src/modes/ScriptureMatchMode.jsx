@@ -44,8 +44,8 @@ export default function ScriptureMatchMode({
   // ✅ Apply Grace Period once
   useEffect(() => {
     if (activePowerups?.grace_period) {
-      console.log("⏳ Grace Period active — adding 10 seconds");
-      setTimeLeft((prev) => prev + 10);
+      console.log("⏳ Grace Period active — adding 15 seconds");
+      setTimeLeft((prev) => prev + 15);
       activePowerups?.setGraceUsed?.();
     }
   }, [activePowerups, setTimeLeft]);

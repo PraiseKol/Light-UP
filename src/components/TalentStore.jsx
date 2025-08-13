@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { adjustTalents } from "utils/talentUtils";
 import { supabase } from "lib/supabaseClient";
 
 export default function TalentStore({ gameUser, onPurchase }) {
@@ -8,13 +7,14 @@ export default function TalentStore({ gameUser, onPurchase }) {
   const handleBuyTalentsWithMoney = async (talents, price) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/create-payment-session", {
+      const baseUrl = process.env.REACT_APP_PAYMENT_API;
+      const res = await fetch(`${baseUrl}/api/create-payment-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: gameUser.user_id,
           talents,
-          price, // optional, backend can validate
+          price,
         }),
       });
 
@@ -42,7 +42,21 @@ export default function TalentStore({ gameUser, onPurchase }) {
 
     setLoading(true);
     try {
-      await adjustTalents(gameUser.user_id, -cost);
+      // Call backend API to adjust talents
+      const baseUrl = process.env.REACT_APP_PAYMENT_API;
+      const res = await fetch(`${baseUrl}/api/adjust-talents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: gameUser.user_id,
+          amount: -cost,
+        }),
+      });
+
+      const result = await res.json();
+      if (!result.success) {
+        throw new Error("Failed to deduct talents");
+      }
 
       await supabase
         .from("game_users")
@@ -73,7 +87,7 @@ export default function TalentStore({ gameUser, onPurchase }) {
       <div className="text-right text-sm mb-4">
         <span className="font-semibold text-gray-700">Your Talents:</span>{" "}
         <span className="text-yellow-600 font-bold">
-          {gameUser?.talents ?? 0}
+          💎 {gameUser?.talents ?? 0}
         </span>
       </div>
 
@@ -120,7 +134,7 @@ export default function TalentStore({ gameUser, onPurchase }) {
       <div className="space-y-4">
         <div className="flex justify-between items-center bg-green-50 border border-green-200 p-4 rounded-xl shadow-sm">
           <div>
-            <p className="font-semibold text-green-900">5 ❤️ Lives</p>
+            <p className="font-semibold text-green-900">Full ❤️ Lives</p>
             <p className="text-sm text-gray-600">💎 25 Talents</p>
           </div>
           <button

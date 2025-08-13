@@ -78,7 +78,7 @@ export default function FourPicsMode({
   // Grace Period powerup
   useEffect(() => {
     if (activePowerups?.grace_period) {
-      setTimeLeft((prev) => prev + 10);
+      setTimeLeft((prev) => prev + 15);
       activePowerups?.setGraceUsed?.();
     }
   }, [activePowerups, setTimeLeft]);

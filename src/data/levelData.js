@@ -23,8 +23,8 @@ function getCurvedPosition(index, total) {
   const x = centerX + Math.sin(progress * Math.PI * 2) * amplitudeX;
 
   // Keep y strictly inside [5%, 95%] of phase height
-  const topMargin = 5;
-  const bottomMargin = 95;
+  const topMargin = 7;
+  const bottomMargin = 93;
   const y = bottomMargin - progress * (bottomMargin - topMargin);
 
   return { x, y };

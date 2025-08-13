@@ -58,7 +58,7 @@ export default function WordFillMode({
   // ✅ Grace Period
   useEffect(() => {
     if (activePowerups?.grace_period) {
-      setTimeLeft((prev) => prev + 10);
+      setTimeLeft((prev) => prev + 15);
       activePowerups?.setGraceUsed?.();
     }
   }, [activePowerups?.grace_period, activePowerups, setTimeLeft]);
