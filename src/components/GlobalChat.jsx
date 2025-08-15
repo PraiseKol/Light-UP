@@ -4,15 +4,14 @@ import { supabase } from "lib/supabaseClient";
 export default function GlobalChat({ user }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const messagesEndRef = useRef(null);
   const [playerName, setPlayerName] = useState("");
+  const messagesEndRef = useRef(null);
 
-  // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Fetch player's name from game_users
+  // Fetch player's name
   useEffect(() => {
     const fetchPlayerName = async () => {
       if (!user?.id) return;
@@ -21,7 +20,6 @@ export default function GlobalChat({ user }) {
         .select("player_name")
         .eq("user_id", user.id)
         .single();
-
       if (!error && data) {
         setPlayerName(data.player_name);
       }
@@ -30,13 +28,20 @@ export default function GlobalChat({ user }) {
   }, [user?.id]);
 
   useEffect(() => {
-    // Fetch last 30 messages
     const fetchMessages = async () => {
       let { data } = await supabase
         .from("chat_messages")
-        .select("*")
+        .select(`
+          *,
+          game_users!inner(
+            player_name,
+            is_admin,
+            role
+          )
+        `)
         .order("created_at", { ascending: true })
         .limit(30);
+
       setMessages(data || []);
     };
 
@@ -48,10 +53,23 @@ export default function GlobalChat({ user }) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages" },
-        (payload) => {
+        async (payload) => {
+          const { data: joined } = await supabase
+            .from("chat_messages")
+            .select(`
+              *,
+              game_users!inner(
+                player_name,
+                is_admin,
+                role
+              )
+            `)
+            .eq("id", payload.new.id)
+            .single();
+
           setMessages((prev) => {
-            const updated = [...prev, payload.new];
-            return updated.slice(-30); // ✅ Keep only the latest 30
+            const updated = [...prev, joined];
+            return updated.slice(-30);
           });
         }
       )
@@ -66,32 +84,64 @@ export default function GlobalChat({ user }) {
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !playerName) return;
-
     await supabase.from("chat_messages").insert({
       user_id: user.id,
-      username: playerName, // ✅ Use player_name instead of email
+      username: playerName,
       message: newMessage.trim(),
     });
     setNewMessage("");
   };
 
+  // Only keep latest super admin message
+  const latestSuperAdmin = messages
+    .filter((m) => m.game_users?.role === "super_admin")
+    .slice(-1); // ✅ UI shows only one
+
+  const normalMessages = messages.filter(
+    (m) => m.game_users?.role !== "super_admin"
+  );
+
   return (
-    <div className="flex flex-col h-80 w-full bg-white/80 backdrop-blur-md border border-gray-800 rounded-xl shadow-lg overflow-hidden">
-      {/* Messages */}
+    <div className="flex flex-col h-[550px] w-full bg-white/80 backdrop-blur-md border border-gray-800 rounded-xl shadow-lg overflow-hidden">
+      
+      {/* 🔹 Super Admin Announcement */}
+      {latestSuperAdmin.length > 0 && (
+        <div className="bg-gray-100 border-b border-yellow-400 p-2 text-xs">
+          {latestSuperAdmin.map((msg) => (
+            <div key={msg.id} className="rounded-lg px-2 py-1 shadow-sm">
+              <span className="font-bold text-red-700">
+                {msg.username}
+                
+                {msg.game_users?.is_admin && " - ADMIN"}
+              </span>
+              <div className="text-gray-800 break-words whitespace-pre-wrap">
+                {msg.message}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 🔹 Normal Chat Messages */}
       <div className="flex-1 overflow-y-auto p-4 text-[10px] space-y-2">
-        {messages.map((msg) => (
+        {normalMessages.map((msg) => (
           <div
             key={msg.id}
             className="bg-gray-300 border border-gray-200 rounded-lg px-2 py-1 shadow-sm"
           >
-            <span className="font-bold text-blue-700">{msg.username}: </span>
-            <span className="text-gray-800">{msg.message}</span>
+            <span className="font-bold text-blue-700">
+              {msg.username}
+              {msg.game_users?.is_admin && " - ADMIN"}
+            </span>
+            <div className="text-gray-800 break-words whitespace-pre-wrap">
+              {msg.message}
+            </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* 🔹 Input */}
       <div className="flex border-t border-gray-300 bg-gray-50 p-2">
         <input
           className="flex-1 p-2 text-[10px] outline-none border border-gray-300 rounded-lg focus:border-blue-400 focus:ring-1 focus:ring-blue-300 transition"
@@ -99,8 +149,6 @@ export default function GlobalChat({ user }) {
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           placeholder="Type your message here..."
-        
-        //   placeholder="Jesus loves you ❤️✝️..."
         />
         <button
           onClick={sendMessage}
