@@ -5,20 +5,38 @@ import { supabase } from "lib/supabaseClient";
 const PAYMENT_BACKEND_URL =
   process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL || "http://localhost:3000";
 
-// Adjust talents by amount (+ or -) via payment-backend API
-export async function adjustTalents(userId, amount) {
+/**
+ * Adjust talents by amount (+ or -) via payment-backend API
+ * @param {string} userId - The user's ID (must match game_users.user_id)
+ * @param {number} amount - Number of talents to adjust (positive or negative)
+ * @param {string} [transactionId] - Optional unique transaction ID (if not provided, auto-generated)
+ */
+export async function adjustTalents(userId, amount, transactionId) {
   try {
+    if (!userId || typeof amount !== "number") {
+      console.error("❌ adjustTalents: Missing or invalid parameters", { userId, amount, transactionId });
+      throw new Error("Missing or invalid parameters for adjustTalents");
+    }
+
+    // Auto-generate a transactionId if not passed in
+    const txId = transactionId || `${userId}-${Date.now()}-${amount}`;
+
+    console.log("📤 Sending adjustTalents request:", { userId, amount, transactionId: txId });
+
     const res = await fetch(`${PAYMENT_BACKEND_URL}/api/adjust-talents`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, amount }),
+      body: JSON.stringify({ userId, amount, transactionId: txId }),
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      throw new Error(`API error: ${res.status}`);
+      console.error("❌ API returned error:", data);
+      throw new Error(data.error || `API error: ${res.status}`);
     }
 
-    const data = await res.json();
+    console.log("✅ Talents adjusted successfully. New balance:", data.newBalance);
     return data.newBalance; // The backend returns updated balance
   } catch (err) {
     console.error("❌ Error adjusting talents:", err);

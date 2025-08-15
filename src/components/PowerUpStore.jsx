@@ -104,7 +104,7 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
 
           <div className="text-right text-sm mb-4">
             <span className="font-semibold text-gray-700">Your Talents:</span>{" "}
-            <span className="text-blue-600 font-bold">{gameUser?.talents ?? 0} 💎</span>
+            <span className="text-blue-600 font-bold">💎 {gameUser?.talents ?? 0} </span>
           </div>
 
           <div className="space-y-4">
@@ -127,14 +127,14 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
                     onClick={() => handlePurchase(pu, "one")}
                     className="px-2 py-1 text-sm bg-blue-600 hover:bg-blue-500 text-white disabled:bg-gray-300"
                   >
-                    1x for {pu.costs.one} 💎
+                    1x for 💎 {pu.costs.one} 
                   </button>
                   <button
                     disabled={loading || gameUser.talents < pu.costs.three}
                     onClick={() => handlePurchase(pu, "three")}
                     className="px-2 py-1 text-sm bg-green-600 hover:bg-green-500 text-white disabled:bg-gray-300"
                   >
-                    3x for {pu.costs.three} 💎
+                    3x for 💎 {pu.costs.three} 
                   </button>
                 </div>
               </div>

@@ -1,71 +1,58 @@
 // src/pages/PaymentSuccess.jsx
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { adjustTalents } from "utils/talentUtils";
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const talents = searchParams.get("talents");
-  const userId = searchParams.get("userId");
-  const sessionId = searchParams.get("session_id");
+  // Works for both Paystack (reference) and Stripe (session_id)
+  const reference = searchParams.get("reference") || searchParams.get("session_id");
 
-  const [status, setStatus] = useState("Processing your purchase...");
+  const [status, setStatus] = useState("Checking payment status...");
   const [newBalance, setNewBalance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [showText, setShowText] = useState(false);
 
   useEffect(() => {
-    if (!talents || !userId) {
-      setStatus("❌ Missing payment details.");
+    if (!reference) {
+      setStatus("❌ Missing payment reference.");
       setLoading(false);
       return;
     }
 
-    // Prevent duplicate crediting if refreshed
-    const processedKey = `payment-processed-${sessionId || `${userId}-${talents}`}`;
-    if (sessionStorage.getItem(processedKey)) {
-      setStatus(`✅ Payment already processed.`);
-      setLoading(false);
-      setSuccess(true);
-      return;
-    }
-
-    const creditTalents = async () => {
+    const checkPaymentStatus = async () => {
       try {
-        // ✅ Add talents via backend API
-        const result = await adjustTalents(userId, parseInt(talents, 10));
-        if (!result.success) throw new Error("Backend failed to adjust talents");
+        const baseUrl = process.env.REACT_APP_PAYMENT_API;
+        const res = await fetch(`${baseUrl}/api/payment-status?reference=${reference}`);
+        const result = await res.json();
 
-        // ✅ Get updated balance from backend API
-        const res = await fetch(`/api/get-talents?userId=${userId}`);
-        const balanceData = await res.json();
-        if (!res.ok || balanceData.error) throw new Error(balanceData.error || "Failed to fetch balance");
+        if (!res.ok || result.error) {
+          throw new Error(result.error || "Failed to verify payment");
+        }
 
-        setNewBalance(balanceData.talents);
-        setStatus(`🎉 Purchase successful! You received ${talents} talents.`);
-        setSuccess(true);
-        setShowText(true);
-
-        // Mark payment as processed for this session
-        sessionStorage.setItem(processedKey, "true");
+        if (result.success) {
+          setNewBalance(result.newBalance);
+          setStatus(`🎉 Payment confirmed!`);
+          setSuccess(true);
+          setShowText(true);
+        } else {
+          setStatus("❌ Payment not found or not successful.");
+        }
       } catch (err) {
-        console.error("Error crediting talents:", err);
-        setStatus("❌ Something went wrong crediting your talents.");
+        console.error("Error verifying payment:", err);
+        setStatus("❌ Error verifying payment.");
       } finally {
         setLoading(false);
-
-        // Redirect after 5s
         setTimeout(() => {
           navigate("/store");
         }, 5000);
       }
     };
 
-    creditTalents();
-  }, [talents, userId, sessionId, navigate]);
+    checkPaymentStatus();
+  }, [reference, navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-gray-50">

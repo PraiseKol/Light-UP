@@ -52,6 +52,7 @@ export default function TalentStore({ gameUser, onPurchase }) {
         body: JSON.stringify({
           userId: gameUser.user_id,
           amount: -cost,
+          transactionId: `lives-${Date.now()}`
         }),
       });
 
@@ -81,8 +82,22 @@ export default function TalentStore({ gameUser, onPurchase }) {
     <div className="p-6 max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-yellow-100">
       {/* Money → Talents */}
       <div className="space-y-4 mb-8">
+      <h2 className="text-2xl font-extrabold mb-3 text-yellow-700 text-center">
+            Talent Store
+          </h2>
+      <p className="text-center text-sm text-gray-500 mb-6">
+            Top up your talents and lives here.
+          </p>
+
+          <div className="text-right text-sm mb-4">
+            <span className="font-semibold text-gray-700">Your Talents:</span>{" "}
+            <span className="text-yellow-600 font-bold">💎 {gameUser?.talents ?? 0} </span>
+          </div>
+          
         <div className="flex justify-between items-center bg-blue-50 border border-blue-200 p-4 rounded-xl shadow-sm">
+          
           <div>
+        
             <p className="font-semibold text-blue-900">💎 100 Talents</p>
             <p className="text-sm text-gray-600">₦750 / $0.50</p>
           </div>
@@ -123,11 +138,11 @@ export default function TalentStore({ gameUser, onPurchase }) {
         <div className="flex justify-between items-center bg-green-50 border border-green-200 p-4 rounded-xl shadow-sm">
           <div>
             <p className="font-semibold text-green-900">Full ❤️ Lives</p>
-            <p className="text-sm text-gray-600">💎 25 Talents</p>
+            <p className="text-sm text-gray-600">💎 50 Talents</p>
           </div>
           <button
-            disabled={loading || gameUser.talents < 25}
-            onClick={() => handleBuyLivesWithTalents(25, 5)}
+            disabled={loading || gameUser.talents < 50}
+            onClick={() => handleBuyLivesWithTalents(50, 5)}
             className="px-3 py-1 text-sm bg-green-600 hover:bg-green-500 text-white rounded disabled:bg-gray-300 flex items-center gap-2"
           >
             {loading ? (

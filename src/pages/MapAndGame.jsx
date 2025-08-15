@@ -340,7 +340,7 @@ export default function MapAndGame({ sound, setSound }) {
                 <h2 className="text-sm font-bold text-blue-700 mb-2">
                   🏆 Top Players
                 </h2>
-                <ol className="space-y-1 text-sm">
+                <ol className="space-y-1 text-[10px]">
                   {totalLeaderboard.map((entry, index) => (
                     <li key={index} className="flex justify-between">
                       <span>
@@ -405,7 +405,7 @@ export default function MapAndGame({ sound, setSound }) {
           <div className="sticky top-0 z-40 bg-white py-2 px-4 shadow-sm flex flex-wrap justify-between items-center text-sm md:text-base font-semibold text-blue-700 gap-4">
             <div className="truncate"> {gameUser.player_name || "Unnamed"}</div>
             <div className="flex items-center gap-1">
-              💎 Talents: {gameUser.talents ?? 0}
+               Talents: 💎 {gameUser.talents ?? 0}
             </div>
             <div>Total Score: {userScore}</div>
             <LivesDisplay
@@ -500,7 +500,7 @@ export default function MapAndGame({ sound, setSound }) {
               <h2 className="text-lg font-bold text-blue-700 mb-2">
                 🏆 Top Players
               </h2>
-              <ol className="space-y-1 text-sm">
+              <ol className="space-y-1 text-[10px]">
                 {totalLeaderboard.map((entry, index) => (
                   <li key={index} className="flex justify-between">
                     <span>
