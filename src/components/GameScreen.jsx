@@ -20,7 +20,39 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
   const maybeUser = useUser();
   const user = maybeUser ?? null;
 
-  const { gameUser, loading: loadingGameUser, refetch } = useGameUser(user?.id ?? null);
+  const {
+    gameUser,
+    loading: loadingGameUser,
+    refetch,
+  } = useGameUser(user?.id ?? null);
+
+  // Mark player as in game when screen mounts
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const markInGame = async () => {
+      await supabase
+        .from("game_users")
+        .update({ in_game: true, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+      await refetch(); // ✅ refresh state
+    };
+
+    const markOutOfGame = async () => {
+      await supabase
+        .from("game_users")
+        .update({ in_game: false, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+    };
+
+    markInGame();
+
+    // On unmount, mark player as NOT in game
+    return () => {
+      // Fire and forget — we don't await inside cleanup
+      markOutOfGame();
+    };
+  }, [user?.id, refetch]);
 
   const [questionData, setQuestionData] = useState(null);
   const [loadingQuestion, setLoadingQuestion] = useState(true);
@@ -74,6 +106,16 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
     }
 
     await loseLife(user.id, gameUser.lives);
+
+    // If that was their last life, mark them as out of game
+    if (gameUser.lives - 1 <= 0) {
+      await supabase
+        .from("game_users")
+        .update({ in_game: false, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+      await refetch();
+    }
+
     await refetch();
   };
 
@@ -121,8 +163,12 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
       <div className="flex items-center justify-center h-screen bg-gradient-to-b from-blue-200 via-blue-50 to-white">
         <div className="flex flex-col items-center bg-white/60 backdrop-blur-lg rounded-2xl shadow-xl p-8 max-w-sm w-full animate-fadeIn">
           <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <h2 className="text-2xl font-extrabold text-gray-800 mb-1">Loading user...</h2>
-          <p className="text-sm text-gray-500 text-center">Hang tight ⚡ Preparing your adventure</p>
+          <h2 className="text-2xl font-extrabold text-gray-800 mb-1">
+            Loading user...
+          </h2>
+          <p className="text-sm text-gray-500 text-center">
+            Hang tight ⚡ Preparing your adventure
+          </p>
         </div>
       </div>
     );
@@ -133,8 +179,12 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
       <div className="flex items-center justify-center h-screen bg-gradient-to-b from-green-200 via-green-50 to-white">
         <div className="flex flex-col items-center bg-white/60 backdrop-blur-lg rounded-2xl shadow-xl p-8 max-w-sm w-full animate-fadeIn">
           <div className="w-12 h-12 border-4 border-green-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <h2 className="text-2xl font-extrabold text-gray-800 mb-1">Loading game...</h2>
-          <p className="text-sm text-gray-500 text-center">Setting the stage for your next challenge 🎯</p>
+          <h2 className="text-2xl font-extrabold text-gray-800 mb-1">
+            Loading game...
+          </h2>
+          <p className="text-sm text-gray-500 text-center">
+            Setting the stage for your next challenge 🎯
+          </p>
         </div>
       </div>
     );
@@ -144,9 +194,12 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-blue-200 via-blue-50 to-white px-4">
         <div className="text-6xl mb-4 animate-bounce">😢</div>
-        <div className="text-2xl font-bold mb-2 text-blue-700">No Question Yet</div>
+        <div className="text-2xl font-bold mb-2 text-blue-700">
+          No Question Yet
+        </div>
         <p className="text-sm text-gray-600 text-center max-w-xs">
-          This level hasn’t been unlocked yet. Try another challenge or check back soon.
+          This level hasn’t been unlocked yet. Try another challenge or check
+          back soon.
         </p>
         <button
           onClick={() => navigate("/map")}
@@ -175,7 +228,6 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
 
   return (
     <div className="pb-28 p-4 space-y-4 relative min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100">
-      
       {/* Top HUD */}
       <div className="flex justify-between items-center px-4 py-3 bg-white/40 backdrop-blur-md rounded-xl shadow-md">
         <span className="flex items-center gap-2">
@@ -200,19 +252,40 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
       {/* Game mode area */}
       <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-lg p-4">
         {mode === "word-fill" && (
-          <WordFillMode {...commonProps} question={questionData.question} answer={questionData.answer} />
+          <WordFillMode
+            {...commonProps}
+            question={questionData.question}
+            answer={questionData.answer}
+          />
         )}
         {mode === "trivia" && (
-          <TriviaMode {...commonProps} question={questionData.question} options={questionData.options} answer={questionData.answer} />
+          <TriviaMode
+            {...commonProps}
+            question={questionData.question}
+            options={questionData.options}
+            answer={questionData.answer}
+          />
         )}
         {mode === "four-pics" && (
-          <FourPicsMode {...commonProps} answer={questionData.answer} imageUrls={questionData.image_urls} letters={questionData.letters} />
+          <FourPicsMode
+            {...commonProps}
+            answer={questionData.answer}
+            imageUrls={questionData.image_urls}
+            letters={questionData.letters}
+          />
         )}
         {mode === "scripture-match" && (
-          <ScriptureMatchMode {...commonProps} question={questionData.question} />
+          <ScriptureMatchMode
+            {...commonProps}
+            question={questionData.question}
+          />
         )}
-        {!["word-fill", "trivia", "four-pics", "scripture-match"].includes(mode) && (
-          <div className="p-6 text-center text-gray-700">Mode not supported yet: <strong>{mode}</strong></div>
+        {!["word-fill", "trivia", "four-pics", "scripture-match"].includes(
+          mode
+        ) && (
+          <div className="p-6 text-center text-gray-700">
+            Mode not supported yet: <strong>{mode}</strong>
+          </div>
         )}
       </div>
 

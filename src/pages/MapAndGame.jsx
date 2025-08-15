@@ -20,9 +20,12 @@ import ScriptureModal from "components/ScriptureModal";
 import SettingsModal from "components/SettingsModal";
 import FeedbackButton from "components/FeedbackButton";
 import { toast } from "sonner";
+import { markInGame, clearInGame } from "utils/inGame";
+import { loseLife } from "utils/loseLife";
 
 import PowerUpStore from "components/PowerUpStore";
 import Modal from "components/ui/modal";
+import GlobalChat from "components/GlobalChat";
 import {
   determineUnlockedPhases,
   wrapLevelsWithStatus,
@@ -100,20 +103,66 @@ export default function MapAndGame({ sound, setSound }) {
   }, [showTotalLeaderboard]);
 
   useEffect(() => {
+    const penalizeIfStaleInGame = async () => {
+      if (!user?.id || !gameUser) return;
+
+      // If DB says user is in-game but local UI has no selected level,
+      // it usually means user refreshed/left mid-level -> lose a life.
+      if (gameUser.in_game && !selectedLevel) {
+        // give a short grace to avoid penalizing race conditions (optional)
+        // e.g., ignore if in_game_started_at is very recent (last 2s)
+        const startedAt = gameUser.in_game_started_at
+          ? new Date(gameUser.in_game_started_at).getTime()
+          : 0;
+        const justStarted = Date.now() - startedAt < 2000; // 2 seconds
+
+        if (justStarted) return; // skip quick races
+
+        toast.error("You left a level in progress — 1 life deducted.");
+        try {
+          await loseLife(user.id, gameUser.lives);
+          await clearInGame(user.id);
+          await refetch?.();
+        } catch (err) {
+          console.error("Error handling stale in_game:", err);
+        }
+      }
+    };
+
+    penalizeIfStaleInGame();
+  }, [gameUser, selectedLevel, user?.id, refetch]);
+
+  useEffect(() => {
     if (!user) {
       navigate("/login");
       return;
     }
-  
+
+    const startLevel = async (level) => {
+      // Set local selected level first so UI knows user is entering a level
+      setSelectedLevel(level);
+
+      try {
+        if (user?.id) {
+          await markInGame(user.id, level.id);
+          // optionally refresh the gameUser state to surface in_game quickly
+          await refetch?.();
+        }
+      } catch (err) {
+        console.error("Failed to mark in-game:", err);
+        // still let the player start the level locally
+      }
+    };
+
     const loadProgressAndScore = async () => {
       const completed = await fetchProgress(user.id);
       setCompletedLevels(completed);
-  
+
       const unlocked = determineUnlockedPhases(completed, levelPhases);
       setUnlockedPhases(unlocked);
-  
+
       setUserScore(await fetchTotalScore(user.id));
-  
+
       if (unlocked.length > 0) {
         const highestIndex = Math.max(...unlocked);
         setTimeout(() => {
@@ -122,12 +171,11 @@ export default function MapAndGame({ sound, setSound }) {
             block: "end", // so it aligns at the bottom
           });
         }, 500);
-      }      
+      }
     };
-  
+
     loadProgressAndScore();
   }, [user, navigate, levelPhases]);
-  
 
   useEffect(() => {
     if (showNextLevelModal) {
@@ -144,6 +192,17 @@ export default function MapAndGame({ sound, setSound }) {
       setShowSettings(true);
     }
   }, [gameUser]);
+
+  const handleBackFromGame = async () => {
+    try {
+      if (user?.id) await clearInGame(user.id);
+    } catch (err) {
+      console.error("Failed clearing in_game on back:", err);
+    } finally {
+      setSelectedLevel(null);
+      await refetch?.();
+    }
+  };
 
   useEffect(() => {
     const updateChallengeStatus = async () => {
@@ -176,12 +235,21 @@ export default function MapAndGame({ sound, setSound }) {
 
   const handleLevelComplete = async () => {
     if (!user || !selectedLevel?.id) return;
+
     await saveProgress({
       level_id: selectedLevel.id,
       phase: selectedLevel.phaseNumber,
       mode: selectedLevel.mode,
       score: 0,
     });
+
+    // CLEAR in_game now that the level was completed
+    try {
+      await clearInGame(user.id);
+    } catch (err) {
+      console.error("Failed clearing in_game after complete:", err);
+    }
+
     const updatedCompleted = await fetchProgress(user.id);
     setCompletedLevels(updatedCompleted);
     setSelectedLevel(null);
@@ -263,6 +331,10 @@ export default function MapAndGame({ sound, setSound }) {
         </p>
       </div>
     );
+  }
+
+  function startLevel(level) {
+    setSelectedLevel(level);
   }
 
   return (
@@ -378,6 +450,7 @@ export default function MapAndGame({ sound, setSound }) {
 
         {/* LEFT SIDEBAR (desktop) */}
         <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/40 backdrop-blur-md border-r border-gray-300">
+          {/* Top Buttons */}
           <button
             onClick={() => setShowSettings(true)}
             className="bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
@@ -396,6 +469,12 @@ export default function MapAndGame({ sound, setSound }) {
           >
             🎮 Multiplayer
           </button>
+
+          {/* Spacer to push chat to the bottom */}
+          <div className="flex-1" />
+
+          {/* Global Chat */}
+          <GlobalChat user={user} />
         </div>
 
         {/* CENTER CONTENT */}
@@ -405,7 +484,7 @@ export default function MapAndGame({ sound, setSound }) {
           <div className="sticky top-0 z-40 bg-white py-2 px-4 shadow-sm flex flex-wrap justify-between items-center text-sm md:text-base font-semibold text-blue-700 gap-4">
             <div className="truncate"> {gameUser.player_name || "Unnamed"}</div>
             <div className="flex items-center gap-1">
-               Talents: 💎 {gameUser.talents ?? 0}
+              Talents: 💎 {gameUser.talents ?? 0}
             </div>
             <div>Total Score: {userScore}</div>
             <LivesDisplay
@@ -450,7 +529,7 @@ export default function MapAndGame({ sound, setSound }) {
                       currentLevelId={currentPhaseId}
                       isLocked={gameUser.lives === 0}
                       onSelectLevel={(level) => {
-                        if (gameUser.lives > 0) setSelectedLevel(level);
+                        if (gameUser.lives > 0) startLevel(level);
                         else
                           toast.error(
                             "You're out of lives! Please wait to get more."
@@ -464,12 +543,12 @@ export default function MapAndGame({ sound, setSound }) {
           ) : (
             <GameScreen
               level={selectedLevel}
-              onBack={() => {
-                setSelectedLevel(null);
-                refetch?.();
-              }}
+              onBack={handleBackFromGame}
               onComplete={handleLevelComplete}
               onScore={handleScore}
+              onLoseLife={() =>
+                loseLife(gameUser.user_id, gameUser.lives).then(refetch)
+              }
               userScore={userScore}
               refetchGameUser={refetch}
             />
