@@ -357,7 +357,7 @@ export default function MapAndGame({ sound, setSound }) {
                 <h2 className="text-sm font-bold text-yellow-600 mb-2">
                   🏆 Weekly Top 10
                 </h2>
-                <ol className="space-y-1 text-xs">
+                <ol className="space-y-1 text-[10px]">
                   {weeklyLeaderboard.map((entry, index) => (
                     <li key={index} className="flex justify-between">
                       <span>
@@ -500,7 +500,7 @@ export default function MapAndGame({ sound, setSound }) {
               <h2 className="text-lg font-bold text-blue-700 mb-2">
                 🏆 Top Players
               </h2>
-              <ol className="space-y-1 text-[10px]">
+              <ol className="space-y-1 text-sm">
                 {totalLeaderboard.map((entry, index) => (
                   <li key={index} className="flex justify-between">
                     <span>
