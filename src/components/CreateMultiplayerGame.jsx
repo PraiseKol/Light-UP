@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "lib/supabaseClient";
 import { useAuth } from "auth/AuthProvider";
 import { useMultiplayerStore } from "store/useMultiplayerStore";
+import { playSound } from "utils/sound"; // ✅ Import sound helper
 
-export default function CreateMultiplayerGame() {
+export default function CreateMultiplayerGame({ effectsOn }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { setGame, setPlayers } = useMultiplayerStore();
@@ -16,8 +17,13 @@ export default function CreateMultiplayerGame() {
   const generateToken = () => crypto.randomUUID().split("-")[0];
 
   const handleCreateGame = async () => {
-    if (!user) return alert("Please log in first!");
+    if (!user) {
+      playSound("error", effectsOn); // ❌ Error sound
+      return alert("Please log in first!");
+    }
+
     setLoading(true);
+    playSound("creatingGame", effectsOn); // 🎵 "Creating game" sound
 
     try {
       const token = generateToken();
@@ -64,9 +70,11 @@ export default function CreateMultiplayerGame() {
       setGame(game);
       setPlayers(players || []);
 
+      playSound("success", effectsOn); // ✅ Success sound
       navigate(`/multiplayer/lobby/${game.id}`);
     } catch (err) {
       console.error("❌ Error creating game:", err);
+      playSound("error", effectsOn); // ❌ Error sound
       alert("Error creating game: " + err.message);
     } finally {
       setLoading(false);
@@ -79,7 +87,10 @@ export default function CreateMultiplayerGame() {
         
         {/* Back Button */}
         <button
-          onClick={() => navigate("/map")}
+          onClick={() => {
+            playSound("click", effectsOn); // 🔊 Button click
+            navigate("/map");
+          }}
           className="mb-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition"
         >
           ← Back
@@ -96,7 +107,10 @@ export default function CreateMultiplayerGame() {
             {["1v1", "1v1v1", "1v1v1v1", "2v2"].map((m) => (
               <button
                 key={m}
-                onClick={() => setMode(m)}
+                onClick={() => {
+                  setMode(m);
+                  playSound("select", effectsOn); // 🔊 Mode select
+                }}
                 className={`p-3 rounded-lg font-medium border transition-all ${
                   mode === m
                     ? "bg-blue-500 text-white border-blue-400"
@@ -116,7 +130,10 @@ export default function CreateMultiplayerGame() {
             {[60, 120, 180].map((sec) => (
               <button
                 key={sec}
-                onClick={() => setDuration(sec)}
+                onClick={() => {
+                  setDuration(sec);
+                  playSound("select", effectsOn); // 🔊 Duration select
+                }}
                 className={`p-3 rounded-lg font-medium border transition-all ${
                   duration === sec
                     ? "bg-green-500 text-white border-green-400"

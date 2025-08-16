@@ -5,8 +5,9 @@ import { useAuth } from "auth/AuthProvider";
 import { useMultiplayerStore } from "store/useMultiplayerStore";
 import { motion, AnimatePresence } from "framer-motion";
 import html2canvas from "html2canvas";
+import { playSound } from "utils/sound";
 
-export default function MultiplayerGame() {
+export default function MultiplayerGame({ effectsOn }) {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -59,6 +60,7 @@ export default function MultiplayerGame() {
         startGameTimer(new Date(gameData.end_at));
       }
       if (gameData.status === "starting") {
+        playSound("countdown", effectsOn);
         setPreCountdown(5);
       }
 
@@ -171,12 +173,11 @@ export default function MultiplayerGame() {
     return () => supabase.removeChannel(channel);
   }, [gameId]);
 
-
   useEffect(() => {
     // Reset hint when question changes
     setPlaceholderHint("");
   }, [currentQ?.id]);
-  
+
   // --- Fetch questions ---
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -204,42 +205,44 @@ export default function MultiplayerGame() {
     return () => clearTimeout(countdownRef.current);
   }, [preCountdown]);
 
-  useEffect(() => {
-    const fetchAllPowerupUsage = async () => {
-      const { data, error } = await supabase
-        .from("multiplayer_answers")
-        .select("player_id, meta")
-        .eq("game_id", gameId);
+  const fetchAllPowerupUsage = async () => {
+    const { data, error } = await supabase
+      .from("multiplayer_answers")
+      .select("player_id, meta")
+      .eq("game_id", gameId);
 
-      if (error) {
-        console.error("Failed to fetch power-up usage:", error);
-        return;
+    if (error) {
+      console.error("Failed to fetch power-up usage:", error);
+      return;
+    }
+
+    const usageMap = {};
+
+    data?.forEach((row) => {
+      const player = row.player_id;
+      const used = row.meta?.powerups_used || [];
+
+      if (!usageMap[player]) {
+        usageMap[player] = { divine_hint: 0, heavenly_match: 0 };
       }
 
-      const usageMap = {};
-
-      data?.forEach((row) => {
-        const player = row.player_id;
-        const used = row.meta?.powerups_used || [];
-
-        if (!usageMap[player]) {
-          usageMap[player] = { divine_hint: 0, heavenly_match: 0 };
+      used.forEach((type) => {
+        if (usageMap[player][type] !== undefined) {
+          usageMap[player][type]++;
         }
-
-        used.forEach((type) => {
-          if (usageMap[player][type] !== undefined) {
-            usageMap[player][type]++;
-          }
-        });
       });
+    });
 
-      setAllPowerupUsage(usageMap);
-    };
+    setAllPowerupUsage(usageMap);
+  };
 
+  useEffect(() => {
     if (game?.status === "finished") {
-      fetchAllPowerupUsage();
+      playSound("gameOver", effectsOn); // 🔊 play only if effectsOn is true
+      fetchAllPowerupUsage(); // ✅ still runs on finish
     }
-  }, [game?.status, gameId]);
+  }, [game?.status, effectsOn, gameId]);
+  
 
   const startGame = async () => {
     const endAt = new Date(
@@ -285,7 +288,9 @@ export default function MultiplayerGame() {
 
   const handleAnswer = async (answer) => {
     if (!currentQ || !playerId) return;
+
     const elapsed = (Date.now() - questionStartTime) / 1000;
+
     let earned = 0;
     const isCorrect =
       answer.toLowerCase().trim() === currentQ.answer.toLowerCase().trim();
@@ -342,13 +347,6 @@ export default function MultiplayerGame() {
 
   const logPowerupUsage = async (type) => {
     if (!gameId || !playerId) return;
-
-    await supabase.from("multiplayer_answers").insert({
-      game_id: gameId,
-      player_id: playerId,
-      question_id: currentQ?.id || null,
-      meta: { powerups_used: [type] },
-    });
   };
 
   const handleUsePowerup = async (type) => {
@@ -364,7 +362,7 @@ export default function MultiplayerGame() {
       .eq("user_id", user.id);
 
     // 🧩 Log power-up usage in multiplayer_answers.meta
-    await supabase.from("multiplayer_answers").insert({
+    await supabase.from("multiplayer_answers").upsert({
       game_id: gameId,
       player_id: playerId,
       question_id: currentQ.id,
@@ -424,6 +422,7 @@ export default function MultiplayerGame() {
   // --- Finished screen ---
   // Inside the finished state rendering section:
   if (game?.status === "finished") {
+    playSound("gameOver", effectsOn);
     const matchCode = game?.token || "N/A";
     const finishedAt = new Date().toLocaleString();
 
@@ -434,6 +433,7 @@ export default function MultiplayerGame() {
       return "";
     };
 
+    //lets see
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
         {/* Trophy */}
@@ -557,7 +557,10 @@ export default function MultiplayerGame() {
                     <button
                       key={i}
                       className="p-3 rounded-xl bg-blue-500 hover:bg-blue-400 shadow-lg transition"
-                      onClick={() => handleAnswer(opt)}
+                      onClick={() => {
+                        playSound("optionSelect", effectsOn); // ✅ sound for picking
+                        handleAnswer(opt);
+                      }}
                     >
                       {opt}
                     </button>
@@ -572,14 +575,20 @@ export default function MultiplayerGame() {
                     placeholder={placeholderHint || "Your answer"} // ✅ updated
                     className="border p-2 rounded-xl w-64 text-black"
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") handleAnswer(textAnswer);
+                      if (e.key === "Enter") {
+                        playSound("submitAnswer", effectsOn); // ✅ sound for submit
+                        handleAnswer(textAnswer);
+                      }
                     }}
                     onFocus={() => setIsInputFocused(true)}
                     onBlur={() => setIsInputFocused(false)}
                   />
 
                   <button
-                    onClick={() => handleAnswer(textAnswer)}
+                    onClick={() => {
+                      playSound("submitAnswer", effectsOn); // ✅ sound for submit
+                      handleAnswer(textAnswer);
+                    }}
                     className="px-4 py-2 bg-green-500 rounded-xl hover:bg-green-400 shadow-lg transition"
                   >
                     Submit
@@ -592,7 +601,10 @@ export default function MultiplayerGame() {
               ) && (
                 <div className="mt-4 flex gap-4 justify-center">
                   <button
-                    onClick={() => handleUsePowerup("divine_hint")}
+                    onClick={() => {
+                      playSound("powerUpUsed", effectsOn); // ✅ sound for power-up
+                      handleUsePowerup("divine_hint");
+                    }}
                     disabled={!canUsePowerup("divine_hint")}
                     className="px-4 py-2 rounded-lg bg-purple-600 text-black disabled:bg-gray-600 hover:bg-purple-500 transition"
                   >
@@ -600,7 +612,10 @@ export default function MultiplayerGame() {
                   </button>
 
                   <button
-                    onClick={() => handleUsePowerup("heavenly_match")}
+                    onClick={() => {
+                      playSound("powerUpUsed", effectsOn); // ✅ sound for power-up
+                      handleUsePowerup("heavenly_match");
+                    }}
                     disabled={!canUsePowerup("heavenly_match")}
                     className="px-4 py-2 rounded-lg bg-yellow-400 text-black disabled:bg-gray-600 hover:bg-yellow-300 transition"
                   >

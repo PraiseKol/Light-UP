@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { playSound } from "utils/sound";
 
-export default function ScriptureMatchWeekly({ quiz, onAnswer }) {
+export default function ScriptureMatchWeekly({ quiz, onAnswer, effectsOn = true }) {
   const [selected, setSelected] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const startTimeRef = useRef(Date.now());
@@ -17,7 +18,7 @@ export default function ScriptureMatchWeekly({ quiz, onAnswer }) {
     return () => clearTimeout(timeoutRef.current);
   }, [submitted, onAnswer]);
 
-  const handleSelection = (choice) => {
+  const handleSelect = (choice) => {
     if (submitted) return;
     const timeTaken = Math.floor((Date.now() - startTimeRef.current) / 1000);
     const isCorrect =
@@ -58,7 +59,12 @@ export default function ScriptureMatchWeekly({ quiz, onAnswer }) {
           return (
             <button
               key={idx}
-              onClick={() => handleSelection(option)}
+              onClick={() => {
+                if (!submitted) {
+                  playSound("optionSelect", effectsOn); // 🔊 sound when clicking an option
+                  handleSelect(option);
+                }
+              }}
               disabled={submitted}
               className={`px-5 py-3 rounded-xl text-left font-medium transition-all duration-200 border-2 
                 ${

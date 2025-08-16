@@ -4,8 +4,9 @@ import { supabase } from "lib/supabaseClient";
 import { useMultiplayerStore } from "store/useMultiplayerStore";
 import { useAuth } from "auth/AuthProvider";
 import Switch from "components/ui/Switch"; // shadcn/ui switch
+import { playSound } from "utils/sound";
 
-export default function MultiplayerLobby() {
+export default function MultiplayerLobby({ effectsOn }) {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -20,6 +21,7 @@ export default function MultiplayerLobby() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(joinUrl);
+    playSound("click", effectsOn);
     alert("Join link copied!");
   };
 
@@ -117,12 +119,15 @@ export default function MultiplayerLobby() {
 
   const handleTogglePowerups = async (newValue) => {
     if (!isCreator) return;
+    playSound("switch", effectsOn);
     setAllowPowerups(newValue);
     const { error } = await supabase
       .from("multiplayer_games")
       .update({ allow_powerups: newValue })
       .eq("id", gameId);
-    if (error) console.error("Failed to toggle power-ups:", error);
+    if (error) 
+    playSound("error", effectsOn);
+    console.error("Failed to toggle power-ups:", error);
   };
 
   const handleJoinSlot = async (slot) => {
@@ -131,6 +136,7 @@ export default function MultiplayerLobby() {
       : 0;
 
     if (filledSlots >= totalSlots) {
+      playSound("success", effectsOn);
       alert("Game Full");
       return;
     }
@@ -148,6 +154,7 @@ export default function MultiplayerLobby() {
       .single();
 
     const playerName = gameUser?.player_name || "Unnamed";
+    playSound("click", effectsOn);
 
     if (existing) {
       await supabase
@@ -169,7 +176,7 @@ export default function MultiplayerLobby() {
 
   const handleStartGame = async () => {
     if (players.filter((p) => p.slot_number).length < totalSlots) return;
-
+    playSound("creatingGame", effectsOn);
     await supabase
       .from("multiplayer_games")
       .update({
@@ -181,6 +188,7 @@ export default function MultiplayerLobby() {
   const handleBack = async () => {
     try {
       if (user?.id === game?.creator_id) {
+        playSound("back", effectsOn);
         await supabase
           .from("multiplayer_players")
           .delete()
@@ -188,14 +196,17 @@ export default function MultiplayerLobby() {
         await supabase.from("multiplayer_games").delete().eq("id", gameId);
         navigate(-1);
       } else {
+        playSound("back", effectsOn);
         await supabase
           .from("multiplayer_players")
           .delete()
           .eq("game_id", gameId)
           .eq("user_id", user.id);
+
         navigate("/multiplayer/create");
       }
     } catch (err) {
+      playSound("error", effectsOn);
       console.error("❌ Error leaving game:", err);
     }
   };

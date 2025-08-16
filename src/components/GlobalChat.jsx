@@ -11,7 +11,7 @@ export default function GlobalChat({ user }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Fetch player's name
+  // Fetch player's display name (player_name from game_users)
   useEffect(() => {
     const fetchPlayerName = async () => {
       if (!user?.id) return;
@@ -20,6 +20,7 @@ export default function GlobalChat({ user }) {
         .select("player_name")
         .eq("user_id", user.id)
         .single();
+
       if (!error && data) {
         setPlayerName(data.player_name);
       }
@@ -27,6 +28,7 @@ export default function GlobalChat({ user }) {
     fetchPlayerName();
   }, [user?.id]);
 
+  // Fetch and subscribe to chat messages
   useEffect(() => {
     const fetchMessages = async () => {
       let { data } = await supabase
@@ -47,7 +49,7 @@ export default function GlobalChat({ user }) {
 
     fetchMessages();
 
-    // Subscribe to new messages
+    // Live subscription for real-time chat updates
     const subscription = supabase
       .channel("public:chat_messages")
       .on(
@@ -84,18 +86,20 @@ export default function GlobalChat({ user }) {
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !playerName) return;
+
     await supabase.from("chat_messages").insert({
       user_id: user.id,
       username: playerName,
       message: newMessage.trim(),
     });
+
     setNewMessage("");
   };
 
-  // Only keep latest super admin message
+  // Keep only latest super admin message
   const latestSuperAdmin = messages
     .filter((m) => m.game_users?.role === "super_admin")
-    .slice(-1); // ✅ UI shows only one
+    .slice(-1);
 
   const normalMessages = messages.filter(
     (m) => m.game_users?.role !== "super_admin"
@@ -106,12 +110,11 @@ export default function GlobalChat({ user }) {
       
       {/* 🔹 Super Admin Announcement */}
       {latestSuperAdmin.length > 0 && (
-        <div className="bg-gray-100 border-b border-yellow-400 p-2 text-xs">
+        <div className="bg-yellow-100 border-b border-yellow-400 p-2 text-xs">
           {latestSuperAdmin.map((msg) => (
             <div key={msg.id} className="rounded-lg px-2 py-1 shadow-sm">
               <span className="font-bold text-red-700">
-                {msg.username}
-                
+                {msg.game_users?.player_name}
                 {msg.game_users?.is_admin && " - ADMIN"}
               </span>
               <div className="text-gray-800 break-words whitespace-pre-wrap">
@@ -122,15 +125,15 @@ export default function GlobalChat({ user }) {
         </div>
       )}
 
-      {/* 🔹 Normal Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 text-[10px] space-y-2">
+      {/* 🔹 Normal Chat */}
+      <div className="flex-1 overflow-y-auto p-4 text-[11px] space-y-2">
         {normalMessages.map((msg) => (
           <div
             key={msg.id}
             className="bg-gray-300 border border-gray-200 rounded-lg px-2 py-1 shadow-sm"
           >
             <span className="font-bold text-blue-700">
-              {msg.username}
+              {msg.game_users?.player_name}
               {msg.game_users?.is_admin && " - ADMIN"}
             </span>
             <div className="text-gray-800 break-words whitespace-pre-wrap">
@@ -141,14 +144,14 @@ export default function GlobalChat({ user }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 🔹 Input */}
+      {/* 🔹 Input Field */}
       <div className="flex border-t border-gray-300 bg-gray-50 p-2">
         <input
           className="flex-1 p-2 text-[10px] outline-none border border-gray-300 rounded-lg focus:border-blue-400 focus:ring-1 focus:ring-blue-300 transition"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          placeholder="Type your message here..."
+          placeholder="Type your message..."
         />
         <button
           onClick={sendMessage}

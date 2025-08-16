@@ -6,6 +6,7 @@ import { useUser } from "@supabase/auth-helpers-react";
 import WordFillWeekly from "modes/WordFillWeekly";
 import ScriptureMatchWeekly from "modes/ScriptureMatchWeekly";
 import TriviaWeekly from "modes/TriviaWeekly";
+import { playSound } from "utils/sound";
 
 console.log("🟣 WeeklyChallengeScreen component mounted");
 
@@ -25,14 +26,20 @@ const STORAGE_KEY_SCORE = "weeklyChallengeScore";
 const STORAGE_KEY_CORRECT = "weeklyChallengeCorrect";
 const STORAGE_KEY_INCORRECT = "weeklyChallengeIncorrect";
 
-export default function WeeklyChallengeScreen() {
+export default function WeeklyChallengeScreen({ effectsOn }) {
   const [questions, setQuestions] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [score, setScore] = useState(() => parseInt(localStorage.getItem(STORAGE_KEY_SCORE) || "0", 10));
+  const [score, setScore] = useState(() =>
+    parseInt(localStorage.getItem(STORAGE_KEY_SCORE) || "0", 10)
+  );
   const [isFinished, setIsFinished] = useState(false);
   const [timeLeft, setTimeLeft] = useState(CHALLENGE_DURATION);
-  const [correctCount, setCorrectCount] = useState(() => parseInt(localStorage.getItem(STORAGE_KEY_CORRECT) || "0", 10));
-  const [incorrectCount, setIncorrectCount] = useState(() => parseInt(localStorage.getItem(STORAGE_KEY_INCORRECT) || "0", 10));
+  const [correctCount, setCorrectCount] = useState(() =>
+    parseInt(localStorage.getItem(STORAGE_KEY_CORRECT) || "0", 10)
+  );
+  const [incorrectCount, setIncorrectCount] = useState(() =>
+    parseInt(localStorage.getItem(STORAGE_KEY_INCORRECT) || "0", 10)
+  );
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
@@ -154,7 +161,9 @@ export default function WeeklyChallengeScreen() {
   };
 
   const handleAnswer = (isCorrect, timeTaken) => {
-    console.log(`📝 Answer received. Correct: ${isCorrect}, Time: ${timeTaken}s`);
+    console.log(
+      `📝 Answer received. Correct: ${isCorrect}, Time: ${timeTaken}s`
+    );
 
     if (isCorrect) {
       const earned = getPoints(timeTaken);
@@ -238,15 +247,39 @@ export default function WeeklyChallengeScreen() {
     const current = questions[currentIndex];
     const key = `${current.mode}-${current.id}`;
 
-    console.log(`🎮 Rendering mode: ${current.mode} (Question ${currentIndex + 1})`);
+    console.log(
+      `🎮 Rendering mode: ${current.mode} (Question ${currentIndex + 1})`
+    );
 
     switch (current.mode) {
       case "word-fill":
-        return <WordFillWeekly key={key} quiz={current} onAnswer={handleAnswer} />;
+        return (
+          <WordFillWeekly
+            key={key}
+            quiz={current}
+            onAnswer={handleAnswer}
+            effectsOn={effectsOn}
+          />
+        );
       case "scripture-match":
-        return <ScriptureMatchWeekly key={key} quiz={current} onAnswer={handleAnswer} />;
+        return (
+          <ScriptureMatchWeekly
+            key={key}
+            quiz={current}
+            onAnswer={handleAnswer}
+            effectsOn={effectsOn}
+          />
+        );
       case "trivia":
-        return <TriviaWeekly key={key} quiz={current} onAnswer={handleAnswer} />;
+        return (
+          <TriviaWeekly
+            key={key}
+            quiz={current}
+            onAnswer={handleAnswer}
+            effectsOn={effectsOn}
+          />
+        );
+
       default:
         console.warn("⚠️ Unknown mode:", current.mode);
         return <div>Unknown mode</div>;
@@ -281,7 +314,9 @@ export default function WeeklyChallengeScreen() {
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
           <div
             className="bg-gradient-to-r from-orange-400 to-pink-500 h-full transition-all duration-500 ease-out"
-            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+            style={{
+              width: `${((currentIndex + 1) / questions.length) * 100}%`,
+            }}
           />
         </div>
       </div>

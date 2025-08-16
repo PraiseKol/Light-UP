@@ -37,23 +37,36 @@ function ProtectedRoute({ children }) {
 function AppContent() {
   const { user } = useAuth();
   const [sound, setSound] = useState("default");
+  const [effectsOn, setEffectsOn] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (!user?.id) {
       setSound("default");
+      setEffectsOn(true);
       return;
     }
+  
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from("game_users")
-        .select("sound")
+        .select("sound, effects_on")
         .eq("user_id", user.id)
         .single();
-
-      setSound(!error && data?.sound ? data.sound : "default");
+  
+      if (error) {
+        console.error("Error fetching user settings:", error);
+        setSound("default");
+        setEffectsOn(true);
+        return;
+      }
+  
+      setSound(data?.sound || "default");
+      setEffectsOn(data?.effects_on ?? true);
     };
+  
     fetchSettings();
-  }, [user]);
+  }, [user?.id]);
+  
 
   return (
     <>
@@ -70,7 +83,12 @@ function AppContent() {
           path="/map"
           element={
             <ProtectedRoute>
-              <MapAndGame sound={sound} setSound={setSound} />
+              <MapAndGame
+                sound={sound}
+                setSound={setSound}
+                effectsOn={effectsOn}
+                setEffectsOn={setEffectsOn}
+              />
             </ProtectedRoute>
           }
         />
@@ -78,7 +96,12 @@ function AppContent() {
           path="/weekly-challenge"
           element={
             <ProtectedRoute>
-              <WeeklyChallengeScreen />
+              <WeeklyChallengeScreen 
+                sound={sound}
+                setSound={setSound}
+                effectsOn={effectsOn}
+                setEffectsOn={setEffectsOn}
+              />
             </ProtectedRoute>
           }
         />
@@ -86,7 +109,12 @@ function AppContent() {
           path="/multiplayer/create"
           element={
             <ProtectedRoute>
-              <CreateMultiplayerGame />
+              <CreateMultiplayerGame 
+                sound={sound}
+                setSound={setSound}
+                effectsOn={effectsOn}
+                setEffectsOn={setEffectsOn}
+              />
             </ProtectedRoute>
           }
         />
@@ -94,7 +122,12 @@ function AppContent() {
           path="/multiplayer/lobby/:gameId"
           element={
             <ProtectedRoute>
-              <MultiplayerLobby />
+              <MultiplayerLobby 
+                sound={sound}
+                setSound={setSound}
+                effectsOn={effectsOn}
+                setEffectsOn={setEffectsOn}
+              />
             </ProtectedRoute>
           }
         />
@@ -102,7 +135,12 @@ function AppContent() {
           path="/multiplayer/join/:token"
           element={
             <ProtectedRoute>
-              <JoinMultiplayerGame />
+              <JoinMultiplayerGame 
+                sound={sound}
+                setSound={setSound}
+                effectsOn={effectsOn}
+                setEffectsOn={setEffectsOn}
+              />
             </ProtectedRoute>
           }
         />
@@ -110,7 +148,12 @@ function AppContent() {
           path="/multiplayer/game/:gameId"
           element={
             <ProtectedRoute>
-              <MultiplayerGame />
+              <MultiplayerGame 
+                sound={sound}
+                setSound={setSound}
+                effectsOn={effectsOn}
+                setEffectsOn={setEffectsOn}
+              />
             </ProtectedRoute>
           }
         />
@@ -121,7 +164,12 @@ function AppContent() {
           path="/admin/dashboard"
           element={
             <AdminRoute>
-              <AdminDashboard />
+              <AdminDashboard 
+                sound={sound}
+                setSound={setSound}
+                effectsOn={effectsOn}
+                setEffectsOn={setEffectsOn}
+              />
             </AdminRoute>
           }
         />

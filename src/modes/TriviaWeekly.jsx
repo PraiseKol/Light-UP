@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { playSound } from "utils/sound";
 
-export default function TriviaWeekly({ quiz, onAnswer }) {
+export default function TriviaWeekly({ quiz, onAnswer, effectsOn = true }) {
   const [selected, setSelected] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const startTimeRef = useRef(Date.now());
@@ -41,9 +42,7 @@ export default function TriviaWeekly({ quiz, onAnswer }) {
   return (
     <div className="bg-white shadow-xl rounded-2xl p-6 max-w-lg mx-auto text-center animate-fadeIn">
       {/* Question */}
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        {quiz.question}
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">{quiz.question}</h2>
 
       {/* Options */}
       <div className="grid gap-4">
@@ -55,19 +54,24 @@ export default function TriviaWeekly({ quiz, onAnswer }) {
           return (
             <button
               key={idx}
-              onClick={() => handleSelect(option)}
+              onClick={() => {
+                if (!submitted) {
+                  playSound("optionSelect", effectsOn); // 🔊 sound when clicking an option
+                  handleSelect(option);
+                }
+              }}
               disabled={submitted}
               className={`px-5 py-3 rounded-xl text-left font-medium shadow-md transition-all transform duration-200
-                ${
-                  submitted
-                    ? isCorrectAnswer
-                      ? "bg-green-500 text-white border-2 border-green-700"
-                      : isSelectedWrong
-                      ? "bg-red-500 text-white border-2 border-red-700"
-                      : "bg-gray-200 text-gray-700"
-                    : "bg-white border-2 border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 hover:scale-[1.02]"
-                }
-                ${submitted ? "" : "cursor-pointer"}`}
+    ${
+      submitted
+        ? isCorrectAnswer
+          ? "bg-green-500 text-white border-2 border-green-700"
+          : isSelectedWrong
+          ? "bg-red-500 text-white border-2 border-red-700"
+          : "bg-gray-200 text-gray-700"
+        : "bg-white border-2 border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 hover:scale-[1.02]"
+    }
+    ${submitted ? "" : "cursor-pointer"}`}
             >
               {option}
             </button>
