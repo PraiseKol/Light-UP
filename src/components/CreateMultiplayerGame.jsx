@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "lib/supabaseClient";
 import { useAuth } from "auth/AuthProvider";
 import { useMultiplayerStore } from "store/useMultiplayerStore";
-import { playSound } from "utils/sound"; // ✅ Import sound helper
+import { playSound } from "utils/sound"; 
+import GlobalChat from "components/GlobalChat"; // ✅ import chat
 
 export default function CreateMultiplayerGame({ effectsOn }) {
   const { user } = useAuth();
@@ -18,12 +19,12 @@ export default function CreateMultiplayerGame({ effectsOn }) {
 
   const handleCreateGame = async () => {
     if (!user) {
-      playSound("error", effectsOn); // ❌ Error sound
+      playSound("error", effectsOn);
       return alert("Please log in first!");
     }
 
     setLoading(true);
-    playSound("creatingGame", effectsOn); // 🎵 "Creating game" sound
+    playSound("creatingGame", effectsOn);
 
     try {
       const token = generateToken();
@@ -70,11 +71,11 @@ export default function CreateMultiplayerGame({ effectsOn }) {
       setGame(game);
       setPlayers(players || []);
 
-      playSound("success", effectsOn); // ✅ Success sound
+      playSound("success", effectsOn);
       navigate(`/multiplayer/lobby/${game.id}`);
     } catch (err) {
       console.error("❌ Error creating game:", err);
-      playSound("error", effectsOn); // ❌ Error sound
+      playSound("error", effectsOn);
       alert("Error creating game: " + err.message);
     } finally {
       setLoading(false);
@@ -82,83 +83,93 @@ export default function CreateMultiplayerGame({ effectsOn }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-6">
-      <div className="max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20 text-white">
-        
-        {/* Back Button */}
-        <button
-          onClick={() => {
-            playSound("click", effectsOn); // 🔊 Button click
-            navigate("/map");
-          }}
-          className="mb-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition"
-        >
-          ← Back
-        </button>
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-gray-900 via-gray-800 to-black p-6 gap-6">
+  
+  {/* 🔹 Global Chat (Responsive: left on desktop, bottom on mobile) */}
+  <div className="w-full lg:w-1/3 order-2 lg:order-1 max-h-[300px] lg:max-h-none overflow-y-auto">
+    <GlobalChat user={user} />
+  </div>
 
-        <h2 className="text-2xl font-bold text-center mb-6">
-          Create Multiplayer Game
-        </h2>
+  {/* 🔹 Game Creation UI */}
+  <div className="flex-1 flex items-center justify-center order-1 lg:order-2">
+    <div className="max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20 text-white">
 
-        {/* Mode Selection */}
-        <div className="mb-6">
-          <h3 className="font-semibold mb-3 text-lg">Select Mode</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {["1v1", "1v1v1", "1v1v1v1", "2v2"].map((m) => (
-              <button
-                key={m}
-                onClick={() => {
-                  setMode(m);
-                  playSound("select", effectsOn); // 🔊 Mode select
-                }}
-                className={`p-3 rounded-lg font-medium border transition-all ${
-                  mode === m
-                    ? "bg-blue-500 text-white border-blue-400"
-                    : "bg-white/10 border-white/20 hover:bg-white/20"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
+      {/* Back Button */}
+      <button
+        onClick={() => {
+          playSound("back", effectsOn);
+          navigate("/map");
+        }}
+        className="mb-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition"
+      >
+        ← Back
+      </button>
+
+      <h2 className="text-2xl font-bold text-center mb-6">
+        Create Multiplayer Game
+      </h2>
+
+      {/* Mode Selection */}
+      <div className="mb-6">
+        <h3 className="font-semibold mb-3 text-lg">Select Mode</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {["1v1", "1v1v1", "1v1v1v1", "2v2"].map((m) => (
+            <button
+              key={m}
+              onClick={() => {
+                setMode(m);
+                playSound("select", effectsOn);
+              }}
+              className={`p-3 rounded-lg font-medium border transition-all ${
+                mode === m
+                  ? "bg-blue-500 text-white border-blue-400"
+                  : "bg-white/10 border-white/20 hover:bg-white/20"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
         </div>
-
-        {/* Duration Selection */}
-        <div className="mb-6">
-          <h3 className="font-semibold mb-3 text-lg">Select Duration</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {[60, 120, 180].map((sec) => (
-              <button
-                key={sec}
-                onClick={() => {
-                  setDuration(sec);
-                  playSound("select", effectsOn); // 🔊 Duration select
-                }}
-                className={`p-3 rounded-lg font-medium border transition-all ${
-                  duration === sec
-                    ? "bg-green-500 text-white border-green-400"
-                    : "bg-white/10 border-white/20 hover:bg-white/20"
-                }`}
-              >
-                {sec / 60} min
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Create Game Button */}
-        <button
-          onClick={handleCreateGame}
-          disabled={loading}
-          className={`w-full py-3 rounded-lg font-semibold transition-all ${
-            loading
-              ? "bg-gray-500 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-400"
-          }`}
-        >
-          {loading ? "Creating..." : "Create Game"}
-        </button>
       </div>
+
+      {/* Duration Selection */}
+      <div className="mb-6">
+        <h3 className="font-semibold mb-3 text-lg">Select Duration</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {[60, 120, 180].map((sec) => (
+            <button
+              key={sec}
+              onClick={() => {
+                setDuration(sec);
+                playSound("select", effectsOn);
+              }}
+              className={`p-3 rounded-lg font-medium border transition-all ${
+                duration === sec
+                  ? "bg-green-500 text-white border-green-400"
+                  : "bg-white/10 border-white/20 hover:bg-white/20"
+              }`}
+            >
+              {sec / 60} min
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Create Game Button */}
+      <button
+        onClick={handleCreateGame}
+        disabled={loading}
+        className={`w-full py-3 rounded-lg font-semibold transition-all ${
+          loading
+            ? "bg-gray-500 cursor-not-allowed"
+            : "bg-blue-500 hover:bg-blue-400"
+        }`}
+      >
+        {loading ? "Creating..." : "Create Game"}
+      </button>
     </div>
+  </div>
+</div>
+
   );
 }

@@ -98,7 +98,7 @@ export default function FeedbackButton({ small, fullWidth, effectsOn = true }) {
               <Button
                 variant="outline"
                 onClick={() => {
-                  playSound("select", effectsOn);
+                  playSound("back", effectsOn);
                   setIsOpen(false);
                   setStatusMessage("");
                 }}

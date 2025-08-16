@@ -167,7 +167,7 @@ export default function SettingsModal({
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-4">
           <Button
             onClick={() => {
-              playSound("click", effectsOn); // 🔊 sound effect
+              playSound("back", effectsOn); // 🔊 sound effect
               onClose();
             }}
             variant="ghost"

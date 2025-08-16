@@ -370,26 +370,38 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         >
           {/* Close button (optional) */}
           <button
-            onClick={() => setMobileActionsOpen(false)}
+            onClick={() => {
+              playSound("switch", true); // 🔊 play switch sound
+              setMobileActionsOpen(false);
+            }}
             className="mb-4 p-2 bg-red-500 text-white rounded-md"
           >
             ✕
           </button>
 
           <button
-            onClick={() => setShowSettings(true)}
+            onClick={() => {
+              playSound("optionSelect", true); // 🔊 play switch sound
+              setShowSettings(true);
+            }}
             className="w-full mb-2 text-left text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
           >
             ⚙️ Settings
           </button>
           <button
-            onClick={() => setShowStore(true)}
+            onClick={() => {
+              playSound("optionSelect", true); // 🔊 play switch sound
+              setShowStore(true);
+            }}
             className="w-full mb-2 text-left bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
           >
             🛒 🎁 Store
           </button>
           <button
-            onClick={() => navigate("/multiplayer/create")}
+            onClick={() => {
+              playSound("optionSelect", true); // 🔊 play switch sound
+              navigate("/multiplayer/create");
+            }}
             className="w-full mb-2 text-left bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600"
           >
             🎮 Multiplayer
@@ -458,19 +470,30 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/40 backdrop-blur-md border-r border-gray-300">
           {/* Top Buttons */}
           <button
-            onClick={() => setShowSettings(true)}
+          onClick={() => {
+              playSound("optionSelect", true); // 🔊 play switch sound
+              setShowSettings(true);
+            }}
+           
             className="bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
           >
             ⚙️ Settings
           </button>
           <button
-            onClick={() => setShowStore(true)}
+            onClick={() => {
+              playSound("optionSelect", true); // 🔊 play switch sound
+              setShowStore(true);
+            }}
+            
             className="bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
           >
             🎁 Store
           </button>
           <button
-            onClick={() => navigate("/multiplayer/create")}
+            onClick={() => {
+              playSound("optionSelect", true); // 🔊 play switch sound
+              navigate("/multiplayer/create");
+            }}
             className="bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600"
           >
             🎮 Multiplayer
@@ -575,7 +598,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               : `🥊 Weekly Quiz: ${countdownText}`}
           </button>
           <button
-            onClick={() => setShowTotalLeaderboard(!showTotalLeaderboard)}
+            onClick={() => {
+              playSound("optionSelect", true); // 🔊 play switch sound
+              setShowTotalLeaderboard(!showTotalLeaderboard);
+            }}
             className="bg-gray-700 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-gray-600"
           >
             {showTotalLeaderboard ? "🌟 Hide Leaderboard" : " 🌟 Leaderboard"}

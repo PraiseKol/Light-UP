@@ -5,6 +5,7 @@ import { useMultiplayerStore } from "store/useMultiplayerStore";
 import { useAuth } from "auth/AuthProvider";
 import Switch from "components/ui/Switch"; // shadcn/ui switch
 import { playSound } from "utils/sound";
+import GlobalChat from "components/GlobalChat";
 
 export default function MultiplayerLobby({ effectsOn }) {
   const { gameId } = useParams();
@@ -125,8 +126,7 @@ export default function MultiplayerLobby({ effectsOn }) {
       .from("multiplayer_games")
       .update({ allow_powerups: newValue })
       .eq("id", gameId);
-    if (error) 
-    playSound("error", effectsOn);
+    if (error) playSound("error", effectsOn);
     console.error("Failed to toggle power-ups:", error);
   };
 
@@ -278,74 +278,92 @@ export default function MultiplayerLobby({ effectsOn }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
-      <div className="max-w-xl w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20">
-        {/* Back Button */}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-4">
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl h-full">
+    
+    {/* Global Chat */}
+    <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-5 border border-white/20
+                    md:col-span-1 order-2 md:order-1
+                    h-48 md:h-auto overflow-y-auto">
+      <GlobalChat user={user} gameId={gameId} effectsOn={effectsOn} />
+    </div>
+
+    {/* Lobby Card */}
+    <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20
+                    md:col-span-2 order-1 md:order-2 flex flex-col">
+      {/* Back Button */}
+      <button
+        onClick={handleBack}
+        className="mb-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition"
+      >
+        ← Back
+      </button>
+
+      {/* Lobby Header */}
+      <h2 className="text-2xl font-bold text-center mb-1">
+        {game.mode} Lobby • {game.duration_seconds / 60} min
+      </h2>
+      <p className="text-center text-sm text-gray-300 mb-4">
+        Match Code: <span className="font-mono">{game.token}</span>
+      </p>
+
+      {/* Join Link */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-6">
+        <input
+          type="text"
+          value={joinUrl}
+          readOnly
+          className="flex-1 bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-sm"
+        />
         <button
-          onClick={handleBack}
-          className="mb-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition"
+          onClick={copyToClipboard}
+          className="px-4 py-2 bg-blue-500 rounded-lg hover:bg-blue-400 text-sm font-medium"
         >
-          ← Back
+          Copy
         </button>
+      </div>
 
-        {/* Lobby Header */}
-        <h2 className="text-2xl font-bold text-center mb-1">
-          {game.mode} Lobby • {game.duration_seconds / 60} min
-        </h2>
-        <p className="text-center text-sm text-gray-300 mb-4">
-          Match Code: <span className="font-mono">{game.token}</span>
-        </p>
-
-        {/* Join Link */}
-        <div className="flex gap-2 mb-6">
-          <input
-            type="text"
-            value={joinUrl}
-            readOnly
-            className="flex-1 bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-sm"
-          />
-          <button
-            onClick={copyToClipboard}
-            className="px-4 py-2 bg-blue-500 rounded-lg hover:bg-blue-400 text-sm font-medium"
-          >
-            Copy
-          </button>
-        </div>
-
-        {/* Power-ups Toggle */}
-        <div className="flex items-center gap-3 mb-6">
-          <span className="text-sm font-medium text-gray-300">
-            Allow Power-ups
-          </span>
-          <Switch
-            checked={allowPowerups}
-            onChange={handleTogglePowerups}
-            disabled={!isCreator}
-          />
-
-          {!allowPowerups && (
-            <span className="text-xs text-red-400">Disabled by creator</span>
-          )}
-        </div>
-
-        {/* Slots */}
-        {renderSlots()}
-
-        {/* Start Game Button */}
-        {game.creator_id === user?.id && (
-          <button
-            onClick={handleStartGame}
-            disabled={players.filter((p) => p.slot_number).length < totalSlots}
-            className={`w-full mt-6 py-3 rounded-lg font-semibold transition-all ${
-              players.filter((p) => p.slot_number).length >= totalSlots
-                ? "bg-green-500 hover:bg-green-400"
-                : "bg-gray-500 cursor-not-allowed"
-            }`}
-          >
-            Start Game
-          </button>
+      {/* Power-ups Toggle */}
+      <div className="flex items-center justify-between mb-6">
+        <span className="text-sm font-medium text-gray-300">
+          Allow Power-ups
+        </span>
+        <Switch
+          checked={allowPowerups}
+          onChange={handleTogglePowerups}
+          disabled={!isCreator}
+        />
+        {!allowPowerups && (
+          <span className="text-xs text-red-400 ml-2">Disabled</span>
         )}
       </div>
+
+      {/* Slots Section */}
+      <div className="mt-4">
+        <h3 className="text-center font-semibold text-gray-200 mb-2">
+          Players
+        </h3>
+        <div className="w-full">{renderSlots()}</div>
+      </div>
+
+      {/* Start Game Button */}
+      {game.creator_id === user?.id && (
+        <button
+          onClick={handleStartGame}
+          disabled={players.filter((p) => p.slot_number).length < totalSlots}
+          className={`w-full mt-6 py-3 rounded-lg font-semibold transition-all ${
+            players.filter((p) => p.slot_number).length >= totalSlots
+              ? "bg-green-500 hover:bg-green-400"
+              : "bg-gray-500 cursor-not-allowed"
+          }`}
+        >
+          Start Game
+        </button>
+      )}
     </div>
+  </div>
+</div>
+
+
   );
 }
