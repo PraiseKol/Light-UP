@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { adjustTalents, adjustPowerupInventory } from "utils/talentUtils";
 import TalentStore from "components/TalentStore";
+import { playSound } from "utils/sound"; // import your sound utility
 
-export default function PowerUpStore({ gameUser, onPurchase }) {
+
+
+export default function PowerUpStore({ gameUser, onPurchase, effectsOn }) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("powerups");
 
@@ -38,39 +41,38 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
   ];
 
   const handlePurchase = async (powerup, bundle) => {
+    playSound("click", effectsOn); // 🔊 Play sound on button click
+
     const cost = powerup.costs[bundle];
     const quantity = bundle === "one" ? 1 : 3;
-  
+
     if (gameUser.talents < cost) {
       alert("Not enough talents to purchase this power-up.");
       return;
     }
-  
+
     setLoading(true);
     try {
-      // Deduct talents (calls backend API)
       const newBalance = await adjustTalents(gameUser.user_id, -cost);
-  
-      if (newBalance === null) {
-        throw new Error("Failed to adjust talents.");
-      }
-  
-      // Update power-up inventory via Supabase RPC
+      if (newBalance === null) throw new Error("Failed to adjust talents.");
       await adjustPowerupInventory(gameUser.user_id, powerup.key, quantity);
-  
+
       alert(`You bought ${quantity}x ${powerup.name}!`);
-  
-      // Update talents locally (important for UI)
       gameUser.talents = newBalance;
-  
-      // Call parent's onPurchase to refetch user data if available
+
       if (onPurchase) onPurchase();
-  
     } catch (err) {
       console.error("Purchase failed:", err);
       alert("Purchase failed. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTabSwitch = (tab) => {
+    if (tab !== activeTab) {
+      playSound("switch", effectsOn); // 🔊 Play sound when switching tabs
+      setActiveTab(tab);
     }
   };
   
@@ -79,15 +81,15 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
     <div>
       {/* Tab Navigation */}
       <div className="flex justify-center mb-4">
-        <button
+      <button
           className={`px-4 py-2 ${activeTab === "powerups" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-          onClick={() => setActiveTab("powerups")}
+          onClick={() => handleTabSwitch("powerups")}
         >
           Power-Ups
         </button>
         <button
           className={`px-4 py-2 ${activeTab === "talents" ? "bg-yellow-600 text-white" : "bg-gray-200"}`}
-          onClick={() => setActiveTab("talents")}
+          onClick={() => handleTabSwitch("talents")}
         >
           Talents
         </button>
@@ -144,7 +146,7 @@ export default function PowerUpStore({ gameUser, onPurchase }) {
       )}
 
       {activeTab === "talents" && (
-        <TalentStore gameUser={gameUser} onPurchase={onPurchase} />
+        <TalentStore gameUser={gameUser} onPurchase={onPurchase} effectsOn={effectsOn}/>
       )}
     </div>
   );

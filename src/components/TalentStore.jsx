@@ -1,24 +1,20 @@
 import { useState } from "react";
 import { supabase } from "lib/supabaseClient";
+import { playSound } from "utils/sound"; // import sound utility
 
-export default function TalentStore({ gameUser, onPurchase }) {
-  // Track which buy button is loading by talents amount (or key)
+export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
   const [loadingButton, setLoadingButton] = useState(null);
-  // General loading state for talents → lives purchase
   const [loading, setLoading] = useState(false);
 
   const handleBuyTalentsWithMoney = async (talents, price) => {
+    playSound("click", effectsOn); // 🔊 play sound on click
     setLoadingButton(talents);
     try {
       const baseUrl = process.env.REACT_APP_PAYMENT_API;
       const res = await fetch(`${baseUrl}/api/create-payment-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: gameUser.user_id,
-          talents,
-          price,
-        }),
+        body: JSON.stringify({ userId: gameUser.user_id, talents, price }),
       });
 
       const data = await res.json();
@@ -40,8 +36,9 @@ export default function TalentStore({ gameUser, onPurchase }) {
       alert("Not enough talents to buy lives.");
       return;
     }
-
     if (!window.confirm(`Spend ${cost} talents for ${lives} lives?`)) return;
+
+    playSound("click", effectsOn); // 🔊 play sound on click
 
     setLoading(true);
     try {
@@ -52,21 +49,16 @@ export default function TalentStore({ gameUser, onPurchase }) {
         body: JSON.stringify({
           userId: gameUser.user_id,
           amount: -cost,
-          transactionId: `lives-${Date.now()}`
+          transactionId: `lives-${Date.now()}`,
         }),
       });
 
       const result = await res.json();
-      if (!result.success) {
-        throw new Error("Failed to deduct talents");
-      }
+      if (!result.success) throw new Error("Failed to deduct talents");
 
       await supabase
         .from("game_users")
-        .update({
-          lives,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ lives, updated_at: new Date().toISOString() })
         .eq("user_id", gameUser.user_id);
 
       alert(`You bought ${lives} lives successfully!`);
@@ -80,24 +72,23 @@ export default function TalentStore({ gameUser, onPurchase }) {
 
   return (
     <div className="p-6 max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-yellow-100">
-      {/* Money → Talents */}
+      {/* Talent Store header */}
       <div className="space-y-4 mb-8">
-      <h2 className="text-2xl font-extrabold mb-3 text-yellow-700 text-center">
-            Talent Store
-          </h2>
-      <p className="text-center text-sm text-gray-500 mb-6">
-            Top up your talents and lives here.
-          </p>
+        <h2 className="text-2xl font-extrabold mb-3 text-yellow-700 text-center">
+          Talent Store
+        </h2>
+        <p className="text-center text-sm text-gray-500 mb-6">
+          Top up your talents and lives here.
+        </p>
 
-          <div className="text-right text-sm mb-4">
-            <span className="font-semibold text-gray-700">Your Talents:</span>{" "}
-            <span className="text-yellow-600 font-bold">💎 {gameUser?.talents ?? 0} </span>
-          </div>
-          
+        <div className="text-right text-sm mb-4">
+          <span className="font-semibold text-gray-700">Your Talents:</span>{" "}
+          <span className="text-yellow-600 font-bold">💎 {gameUser?.talents ?? 0}</span>
+        </div>
+
+        {/* Money → Talents */}
         <div className="flex justify-between items-center bg-blue-50 border border-blue-200 p-4 rounded-xl shadow-sm">
-          
           <div>
-        
             <p className="font-semibold text-blue-900">💎 100 Talents</p>
             <p className="text-sm text-gray-600">₦750 / $0.50</p>
           </div>

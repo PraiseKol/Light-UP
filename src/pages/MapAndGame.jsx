@@ -10,7 +10,6 @@ import { fetchLeaderboard } from "lib/fetchLeaderboard";
 import { fetchMainLeaderboard } from "lib/api/leaderboard";
 import { supabase } from "lib/supabaseClient";
 
-
 import { useGameUser } from "hooks/useGameUser";
 import { LivesDisplay } from "components/LivesDisplay";
 import SpiritualParallaxBackground from "components/SpiritualParallaxBackground";
@@ -24,7 +23,6 @@ import { toast } from "sonner";
 import { markInGame, clearInGame } from "utils/inGame";
 import { loseLife } from "utils/loseLife";
 import { playSound } from "utils/sound";
-
 
 import PowerUpStore from "components/PowerUpStore";
 import Modal from "components/ui/modal";
@@ -447,12 +445,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </div>
 
           <div className="mt-4">
-            <FeedbackButton 
-            effectsOn={effectsOn}
-            fullWidth 
-            sound={sound} // pass current sound state
-        setSound={setSound} // pass setter so modal can update global sound immediately
-
+            <FeedbackButton
+              effectsOn={effectsOn}
+              fullWidth
+              sound={sound} // pass current sound state
+              setSound={setSound} // pass setter so modal can update global sound immediately
             />
           </div>
         </div>
@@ -618,10 +615,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             </div>
           )}
           <div className="mt-auto">
-            <FeedbackButton 
+            <FeedbackButton
               effectsOn={effectsOn}
               sound={sound} // pass current sound state
-        setSound={setSound} // pass setter so modal can update global sound immediately
+              setSound={setSound} // pass setter so modal can update global sound immediately
             />
           </div>
         </div>
@@ -660,7 +657,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       </Modal>
 
       <Modal isOpen={showStore} onClose={() => setShowStore(false)} title="">
-        <PowerUpStore gameUser={gameUser} onPurchase={refetch} />
+        <PowerUpStore 
+        sound={sound} // pass current sound state
+        setSound={setSound} // pass setter so modal can update global sound immediately
+        effectsOn={effectsOn}
+        gameUser={gameUser} onPurchase={refetch} 
+        />
       </Modal>
       {showScriptureModal && (
         <ScriptureModal text={scriptureText} onNext={handleNextPhaseScroll} />
