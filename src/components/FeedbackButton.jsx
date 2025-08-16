@@ -2,8 +2,9 @@ import { useState } from "react";
 import { supabase } from "lib/supabaseClient";
 import { Button } from "components/ui/button";
 import { useAuth } from "auth/AuthProvider";
+import { playSound } from "utils/sound";
 
-export default function FeedbackButton({ small, fullWidth }) {
+export default function FeedbackButton({ small, fullWidth, effectsOn = true }) {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -52,7 +53,9 @@ export default function FeedbackButton({ small, fullWidth }) {
       {/* Feedback Button */}
       <Button
         className={`${fullWidth ? "w-full" : ""} ${
-          small ? "text-xs px-2 py-1" : "fixed bottom-4 right-4 z-50 rounded-full shadow-lg"
+          small
+            ? "text-xs px-2 py-1"
+            : "fixed bottom-4 right-4 z-50 rounded-full shadow-lg"
         }`}
         onClick={() => setIsOpen(true)}
       >
@@ -76,7 +79,11 @@ export default function FeedbackButton({ small, fullWidth }) {
 
             <textarea
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                // Optional: play sound on typing
+                playSound("click", effectsOn);
+              }}
               className="w-full border rounded p-2 mb-3"
               rows={4}
               placeholder="Type your feedback here..."
@@ -87,9 +94,11 @@ export default function FeedbackButton({ small, fullWidth }) {
             )}
 
             <div className="flex justify-end gap-2">
+              {/* Cancel Button */}
               <Button
                 variant="outline"
                 onClick={() => {
+                  playSound("select", effectsOn);
                   setIsOpen(false);
                   setStatusMessage("");
                 }}
@@ -97,7 +106,15 @@ export default function FeedbackButton({ small, fullWidth }) {
               >
                 Cancel
               </Button>
-              <Button onClick={submitFeedback} disabled={loading}>
+
+              {/* Send Button */}
+              <Button
+                onClick={() => {
+                  playSound("select", effectsOn); // 🔊 play sound on click
+                  submitFeedback(); // call your submit function
+                }}
+                disabled={loading}
+              >
                 {loading ? "Sending..." : "Send"}
               </Button>
             </div>

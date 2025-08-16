@@ -10,6 +10,7 @@ import { fetchLeaderboard } from "lib/fetchLeaderboard";
 import { fetchMainLeaderboard } from "lib/api/leaderboard";
 import { supabase } from "lib/supabaseClient";
 
+
 import { useGameUser } from "hooks/useGameUser";
 import { LivesDisplay } from "components/LivesDisplay";
 import SpiritualParallaxBackground from "components/SpiritualParallaxBackground";
@@ -22,6 +23,8 @@ import FeedbackButton from "components/FeedbackButton";
 import { toast } from "sonner";
 import { markInGame, clearInGame } from "utils/inGame";
 import { loseLife } from "utils/loseLife";
+import { playSound } from "utils/sound";
+
 
 import PowerUpStore from "components/PowerUpStore";
 import Modal from "components/ui/modal";
@@ -37,7 +40,7 @@ import {
   hasPlayedThisWeek,
 } from "utils/weeklyChallenge";
 
-export default function MapAndGame({ sound, setSound }) {
+export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [completedLevels, setCompletedLevels] = useState([]);
   const [unlockedPhases, setUnlockedPhases] = useState([]);
@@ -444,7 +447,13 @@ export default function MapAndGame({ sound, setSound }) {
           </div>
 
           <div className="mt-4">
-            <FeedbackButton fullWidth />
+            <FeedbackButton 
+            effectsOn={effectsOn}
+            fullWidth 
+            sound={sound} // pass current sound state
+        setSound={setSound} // pass setter so modal can update global sound immediately
+
+            />
           </div>
         </div>
 
@@ -609,7 +618,11 @@ export default function MapAndGame({ sound, setSound }) {
             </div>
           )}
           <div className="mt-auto">
-            <FeedbackButton />
+            <FeedbackButton 
+              effectsOn={effectsOn}
+              sound={sound} // pass current sound state
+        setSound={setSound} // pass setter so modal can update global sound immediately
+            />
           </div>
         </div>
       </div>
@@ -622,6 +635,7 @@ export default function MapAndGame({ sound, setSound }) {
         onSave={handleSavePlayerName}
         sound={sound} // pass current sound state
         setSound={setSound} // pass setter so modal can update global sound immediately
+        effectsOn={effectsOn}
       />
       <Modal
         isOpen={showNextLevelModal}

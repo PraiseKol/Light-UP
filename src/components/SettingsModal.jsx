@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "lib/supabaseClient";
 import { Button } from "components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { playSound } from "utils/sound";
 
 const soundMap = {
   default: null,
@@ -15,8 +16,8 @@ export default function SettingsModal({
   onClose,
   gameUser,
   onSave,
-  sound,      // <-- now a prop from App.jsx
-  setSound,   // <-- function to update App.jsx state
+  sound, // <-- now a prop from App.jsx
+  setSound, // <-- function to update App.jsx state
 }) {
   const [name, setName] = useState(gameUser?.player_name || "");
   const [loading, setLoading] = useState(false);
@@ -59,7 +60,7 @@ export default function SettingsModal({
       .from("game_users")
       .update({
         player_name: name,
-        sound,        // send current selected sound prop to DB
+        sound, // send current selected sound prop to DB
         effects_on: effectsOn,
       })
       .eq("user_id", gameUser.user_id);
@@ -111,7 +112,11 @@ export default function SettingsModal({
         <div className="flex items-center justify-between border-t border-gray-200 pt-4">
           <span className="text-sm font-medium text-gray-800">✨ Effects</span>
           <button
-            onClick={() => setEffectsOn(!effectsOn)}
+            onClick={() => {
+              const newEffects = !effectsOn;
+              setEffectsOn(newEffects);
+              playSound("switch", newEffects); // 🔊 play toggle sound
+            }}
             className={`px-4 py-1.5 text-sm rounded-full font-semibold shadow-sm transition-all ${
               effectsOn
                 ? "bg-green-500 text-white hover:bg-green-600"
@@ -124,7 +129,9 @@ export default function SettingsModal({
 
         {/* Sound Picker */}
         <div className="flex flex-col border-t border-gray-200 pt-4">
-          <label className="text-sm font-medium mb-1 text-gray-800">🔊 Sound</label>
+          <label className="text-sm font-medium mb-1 text-gray-800">
+            🔊 Sound
+          </label>
           <select
             className="border border-blue-300 px-3 py-2 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
             value={sound}
@@ -144,7 +151,10 @@ export default function SettingsModal({
         {gameUser?.is_admin && (
           <div className="border-t border-gray-200 pt-4 mt-4">
             <Button
-              onClick={handleAdminLogin}
+              onClick={() => {
+                playSound("click", effectsOn); // 🔊 sound effect
+                handleAdminLogin();
+              }}
               variant="secondary"
               className="w-full bg-purple-600 text-white hover:bg-purple-500 rounded-lg shadow-md"
             >
@@ -156,14 +166,21 @@ export default function SettingsModal({
         {/* Footer Buttons */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-4">
           <Button
-            onClick={onClose}
+            onClick={() => {
+              playSound("click", effectsOn); // 🔊 sound effect
+              onClose();
+            }}
             variant="ghost"
             className="px-4 py-2 rounded-lg"
           >
             Cancel
           </Button>
+
           <Button
-            onClick={handleSave}
+            onClick={() => {
+              playSound("select", effectsOn); // 🔊 play save sound
+              handleSave();
+            }}
             disabled={loading}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md"
           >

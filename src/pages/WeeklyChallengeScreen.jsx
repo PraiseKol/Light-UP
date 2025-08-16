@@ -26,7 +26,7 @@ const STORAGE_KEY_SCORE = "weeklyChallengeScore";
 const STORAGE_KEY_CORRECT = "weeklyChallengeCorrect";
 const STORAGE_KEY_INCORRECT = "weeklyChallengeIncorrect";
 
-export default function WeeklyChallengeScreen({ effectsOn }) {
+export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   const [questions, setQuestions] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(() =>
