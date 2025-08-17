@@ -1,8 +1,9 @@
 // src/components/HolyShieldButton.jsx
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "lib/supabaseClient";
+import { playSound } from "utils/sound";
 
-export default function HolyShieldButton({ user, gameUser, refetch }) {
+export default function HolyShieldButton({ user, gameUser, refetch, effectsOn = true }) {
   const [timeLeft, setTimeLeft] = useState(0);
   const intervalRef = useRef(null);
 
@@ -60,6 +61,9 @@ export default function HolyShieldButton({ user, gameUser, refetch }) {
       return;
     }
 
+    // ✅ Play sound effect only when successful
+    playSound("holyShield", effectsOn);
+
     await refetch();
   };
 
@@ -82,8 +86,6 @@ export default function HolyShieldButton({ user, gameUser, refetch }) {
           ? { boxShadow: "0 0 15px 3px rgba(255, 223, 0, 0.7)" }
           : {}
       }
-      // className="flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-lg bg-gradient-to-b from-purple-200 to-purple-300 hover:from-purple-300 hover:to-purple-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition"
-      
     >
       <span className="text-lg">🛡️</span>
       <span className="mt-1 text-center">

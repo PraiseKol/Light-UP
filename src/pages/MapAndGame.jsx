@@ -462,6 +462,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               fullWidth
               sound={sound} // pass current sound state
               setSound={setSound} // pass setter so modal can update global sound immediately
+              
             />
           </div>
         </div>
@@ -470,11 +471,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/40 backdrop-blur-md border-r border-gray-300">
           {/* Top Buttons */}
           <button
-          onClick={() => {
+            onClick={() => {
               playSound("optionSelect", true); // 🔊 play switch sound
               setShowSettings(true);
             }}
-           
             className="bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
           >
             ⚙️ Settings
@@ -484,7 +484,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               playSound("optionSelect", true); // 🔊 play switch sound
               setShowStore(true);
             }}
-            
             className="bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
           >
             🎁 Store
@@ -564,6 +563,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                             "You're out of lives! Please wait to get more."
                           );
                       }}
+                      sound={sound} // pass current sound state
+                      setSound={setSound} // pass setter so modal can update global sound immediately
+                      effectsOn={effectsOn}
                     />
                   </div>
                 );
@@ -580,6 +582,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               }
               userScore={userScore}
               refetchGameUser={refetch}
+              sound={sound} // pass current sound state
+              setSound={setSound} // pass setter so modal can update global sound immediately
+              effectsOn={effectsOn}
             />
           )}
         </div>
@@ -683,11 +688,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       </Modal>
 
       <Modal isOpen={showStore} onClose={() => setShowStore(false)} title="">
-        <PowerUpStore 
-        sound={sound} // pass current sound state
-        setSound={setSound} // pass setter so modal can update global sound immediately
-        effectsOn={effectsOn}
-        gameUser={gameUser} onPurchase={refetch} 
+        <PowerUpStore
+          sound={sound} // pass current sound state
+          setSound={setSound} // pass setter so modal can update global sound immediately
+          effectsOn={effectsOn}
+          gameUser={gameUser}
+          onPurchase={refetch}
         />
       </Modal>
       {showScriptureModal && (

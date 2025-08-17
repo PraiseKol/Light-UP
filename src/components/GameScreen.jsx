@@ -15,10 +15,14 @@ import FourPicsMode from "modes/FourPicsMode";
 import ScriptureMatchMode from "modes/ScriptureMatchMode";
 
 import HolyShieldButton from "components/HolyShieldButton";
+import { playSound } from "utils/sound";
 
 export default function GameScreen({ level, onBack, onComplete, onScore }) {
   const maybeUser = useUser();
   const user = maybeUser ?? null;
+
+  const [effectsOn, setEffectsOn] = useState(true);
+  const [gameOver, setGameOver] = useState(false);
 
   const {
     gameUser,
@@ -137,12 +141,14 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
   const handleDivineHint = () => {
     if (!gameUser?.powerups_inventory?.divine_hint) return;
     setActivePowerups((prev) => ({ ...prev, divine_hint: true }));
+    playSound("divineHint", effectsOn); // 🔊 play sound
     onPowerupUsed("divine_hint");
   };
 
   const handleGracePeriod = () => {
     if (!gameUser?.powerups_inventory?.grace_period) return;
     setActivePowerups((prev) => ({ ...prev, grace_period: true }));
+    playSound("gracePeriod", effectsOn); // 🔊 play sound
     onPowerupUsed("grace_period");
   };
 
@@ -154,6 +160,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
   const handleHeavenlyMatch = () => {
     if (!gameUser?.powerups_inventory?.heavenly_match) return;
     handleScoreEarned(100);
+    playSound("heavenlyMatch", effectsOn); // 🔊 play sound
     onPowerupUsed("heavenly_match");
     onComplete();
   };
@@ -256,6 +263,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             {...commonProps}
             question={questionData.question}
             answer={questionData.answer}
+            effectsOn={effectsOn}
           />
         )}
         {mode === "trivia" && (
@@ -264,6 +272,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             question={questionData.question}
             options={questionData.options}
             answer={questionData.answer}
+            effectsOn={effectsOn}
           />
         )}
         {mode === "four-pics" && (
@@ -272,12 +281,14 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             answer={questionData.answer}
             imageUrls={questionData.image_urls}
             letters={questionData.letters}
+            effectsOn={effectsOn}
           />
         )}
         {mode === "scripture-match" && (
           <ScriptureMatchMode
             {...commonProps}
             question={questionData.question}
+            effectsOn={effectsOn}
           />
         )}
         {!["word-fill", "trivia", "four-pics", "scripture-match"].includes(
@@ -308,7 +319,13 @@ export default function GameScreen({ level, onBack, onComplete, onScore }) {
             ⏳<span> Grace Period +15s</span>
             <span>x{gameUser.powerups_inventory.grace_period ?? 0}</span>
           </button>
-          <HolyShieldButton user={user} gameUser={gameUser} refetch={refetch} />
+          <HolyShieldButton 
+          user={user} 
+          gameUser={gameUser} 
+          refetch={refetch} 
+          onActivate={() => playSound("holyShield", effectsOn)} 
+
+          />
           <button
             onClick={handleHeavenlyMatch}
             disabled={!gameUser.powerups_inventory.heavenly_match}

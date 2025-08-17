@@ -11,12 +11,17 @@ const soundFiles = {
   gameOver: "/sounds/game-over.wav",
   levelUp: "/sounds/level-up.wav",
   lifeLost: "/sounds/life-lost.wav",
-  powerUpUsed: "/sounds/power-up.wav",
   purchase: "/sounds/purchase.wav",
   back: "/sounds/back.wav",
   switch: "/sounds/switch.wav",
   optionSelect: "/sounds/optionSelect.wav",
   submitAnswer: "/sounds/submitAnswer.mp3",
+
+  // 🎵 Power-up specific sounds
+  divineHint: "/sounds/divine-hint.mp3",
+  gracePeriod: "/sounds/grace-period.mp3",
+  holyShield: "/sounds/holy-shield.mp3",
+  heavenlyMatch: "/sounds/heavenly-match.mp3",
 };
 
 // Preload Audio objects
@@ -24,7 +29,7 @@ const sounds = {};
 Object.keys(soundFiles).forEach((key) => {
   const audio = new Audio(soundFiles[key]);
   audio.preload = "auto"; // ensure browser preloads
-  audio.volume = 0.3;     // default volume, adjust if needed
+  audio.volume = 0.3;     // default volume
   sounds[key] = audio;
 });
 

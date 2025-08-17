@@ -10,6 +10,7 @@ import { useResetLevel } from "hooks/useResetLevel";
 import { useTimer } from "hooks/useTimer";
 import { supabase } from "lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
+import { playSound } from "utils/sound";
 
 const getScoreFromTime = (timeLeft) => {
   if (timeLeft > 20) return 100;
@@ -26,6 +27,7 @@ export default function WordFillMode({
   onIncorrect,
   disableIfNoLives,
   activePowerups,
+  effectsOn = true,
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
@@ -181,6 +183,7 @@ export default function WordFillMode({
               }}
               onChange={(e) => {
                 setUserInput(e.target.value);
+                playSound("switch", effectsOn);
                 setStatus("idle");
               }}
               onKeyDown={(e) => {
@@ -189,6 +192,7 @@ export default function WordFillMode({
                   !hasAnsweredCorrectly.current &&
                   !disableIfNoLives
                 ) {
+                  playSound("submitAnswer", effectsOn);
                   checkAnswer();
                 }
               }}
@@ -219,7 +223,11 @@ export default function WordFillMode({
             )}
 
             <button
-              onClick={checkAnswer}
+              onClick={() => {
+                playSound("submitAnswer", effectsOn);
+                checkAnswer();
+                }}
+
               disabled={hasAnsweredCorrectly.current || disableIfNoLives}
               className={`mt-6 w-full py-3 rounded-lg transition ${
                 disableIfNoLives
