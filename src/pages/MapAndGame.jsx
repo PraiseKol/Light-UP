@@ -38,7 +38,7 @@ import {
   hasPlayedThisWeek,
 } from "utils/weeklyChallenge";
 
-export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
+export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [completedLevels, setCompletedLevels] = useState([]);
   const [unlockedPhases, setUnlockedPhases] = useState([]);
@@ -371,7 +371,7 @@ export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
           {/* Close button (optional) */}
           <button
             onClick={() => {
-              playSound("switch", true); // 🔊 play switch sound
+              playSound("switch", effectsOn); // 🔊 play switch sound
               setMobileActionsOpen(false);
             }}
             className="mb-4 p-2 bg-red-500 text-white rounded-md"
@@ -381,7 +381,7 @@ export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
 
           <button
             onClick={() => {
-              playSound("optionSelect", true); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn); // 🔊 play switch sound
               setShowSettings(true);
             }}
             className="w-full mb-2 text-left text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
@@ -390,7 +390,7 @@ export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
           </button>
           <button
             onClick={() => {
-              playSound("optionSelect", true); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn); // 🔊 play switch sound
               setShowStore(true);
             }}
             className="w-full mb-2 text-left bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
@@ -399,7 +399,7 @@ export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
           </button>
           <button
             onClick={() => {
-              playSound("optionSelect", true); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn); // 🔊 play switch sound
               navigate("/multiplayer/create");
             }}
             className="w-full mb-2 text-left bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600"
@@ -408,7 +408,10 @@ export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
           </button>
 
           <button
-            onClick={handleWeeklyChallengeClick}
+            onClick={ () => {
+              playSound("optionSelect", effectsOn); // 🔊 play switch sound
+              handleWeeklyChallengeClick();
+              }}
             disabled={!challengeAllowed}
             className="w-full mb-2 text-left bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600"
           >
@@ -472,7 +475,7 @@ export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
           {/* Top Buttons */}
           <button
             onClick={() => {
-              playSound("optionSelect", true); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn); // 🔊 play switch sound
               setShowSettings(true);
             }}
             className="bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
@@ -481,7 +484,7 @@ export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
           </button>
           <button
             onClick={() => {
-              playSound("optionSelect", true); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn); // 🔊 play switch sound
               setShowStore(true);
             }}
             className="bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
@@ -490,7 +493,7 @@ export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
           </button>
           <button
             onClick={() => {
-              playSound("optionSelect", true); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn); // 🔊 play switch sound
               navigate("/multiplayer/create");
             }}
             className="bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600"
@@ -592,9 +595,13 @@ export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
         {/* RIGHT SIDEBAR (desktop) */}
         <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/20 backdrop-blur-md border-l border-gray-300">
           <button
-            onClick={handleWeeklyChallengeClick}
+            onClick={() => {
+              playSound("optionSelect", effectsOn); // 🔊 play switch sound
+              handleWeeklyChallengeClick();
+              }}
             disabled={!challengeAllowed}
             className="bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600"
+
           >
             {challengeAllowed && !challengePlayed
               ? "🥊 Weekly Challenge"
@@ -604,7 +611,7 @@ export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
           </button>
           <button
             onClick={() => {
-              playSound("optionSelect", true); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn); // 🔊 play switch sound
               setShowTotalLeaderboard(!showTotalLeaderboard);
             }}
             className="bg-gray-700 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-gray-600"
