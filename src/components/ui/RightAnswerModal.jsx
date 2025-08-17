@@ -1,6 +1,7 @@
 // src/components/ui/RightAnswerModal.jsx
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { playSound } from "utils/sound";
 
 export default function RightAnswerModal({
   isOpen,
@@ -8,6 +9,7 @@ export default function RightAnswerModal({
   onNext,
   onBackToMap,
   score, // 👈 Accept score as a prop
+  effectsOn = true,
 }) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -41,13 +43,19 @@ export default function RightAnswerModal({
 
             <div className="space-y-2">
               <button
-                onClick={onNext}
+                onClick={() => {
+                  playSound("success", effectsOn);
+                  onNext();
+                }}
                 className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
               >
                 Next Level
               </button>
               <button
-                onClick={onBackToMap}
+                onClick={() => {
+                  playSound("select", effectsOn);
+                  onBackToMap();
+                }}
                 className="w-full bg-gray-200 text-gray-800 py-2 rounded hover:bg-gray-300 transition"
               >
                 Back to Map

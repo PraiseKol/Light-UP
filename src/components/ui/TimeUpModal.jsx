@@ -1,8 +1,9 @@
 // src/components/ui/TimeUpModal.jsx
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { playSound } from "utils/sound";
 
-export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap }) {
+export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn = true, }) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog onClose={() => {}} className="relative z-50">
@@ -29,13 +30,19 @@ export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap }) {
 
             <div className="space-y-2">
               <button
-                onClick={onTryAgain}
+                onClick={() => {
+                  playSound("back", effectsOn);
+                  onTryAgain();
+                }}
                 className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
               >
                 🔁 Try Again
               </button>
               <button
-                onClick={onGoToMap}
+                onClick={() => {
+                  playSound("click", effectsOn);
+                  onGoToMap();
+                }}
                 className="w-full bg-gray-200 text-gray-800 py-2 rounded hover:bg-gray-300 transition"
               >
                 🔙 Return to Map

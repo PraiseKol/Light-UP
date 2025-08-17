@@ -46,6 +46,7 @@ export default function WordFillMode({
 
   const { timeLeft, setTimeLeft, setIsRunning } = useTimer(30, () => {
     if (!hasAnsweredCorrectly.current && !userInput.trim()) {
+      playSound("error", effectsOn);
       setShowTimeUpModal(true);
       if (onIncorrect && !lifeLostRef.current) {
         onIncorrect();
@@ -119,6 +120,7 @@ export default function WordFillMode({
 
   const checkAnswer = useCallback(() => {
     if (hasAnsweredCorrectly.current || disableIfNoLives) return;
+    
     stopTimer();
 
     const isCorrect =
@@ -128,6 +130,7 @@ export default function WordFillMode({
 
     setTimeout(async () => {
       if (isCorrect) {
+        playSound("success", effectsOn);
         hasAnsweredCorrectly.current = true;
         const earned = getScoreFromTime(timeLeft);
         setScore(earned);
@@ -137,6 +140,7 @@ export default function WordFillMode({
       } else {
         if (onIncorrect && !lifeLostRef.current) {
           onIncorrect();
+          playSound("error", effectsOn);
           lifeLostRef.current = true;
         }
         setShowWrongModal(true);
@@ -226,8 +230,7 @@ export default function WordFillMode({
               onClick={() => {
                 playSound("submitAnswer", effectsOn);
                 checkAnswer();
-                }}
-
+              }}
               disabled={hasAnsweredCorrectly.current || disableIfNoLives}
               className={`mt-6 w-full py-3 rounded-lg transition ${
                 disableIfNoLives
@@ -247,18 +250,21 @@ export default function WordFillMode({
         onClose={() => onCorrect()}
         onNext={() => onCorrect()}
         onBackToMap={() => window.location.reload()}
+        effectsOn={effectsOn}
       />
 
       <WrongAnswerModal
         isOpen={showWrongModal}
         onRetry={() => resetLevel({ skipIncorrect: true })}
         onBack={() => window.location.reload()}
+        effectsOn={effectsOn}
       />
 
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
         onGoToMap={() => window.location.reload()}
+        effectsOn={effectsOn}
       />
     </div>
   );

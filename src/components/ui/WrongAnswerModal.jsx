@@ -1,8 +1,9 @@
 // src/components/ui/WrongAnswerModal.jsx
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { playSound } from "utils/sound";
 
-export default function WrongAnswerModal({ isOpen, onRetry, onBack }) {
+export default function WrongAnswerModal({ isOpen, onRetry, onBack, effectsOn = true }) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog onClose={onBack || (() => {})} className="relative z-50">
@@ -29,13 +30,19 @@ export default function WrongAnswerModal({ isOpen, onRetry, onBack }) {
 
             <div className="space-y-2">
               <button
-                onClick={onRetry}
+                onClick={() => {
+                  playSound("back", effectsOn);
+                  onRetry();
+                }}
                 className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
               >
                 🔁 Retry
               </button>
               <button
-                onClick={onBack}
+                onClick={() => {
+                  playSound("click", effectsOn);
+                  onBack();
+                }}
                 className="w-full bg-gray-200 text-gray-800 py-2 rounded hover:bg-gray-300 transition"
               >
                 🗺️ Return to Map

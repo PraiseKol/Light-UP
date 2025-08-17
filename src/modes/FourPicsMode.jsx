@@ -71,6 +71,7 @@ export default function FourPicsMode({
   const { timeLeft, setTimeLeft, setIsRunning } = useTimer(INITIAL_TIME, () => {
     if (input.every((slot) => slot === "")) {
       handleLifeLoss();
+      playSound("error", effectsOn);
       setShowTimeUpModal(true);
     } else {
       checkAnswer();
@@ -177,15 +178,18 @@ export default function FourPicsMode({
     if (!question?.answer || hasAnswered.current) return;
     hasAnswered.current = true;
     setIsRunning(false);
+
     const correct =
       input.join("").toLowerCase() === question.answer.toLowerCase();
     if (correct) {
+      playSound("success", effectsOn);
       const earned = calculateScore();
       setScore(earned); // ✅ set state
       saveScore(earned);
       setShowRightModal(true);
     } else {
       handleLifeLoss();
+      playSound("error", effectsOn);
       setShowWrongModal(true);
     }
   };
@@ -405,16 +409,19 @@ export default function FourPicsMode({
         onNext={onCorrect}
         onBackToMap={() => window.location.reload()}
         score={score}
+        effectsOn={effectsOn}
       />
       <WrongAnswerModal
         isOpen={showWrongModal}
         onRetry={resetLevel}
         onBack={onBack}
+        effectsOn={effectsOn}
       />
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={resetLevel}
         onGoToMap={onBack}
+        effectsOn={effectsOn}
       />
     </div>
   );

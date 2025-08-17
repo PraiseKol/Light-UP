@@ -86,6 +86,7 @@ export default function ScriptureMatchMode({
       },
       setShowTimeUpModal: (open) => {
         if (!open) setStatus("idle");
+        playSound("levelUp", effectsOn);
       },
     },
     setUserInput: () => setMatches({}),
@@ -143,12 +144,14 @@ export default function ScriptureMatchMode({
       (pair) => matches[pair.reference] === pair.verse
     );
     if (isCorrect) {
+      playSound("success", effectsOn);
       const calculated = calculateScore();
       setScore(calculated);
       await saveScore(calculated);
       if (onScore) onScore(calculated);
       setStatus("correct");
     } else {
+      playSound("error", effectsOn);
       await handleLifeLoss();
       if (onIncorrect) onIncorrect();
       setStatus("timeup");
@@ -300,18 +303,21 @@ export default function ScriptureMatchMode({
         onClose={onCorrect}
         onNext={onCorrect}
         onBackToMap={() => window.location.reload()}
+        effectsOn={effectsOn}
       />
 
       <WrongAnswerModal
         isOpen={status === "wrong"}
         onRetry={resetLevel}
         onBack={onBack}
+        effectsOn={effectsOn}
       />
 
       <TimeUpModal
         isOpen={status === "timeup"}
         onTryAgain={resetLevel}
         onGoToMap={onBack}
+        effectsOn={effectsOn}
       />
     </div>
   );

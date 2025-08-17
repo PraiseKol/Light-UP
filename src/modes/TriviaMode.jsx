@@ -55,6 +55,7 @@ export default function TriviaMode({
     } else {
       hasAnswered.current = true;
       setStatus("timeup");
+      playSound("error", effectsOn);
       setShowTimeUpModal(true);
       if (!lifeLostRef.current && onIncorrect) {
         lifeLostRef.current = true;
@@ -158,17 +159,20 @@ export default function TriviaMode({
 
     const isCorrect =
       selected?.trim().toLowerCase() === answer.trim().toLowerCase();
+      
 
     setStatus(isCorrect ? "correct" : "wrong");
 
     setTimeout(() => {
       if (isCorrect) {
+        playSound("success", effectsOn);
         const score = getScoreFromTime(timeLeft);
         setscore(score);
         saveScore(score);
         if (onScore) onScore(score);
         setShowRightModal(true);
       } else {
+        playSound("error", effectsOn);
         if (!lifeLostRef.current && onIncorrect) {
           lifeLostRef.current = true;
           onIncorrect();
@@ -261,18 +265,21 @@ export default function TriviaMode({
         onNext={onCorrect}
         onBackToMap={() => window.location.reload()}
         score={score}
+        effectsOn={effectsOn}
       />
 
       <WrongAnswerModal
         isOpen={showWrongModal}
         onRetry={resetLevel}
         onBack={() => window.location.reload()}
+        effectsOn={effectsOn}
       />
 
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={resetLevel}
         onGoToMap={() => window.location.reload()}
+        effectsOn={effectsOn}
       />
     </div>
   );

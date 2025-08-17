@@ -38,7 +38,7 @@ import {
   hasPlayedThisWeek,
 } from "utils/weeklyChallenge";
 
-export default function MapAndGame({ sound, setSound, effectsOn }) {
+export default function MapAndGame({ sound, setSound, effectsOn="true" }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [completedLevels, setCompletedLevels] = useState([]);
   const [unlockedPhases, setUnlockedPhases] = useState([]);
