@@ -9,6 +9,7 @@ import { useResetLevel } from "hooks/useResetLevel";
 import ProgressBar from "components/ui/progress";
 import { supabase } from "lib/supabaseClient";
 import { loseLife } from "utils/loseLife";
+import { playSound } from "utils/sound";
 
 export default function FourPicsMode({
   level,
@@ -16,6 +17,7 @@ export default function FourPicsMode({
   onCorrect = () => {},
   onScore = () => {},
   activePowerups,
+  effectsOn = true,
 }) {
   const INITIAL_TIME = 30;
 
@@ -350,7 +352,10 @@ export default function FourPicsMode({
         {shuffledLetters.map((ltr, idx) => (
           <button
             key={idx}
-            onClick={() => handleLetterClick(ltr, idx)}
+            onClick={() => {
+              playSound("click", effectsOn);
+             handleLetterClick(ltr, idx);
+             }}
             disabled={usedIndexes.includes(idx) || hasAnswered.current}
             className={`w-10 h-10 text-lg font-bold rounded-lg transition shadow ${
               usedIndexes.includes(idx)
@@ -365,14 +370,20 @@ export default function FourPicsMode({
 
       <div className="flex justify-center gap-4">
         <Button
-          onClick={handleBackspace}
+          onClick={() => {
+                playSound("back", effectsOn);
+                handleBackspace();
+                }}
           disabled={input.every((slot) => slot === "") || hasAnswered.current}
           className="bg-gray-200 hover:bg-gray-300 text-black"
         >
           ⌫
         </Button>
         <Button
-          onClick={checkAnswer}
+          onClick={() => {
+                playSound("submitAnswer", effectsOn);
+                checkAnswer();
+                }}
           disabled={hasAnswered.current || input.includes("")}
         >
           ✅ Submit

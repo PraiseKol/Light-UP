@@ -9,6 +9,7 @@ import { supabase } from "lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
 import { loseLife } from "utils/loseLife";
 import { useResetLevel } from "hooks/useResetLevel";
+import { playSound } from "utils/sound";
 
 const scriptureMatchBackground =
   "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//ScriptureMatchBackground.png";
@@ -22,6 +23,7 @@ export default function ScriptureMatchMode({
   onScore,
   onIncorrect,
   activePowerups, // ✅ Powerups support
+  effectsOn = true,
 }) {
   const [pairs, setPairs] = useState([]);
   const [shuffledVerses, setShuffledVerses] = useState([]);
@@ -234,7 +236,10 @@ export default function ScriptureMatchMode({
                 {pairs.map(({ reference }) => (
                   <div
                     key={reference}
-                    onDragOver={(e) => e.preventDefault()}
+                    onDragOver={(e) => { 
+                      playSound("click", effectsOn);
+                      e.preventDefault();
+                      }}
                     onDrop={() => handleDrop(reference)}
                     className="border p-3 min-h-[60px] mb-3 bg-gray-50 flex items-center justify-between"
                   >
@@ -254,7 +259,10 @@ export default function ScriptureMatchMode({
                   <div
                     key={verse}
                     draggable={!isMatched(verse)}
-                    onDragStart={() => setDraggedVerse({ verse })}
+                    onDragStart={() => {
+                      playSound("slide", effectsOn);
+                    setDraggedVerse({ verse });
+                    }}
                     className={`cursor-move border p-3 rounded-lg mb-3 transition ${
                       isMatched(verse)
                         ? "bg-green-200 text-gray-700"
@@ -273,7 +281,10 @@ export default function ScriptureMatchMode({
                   hasAnswered.current ||
                   Object.keys(matches).length !== pairs.length
                 }
-                onClick={checkAnswer}
+                onClick={() => {
+                playSound("submitAnswer", effectsOn);
+                checkAnswer();
+                }}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 ✅ Submit

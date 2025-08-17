@@ -9,6 +9,7 @@ import { useTimer } from "hooks/useTimer";
 import { useResetLevel } from "hooks/useResetLevel";
 import { supabase } from "lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
+import { playSound } from "utils/sound";
 
 const triviaBackground =
   "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds/TriviaBackground.png";
@@ -29,6 +30,7 @@ export default function TriviaMode({
   onScore,
   onIncorrect,
   activePowerups,
+  effectsOn = true,
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
@@ -208,6 +210,7 @@ export default function TriviaMode({
                 selected !== null &&
                 !hasAnswered.current
               ) {
+                playSound("submitAnswer", effectsOn);
                 checkAnswer();
               }
             }}
@@ -222,7 +225,9 @@ export default function TriviaMode({
                     key={i}
                     disabled={isDisabled}
                     onClick={() => {
-                      if (!hasAnswered.current) setSelected(opt);
+                      if (!hasAnswered.current) 
+                      setSelected(opt);
+                      playSound("optionSelect", effectsOn); // 🔊 sound when clicking an option
                     }}
                     className={`w-full px-4 py-3 rounded-md text-left border transition ${
                       isSelected
@@ -237,7 +242,10 @@ export default function TriviaMode({
             </div>
 
             <Button
-              onClick={checkAnswer}
+              onClick={() => {
+                playSound("submitAnswer", effectsOn);
+                checkAnswer();
+              }}
               disabled={!selected || hasAnswered.current}
               className="w-full bg-blue-600 text-white hover:bg-blue-700 transition"
             >

@@ -16,6 +16,7 @@ const soundFiles = {
   switch: "/sounds/switch.wav",
   optionSelect: "/sounds/optionSelect.wav",
   submitAnswer: "/sounds/submitAnswer.mp3",
+  slide: "/sounds/slide.mp3",
 
   // 🎵 Power-up specific sounds
   divineHint: "/sounds/divine-hint.mp3",
