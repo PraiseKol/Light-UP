@@ -9,7 +9,7 @@ export default function RightAnswerModal({
   onNext,
   onBackToMap,
   score, // 👈 Accept score as a prop
-  effectsOn = true,
+  effectsOn
 }) {
   return (
     <Transition appear show={isOpen} as={Fragment}>

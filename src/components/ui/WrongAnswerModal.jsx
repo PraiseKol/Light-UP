@@ -3,7 +3,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { playSound } from "utils/sound";
 
-export default function WrongAnswerModal({ isOpen, onRetry, onBack, effectsOn = true }) {
+export default function WrongAnswerModal({ isOpen, onRetry, onBack, effectsOn }) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog onClose={onBack || (() => {})} className="relative z-50">

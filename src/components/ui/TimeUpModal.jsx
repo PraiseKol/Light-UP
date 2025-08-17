@@ -3,7 +3,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { playSound } from "utils/sound";
 
-export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn = true, }) {
+export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn }) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog onClose={() => {}} className="relative z-50">

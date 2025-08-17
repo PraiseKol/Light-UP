@@ -17,11 +17,11 @@ import ScriptureMatchMode from "modes/ScriptureMatchMode";
 import HolyShieldButton from "components/HolyShieldButton";
 import { playSound } from "utils/sound";
 
-export default function GameScreen({ level, onBack, onComplete, onScore }) {
+export default function GameScreen({ level, onBack, onComplete, onScore, effectsOn }) {
   const maybeUser = useUser();
   const user = maybeUser ?? null;
 
-  const [effectsOn, setEffectsOn] = useState(true);
+  
   const [gameOver, setGameOver] = useState(false);
 
   const {
