@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { markInGame, clearInGame } from "utils/inGame";
 import { loseLife } from "utils/loseLife";
 import { playSound } from "utils/sound";
+import DonationsButton from "components/DonationsButton";
 
 import PowerUpStore from "components/PowerUpStore";
 import Modal from "components/ui/modal";
@@ -408,10 +409,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </button>
 
           <button
-            onClick={ () => {
+            onClick={() => {
               playSound("optionSelect", effectsOn); // 🔊 play switch sound
               handleWeeklyChallengeClick();
-              }}
+            }}
             disabled={!challengeAllowed}
             className="w-full mb-2 text-left bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600"
           >
@@ -459,14 +460,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             )}
           </div>
 
-          <div className="mt-4">
+          <div className="mt-auto flex gap-2">
             <FeedbackButton
               effectsOn={effectsOn}
-              fullWidth
-              sound={sound} // pass current sound state
-              setSound={setSound} // pass setter so modal can update global sound immediately
-              
+              sound={sound}
+              setSound={setSound}
             />
+
+            <DonationsButton effectsOn={effectsOn} playSound={playSound} />
           </div>
         </div>
 
@@ -514,14 +515,15 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           <br></br> <br></br>
           <div className="sticky top-0 z-40 bg-white py-2 px-4 shadow-sm flex flex-wrap justify-between items-center text-sm md:text-base font-semibold text-blue-700 gap-4">
             <div className="truncate"> {gameUser.player_name || "Unnamed"}</div>
-            <div className="flex items-center gap-1">
-              Talents: 💎 {gameUser.talents ?? 0}
-            </div>
+
             <div>Total Score: {userScore}</div>
             <LivesDisplay
               lives={gameUser.lives}
               lastLostAt={gameUser.last_life_lost_at}
             />
+            <div className="flex items-center gap-1">
+              Talents: 💎 {gameUser.talents ?? 0}
+            </div>
             <div className="flex gap-4">
               {Object.entries(gameUser.powerups_inventory || {}).map(
                 ([key, count]) => (
@@ -580,9 +582,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               onBack={handleBackFromGame}
               onComplete={handleLevelComplete}
               onScore={handleScore}
-              onLoseLife={() =>
-                loseLife(gameUser.user_id, gameUser.lives).then(refetch)
-              }
+              onLoseLife={() => {
+                return loseLife(gameUser.user_id, gameUser.lives).then(refetch);
+              }}
               userScore={userScore}
               refetchGameUser={refetch}
               sound={sound} // pass current sound state
@@ -598,10 +600,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             onClick={() => {
               playSound("optionSelect", effectsOn); // 🔊 play switch sound
               handleWeeklyChallengeClick();
-              }}
+            }}
             disabled={!challengeAllowed}
             className="bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600"
-
           >
             {challengeAllowed && !challengePlayed
               ? "🥊 Weekly Challenge"
@@ -652,12 +653,21 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               </ol>
             </div>
           )}
-          <div className="mt-auto">
-            <FeedbackButton
-              effectsOn={effectsOn}
-              sound={sound} // pass current sound state
-              setSound={setSound} // pass setter so modal can update global sound immediately
-            />
+          <div className="mt-auto flex gap-2">
+            <div>
+              <FeedbackButton
+                effectsOn={effectsOn}
+                sound={sound}
+                setSound={setSound}
+              />
+            </div>
+            <div>
+              <DonationsButton
+                effectsOn={effectsOn}
+                playSound={playSound}
+                sound={sound}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import LevelButton from "./LevelButton";
 import { Lock } from "lucide-react";
 import { levelPhases } from "data/levelData";
 import avatarIcon from "assets/avatar.png";
+import { useGameUser } from "hooks/useGameUser";
 
 export default function LevelMap({
   phase,
@@ -15,6 +16,10 @@ export default function LevelMap({
 }) {
   const containerRef = useRef(null);
   const [svgSize, setSvgSize] = useState({ width: 0, height: 0 });
+
+  // 👇 Get player info and rank
+  const { gameUser } = useGameUser();
+
 
   // Measure container size so SVG coordinates match pixel size
   useEffect(() => {
@@ -48,6 +53,13 @@ export default function LevelMap({
       ref={containerRef}
       className="relative w-full h-[150vh] overflow-hidden rounded-xl shadow-lg bg-transparent"
     >
+      {/* Background Phase Title */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <h1 className="text-[5rem] font-extrabold text-black/20 text-center tracking-wider select-none">
+          {`Phase ${phase.phaseNumber} : ${phase.title}`}
+        </h1>
+      </div>
+
       {/* SVG curved path connections */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none">
         {phase.levels.map((level, i) => {
@@ -66,7 +78,7 @@ export default function LevelMap({
           const y2 = (curr.position.y / 100) * svgSize.height;
 
           // Keep horizontal swing near edges but not touching
-          const edgeMargin = svgSize.width * 0.07; // 5% margin
+          const edgeMargin = svgSize.width * 0.07;
           const minX = edgeMargin;
           const maxX = svgSize.width - edgeMargin;
 
@@ -130,11 +142,16 @@ export default function LevelMap({
             />
 
             {isCurrent && (
-              <img
-                src={avatarIcon}
-                alt="Avatar"
-                className="w-12 h-12 absolute -top-9 left-1/4 -translate-x-1/2 rounded-full shadow-md animate-bounce"
-              />
+              <div className="absolute -top-20 left-1/4 -translate-x-1/2 flex flex-col items-center">
+                
+
+                {/* Avatar */}
+                <img
+                  src={avatarIcon}
+                  alt="Avatar"
+                  className="w-12 h-12 rounded-full shadow-md animate-bounce"
+                />
+              </div>
             )}
           </div>
         );
