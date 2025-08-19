@@ -653,7 +653,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               </ol>
             </div>
           )}
-          <div className="mt-auto flex gap-2">
+          <div className="mt-auto flex gap-1">
             <div>
               <FeedbackButton
                 effectsOn={effectsOn}
@@ -663,6 +663,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             </div>
             <div>
               <DonationsButton
+              userId={user?.id}   // 👈 pass the actual user id here
                 effectsOn={effectsOn}
                 playSound={playSound}
                 sound={sound}

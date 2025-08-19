@@ -1,5 +1,9 @@
 import { useState } from "react";
 
+// Use env variable or fallback to localhost:3000 in dev
+const API_BASE =
+  process.env.REACT_APP_API_URL || "http://localhost:3000";
+
 export default function DonationsButton({ userId }) {
   const [showModal, setShowModal] = useState(false);
   const [amount, setAmount] = useState(null);
@@ -15,13 +19,22 @@ export default function DonationsButton({ userId }) {
 
   const handleDonate = async () => {
     if (!amount || amount <= 0) return alert("Enter a valid amount");
-
+  
+    const payload = { userId, amount };
+    console.log("Sending donation payload:", payload); // 👈 log
+  
     try {
-      const res = await fetch("/api/create-donation-session", {
+      const res = await fetch(`${API_BASE}/api/create-donation-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, amount }),
+        body: JSON.stringify(payload),
       });
+  
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
+  
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url; // redirect to payment provider
@@ -29,15 +42,16 @@ export default function DonationsButton({ userId }) {
         alert("Failed to start donation");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Donation error:", err);
       alert("Failed to start donation");
     }
   };
+  
 
   return (
     <>
       <button
-        className="bg-green-600 text-white px-3 py-2 rounded-lg shadow-md"
+        className="bg-green-600 text-white text-[16px] px-3 py-2 rounded-lg shadow-md"
         onClick={() => setShowModal(true)}
       >
         Donations

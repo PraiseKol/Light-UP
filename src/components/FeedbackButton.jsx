@@ -52,10 +52,10 @@ export default function FeedbackButton({ small, fullWidth, effectsOn = true }) {
     <>
       {/* Feedback Button */}
       <Button
-        className={`${fullWidth ? "w-full" : ""} ${
+        className={`${fullWidth ? "w-full" : ""} text-xs ${ 
           small
             ? "text-xs px-2 py-1"
-            : "fixed bottom-4 right-4 z-50 rounded-full shadow-lg"
+            : "fixed bottom-4 right-4 z-50 rounded-lg shadow-md"
         }`}
         onClick={() => setIsOpen(true)}
       >
