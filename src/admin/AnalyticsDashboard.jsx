@@ -3,6 +3,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "lib/supabaseClient";
 import { useAuth } from "auth/AuthProvider";
 import { Card, CardContent } from "components/ui/card";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function AnalyticsDashboard() {
   const { user } = useAuth();
@@ -18,6 +27,8 @@ export default function AnalyticsDashboard() {
     highestLevel: "-",
   });
 
+  const [powerupData, setPowerupData] = useState([]);
+
   useEffect(() => {
     fetchUserRole();
   }, [user]);
@@ -25,6 +36,7 @@ export default function AnalyticsDashboard() {
   useEffect(() => {
     if (role === "super_admin") {
       fetchStats();
+      fetchPowerupTotals();
     }
   }, [role]);
 
@@ -41,7 +53,7 @@ export default function AnalyticsDashboard() {
 
   const fetchHighestPhaseLevel = async () => {
     const { data, error } = await supabase
-      .from("highest_phase_level") // <-- query the view
+      .from("highest_phase_level")
       .select("highest_phase, highest_level")
       .single();
 
@@ -50,14 +62,10 @@ export default function AnalyticsDashboard() {
       return { phase: "-", level: "-" };
     }
 
-    if (data) {
-      return {
-        phase: data.highest_phase || "-",
-        level: data.highest_level || "-",
-      };
-    }
-
-    return { phase: "-", level: "-" };
+    return {
+      phase: data?.highest_phase || "-",
+      level: data?.highest_level || "-",
+    };
   };
 
   const fetchStats = async () => {
@@ -81,6 +89,38 @@ export default function AnalyticsDashboard() {
       console.error("Error fetching analytics:", err);
     }
   };
+
+  // --- Dynamic Powerup Totals ---
+const fetchPowerupTotals = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("game_users")
+      .select("powerups_inventory");
+    if (error) throw error;
+
+    const totals = {};
+
+    data.forEach((user) => {
+      const inv = user.powerups_inventory || {};
+      Object.entries(inv).forEach(([key, value]) => {
+        if (!totals[key]) totals[key] = 0;
+        totals[key] += value || 0;
+      });
+    });
+
+    const chartData = Object.entries(totals)
+      .map(([name, total]) => ({
+        name: name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        total,
+      }))
+      .sort((a, b) => b.total - a.total); // Sort descending by total
+
+    setPowerupData(chartData);
+  } catch (err) {
+    console.error("Error fetching powerup totals:", err);
+  }
+};
+
 
   if (loading) {
     return (
@@ -116,9 +156,7 @@ export default function AnalyticsDashboard() {
       <Card>
         <CardContent className="p-4">
           <h2 className="text-lg font-bold">Highest Phase Reached</h2>
-          <p className="text-3xl">
-            Phase {stats.highestPhase} 
-          </p>
+          <p className="text-3xl">Phase {stats.highestPhase}</p>
         </CardContent>
       </Card>
 
@@ -126,9 +164,7 @@ export default function AnalyticsDashboard() {
       <Card>
         <CardContent className="p-4">
           <h2 className="text-lg font-bold">Highest Level Reached</h2>
-          <p className="text-3xl">
-         Level {stats.highestLevel}
-          </p>
+          <p className="text-3xl">Level {stats.highestLevel}</p>
         </CardContent>
       </Card>
 
@@ -152,6 +188,27 @@ export default function AnalyticsDashboard() {
         <CardContent className="p-4">
           <h2 className="text-lg font-bold">Retention Rate</h2>
           <p className="text-3xl">{stats.retentionRate}%</p>
+        </CardContent>
+      </Card>
+
+      {/* Dynamic Powerups Owned Bar Chart */}
+      <Card className="col-span-1 md:col-span-2">
+        <CardContent className="p-4">
+          <h2 className="text-lg font-bold mb-2">Total Powerups Owned</h2>
+          <div className="w-full h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={powerupData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="total" fill="#4f46e5" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </div>

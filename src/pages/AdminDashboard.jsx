@@ -10,6 +10,8 @@ import MultiplayerQuizManager from "admin/MultiplayerQuizManager";
 import LeaderboardManager from "admin/LeaderboardManager";
 import AnalyticsDashboard from "admin/AnalyticsDashboard";
 import FeedbackManager from "admin/FeedbackManager";
+import DonationsManager from "admin/DonationsManager";
+
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("main");
@@ -41,9 +43,11 @@ export default function AdminDashboard() {
       case "multiplayer":
         return <MultiplayerQuizManager />;
       case "feedback":
-        return <FeedbackManager />;
+        return isSuperAdmin ? <FeedbackManager /> : null
       case "leaderboard":
         return isSuperAdmin ? <LeaderboardManager /> : null;
+        case "donations":
+        return isSuperAdmin ? <DonationsManager /> : null;
       case "analytics":
         return isSuperAdmin ? <AnalyticsDashboard /> : null;
       default:
@@ -87,8 +91,9 @@ export default function AdminDashboard() {
           {tabButton("main", "Main Game Quiz")}
           {tabButton("weekly", "Weekly Quiz")}
           {tabButton("multiplayer", "Multiplayer Quiz")}
-          {tabButton("feedback", "Feedback")}
+          {tabButton("feedback", "Feedback", isSuperAdmin)}
           {tabButton("leaderboard", "Leaderboards", isSuperAdmin)}
+          {tabButton("donations", "Donations", isSuperAdmin)}
           {tabButton("analytics", "Analytics", isSuperAdmin)}
         </div>
 
