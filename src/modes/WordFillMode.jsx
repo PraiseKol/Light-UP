@@ -28,7 +28,9 @@ export default function WordFillMode({
   disableIfNoLives,
   activePowerups,
   effectsOn = true,
+  onBack, // 👈 add this
 }) {
+
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
 
@@ -247,23 +249,23 @@ export default function WordFillMode({
       <RightAnswerModal
         isOpen={showRightModal}
         score={score}
-        onClose={() => onCorrect()}
-        onNext={() => onCorrect()}
-        onBackToMap={() => window.location.reload()}
+        onClose={ onCorrect}
+        onNext={onCorrect}
+        onBackToMap={onBack}
         effectsOn={effectsOn}
       />
 
       <WrongAnswerModal
         isOpen={showWrongModal}
         onRetry={() => resetLevel({ skipIncorrect: true })}
-        onBack={() => window.location.reload()}
+        onBack={onBack}
         effectsOn={effectsOn}
       />
 
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
-        onGoToMap={() => window.location.reload()}
+        onGoToMap={onBack}
         effectsOn={effectsOn}
       />
     </div>

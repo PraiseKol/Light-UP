@@ -41,6 +41,8 @@ import {
 
 export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
+  const safelyNavigatingRef = useRef(false);
+
   const [completedLevels, setCompletedLevels] = useState([]);
   const [unlockedPhases, setUnlockedPhases] = useState([]);
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
@@ -107,6 +109,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   useEffect(() => {
     const penalizeIfStaleInGame = async () => {
       if (!user?.id || !gameUser) return;
+      if (safelyNavigatingRef.current) return; // 👈 do not penalize during intentional exits
 
       // If DB says user is in-game but local UI has no selected level,
       // it usually means user refreshed/left mid-level -> lose a life.
@@ -196,13 +199,20 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   }, [gameUser]);
 
   const handleBackFromGame = async () => {
+    safelyNavigatingRef.current = true;
     try {
-      if (user?.id) await clearInGame(user.id);
+      if (user?.id) {
+        await clearInGame(user.id);
+        await refetch?.(); // ensure gameUser.in_game is false in state
+      }
     } catch (err) {
       console.error("Failed clearing in_game on back:", err);
     } finally {
-      setSelectedLevel(null);
-      await refetch?.();
+      setSelectedLevel(null); // collapse UI immediately
+      // ⏳ delay resetting the guard to avoid race
+      setTimeout(() => {
+        safelyNavigatingRef.current = false;
+      }, 500);
     }
   };
 
@@ -245,9 +255,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       score: 0,
     });
 
-    // CLEAR in_game now that the level was completed
+    safelyNavigatingRef.current = true;
     try {
       await clearInGame(user.id);
+      await refetch?.(); // make sure in_game is false before collapsing the game view
     } catch (err) {
       console.error("Failed clearing in_game after complete:", err);
     }
@@ -255,8 +266,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     const updatedCompleted = await fetchProgress(user.id);
     setCompletedLevels(updatedCompleted);
     setSelectedLevel(null);
+
     setUnlockedPhases(determineUnlockedPhases(updatedCompleted, levelPhases));
     setUserScore(await fetchTotalScore(user.id));
+
     const currentPhase = levelPhases.find(
       (p) => p.phaseNumber === selectedLevel.phaseNumber
     );
@@ -272,7 +285,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         completed: updatedCompleted.includes(nextLevel.id),
         phaseNumber: currentPhase.phaseNumber,
       });
-      setShowNextLevelModal(true); // Show modal
+      setShowNextLevelModal(true);
     } else {
       setScriptureText(
         (await fetchRandomScripture()) ||
@@ -280,7 +293,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       );
       setShowScriptureModal(true);
     }
-    await refetch?.();
+
+    // ⏳ delay resetting the guard
+    setTimeout(() => {
+      safelyNavigatingRef.current = false;
+    }, 500);
   };
 
   const handleScore = async (score) => {
@@ -663,7 +680,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             </div>
             <div>
               <DonationsButton
-              userId={user?.id}   // 👈 pass the actual user id here
+                userId={user?.id} // 👈 pass the actual user id here
                 effectsOn={effectsOn}
                 playSound={playSound}
                 sound={sound}

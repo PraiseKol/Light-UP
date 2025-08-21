@@ -1,4 +1,3 @@
-// src/components/ui/RightAnswerModal.jsx
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { playSound } from "utils/sound";
@@ -8,13 +7,14 @@ export default function RightAnswerModal({
   onClose,
   onNext,
   onBackToMap,
-  score, // 👈 Accept score as a prop
+  score,
   effectsOn
 }) {
   return (
-    <Transition appear show={isOpen} as={Fragment}>
+    <Transition.Root show={isOpen} as={Fragment}>
       <Dialog onClose={onClose} className="relative z-10">
         <Transition.Child
+          as={Fragment}
           enter="ease-out duration-300"
           enterFrom="opacity-0 scale-95"
           enterTo="opacity-100 scale-100"
@@ -64,6 +64,6 @@ export default function RightAnswerModal({
           </Dialog.Panel>
         </div>
       </Dialog>
-    </Transition>
+    </Transition.Root>
   );
 }

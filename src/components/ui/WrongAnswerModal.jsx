@@ -1,11 +1,10 @@
-// src/components/ui/WrongAnswerModal.jsx
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { playSound } from "utils/sound";
 
 export default function WrongAnswerModal({ isOpen, onRetry, onBack, effectsOn }) {
   return (
-    <Transition appear show={isOpen} as={Fragment}>
+    <Transition.Root show={isOpen} as={Fragment}>
       <Dialog onClose={onBack || (() => {})} className="relative z-50">
         <Transition.Child
           as={Fragment}
@@ -51,6 +50,6 @@ export default function WrongAnswerModal({ isOpen, onRetry, onBack, effectsOn })
           </Dialog.Panel>
         </div>
       </Dialog>
-    </Transition>
+    </Transition.Root>
   );
 }

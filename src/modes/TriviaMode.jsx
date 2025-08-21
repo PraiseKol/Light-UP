@@ -159,7 +159,6 @@ export default function TriviaMode({
 
     const isCorrect =
       selected?.trim().toLowerCase() === answer.trim().toLowerCase();
-      
 
     setStatus(isCorrect ? "correct" : "wrong");
 
@@ -229,8 +228,7 @@ export default function TriviaMode({
                     key={i}
                     disabled={isDisabled}
                     onClick={() => {
-                      if (!hasAnswered.current) 
-                      setSelected(opt);
+                      if (!hasAnswered.current) setSelected(opt);
                       playSound("optionSelect", effectsOn); // 🔊 sound when clicking an option
                     }}
                     className={`w-full px-4 py-3 rounded-md text-left border transition ${
@@ -263,22 +261,22 @@ export default function TriviaMode({
         isOpen={showRightModal}
         onClose={onCorrect}
         onNext={onCorrect}
-        onBackToMap={() => window.location.reload()}
+        onBackToMap={onBack}
         score={score}
         effectsOn={effectsOn}
       />
 
       <WrongAnswerModal
-        isOpen={showWrongModal}
-        onRetry={resetLevel}
-        onBack={() => window.location.reload()}
+        isOpen={showWrongModal} // 👈 add this
+        onRetry={() => resetLevel({ skipIncorrect: true })}
+        onBack={onBack}
         effectsOn={effectsOn}
       />
 
       <TimeUpModal
-        isOpen={showTimeUpModal}
-        onTryAgain={resetLevel}
-        onGoToMap={() => window.location.reload()}
+        isOpen={showTimeUpModal} // 👈 add this
+        onTryAgain={() => resetLevel({ skipIncorrect: true })}
+        onGoToMap={onBack}
         effectsOn={effectsOn}
       />
     </div>

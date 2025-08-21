@@ -37,8 +37,6 @@ export default function FourPicsMode({
   const lifeLostRef = useRef(false);
   const [user, setUser] = useState(null);
 
-  
-
   useEffect(() => {
     const getUser = async () => {
       const {
@@ -278,8 +276,6 @@ export default function FourPicsMode({
     },
   });
 
-
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-6 text-gray-600">
@@ -307,7 +303,7 @@ export default function FourPicsMode({
       </div>
     );
   }
-  
+
   if (!question?.answer || !question?.image_urls)
     return (
       <div className="p-6 text-center text-red-600">
@@ -358,8 +354,8 @@ export default function FourPicsMode({
             key={idx}
             onClick={() => {
               playSound("click", effectsOn);
-             handleLetterClick(ltr, idx);
-             }}
+              handleLetterClick(ltr, idx);
+            }}
             disabled={usedIndexes.includes(idx) || hasAnswered.current}
             className={`w-10 h-10 text-lg font-bold rounded-lg transition shadow ${
               usedIndexes.includes(idx)
@@ -375,9 +371,9 @@ export default function FourPicsMode({
       <div className="flex justify-center gap-4">
         <Button
           onClick={() => {
-                playSound("back", effectsOn);
-                handleBackspace();
-                }}
+            playSound("back", effectsOn);
+            handleBackspace();
+          }}
           disabled={input.every((slot) => slot === "") || hasAnswered.current}
           className="bg-gray-200 hover:bg-gray-300 text-black"
         >
@@ -385,9 +381,9 @@ export default function FourPicsMode({
         </Button>
         <Button
           onClick={() => {
-                playSound("submitAnswer", effectsOn);
-                checkAnswer();
-                }}
+            playSound("submitAnswer", effectsOn);
+            checkAnswer();
+          }}
           disabled={hasAnswered.current || input.includes("")}
         >
           ✅ Submit
@@ -407,20 +403,21 @@ export default function FourPicsMode({
         isOpen={showRightModal}
         onClose={onCorrect}
         onNext={onCorrect}
-        onBackToMap={() => window.location.reload()}
+        onBackToMap={onBack}
         score={score}
         effectsOn={effectsOn}
       />
       <WrongAnswerModal
         isOpen={showWrongModal}
-        onRetry={resetLevel}
+        onRetry={() => resetLevel({ skipIncorrect: true })} // ✅ safe retry
         onBack={onBack}
         effectsOn={effectsOn}
       />
+
       <TimeUpModal
         isOpen={showTimeUpModal}
-        onTryAgain={resetLevel}
-        onGoToMap={onBack}
+        onTryAgain={() => resetLevel({ skipIncorrect: true })} // ✅ safe retry
+        onGoToMap={onBack} // ✅ consistent with other modes
         effectsOn={effectsOn}
       />
     </div>

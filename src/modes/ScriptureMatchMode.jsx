@@ -154,7 +154,7 @@ export default function ScriptureMatchMode({
       playSound("error", effectsOn);
       await handleLifeLoss();
       if (onIncorrect) onIncorrect();
-      setStatus("timeup");
+      setStatus("wrong");
     }
   };
 
@@ -302,20 +302,20 @@ export default function ScriptureMatchMode({
         score={score}
         onClose={onCorrect}
         onNext={onCorrect}
-        onBackToMap={() => window.location.reload()}
+        onBackToMap={onBack}
         effectsOn={effectsOn}
       />
 
       <WrongAnswerModal
         isOpen={status === "wrong"}
-        onRetry={resetLevel}
+        onRetry={() => resetLevel({ skipIncorrect: true })}  // ✅ safe retry
         onBack={onBack}
         effectsOn={effectsOn}
       />
 
       <TimeUpModal
         isOpen={status === "timeup"}
-        onTryAgain={resetLevel}
+        onTryAgain={() => resetLevel({ skipIncorrect: true })}  // ✅ safe retry
         onGoToMap={onBack}
         effectsOn={effectsOn}
       />
