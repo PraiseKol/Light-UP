@@ -399,7 +399,7 @@ export default function GameScreen({
             user={user}
             gameUser={gameUser}
             refetch={refetch}
-            onActivate={() => playSound("holyShield", effectsOn)}
+            effectsOn={effectsOn} // 👈 just pass the flag
           />
           <button
             onClick={handleHeavenlyMatch}

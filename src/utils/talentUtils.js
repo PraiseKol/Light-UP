@@ -24,7 +24,6 @@ export async function adjustTalents(
       throw new Error("Missing or invalid parameters for adjustTalents");
     }
 
-    // Auto-generate a transactionId if not passed in
     const txId = transactionId || `${userId}-${Date.now()}-${amount}`;
 
     console.log("📤 Sending adjustTalents request:", {
@@ -62,7 +61,9 @@ export async function adjustTalents(
   }
 }
 
-// Keep the power-up logic as is (still uses Supabase directly)
+/**
+ * Adjust power-up inventory via Supabase RPC
+ */
 export async function adjustPowerupInventory(userId, powerupName, amount) {
   const { data, error } = await supabase.rpc("adjust_powerup_inventory", {
     p_user_id: userId,
@@ -77,7 +78,9 @@ export async function adjustPowerupInventory(userId, powerupName, amount) {
   return data;
 }
 
-// Award talents based on bonus type
+/**
+ * Award talents for a specific bonus type
+ */
 export async function awardBonus(userId, bonusType, referenceId = "global") {
   const bonusRewards = {
     accuracy: 2,
@@ -85,7 +88,7 @@ export async function awardBonus(userId, bonusType, referenceId = "global") {
     phase_completion: 3,
     daily_day3: 1,
     daily_day5: 2,
-    daily_day7plus: 3,
+    daily_day7plus: 3, // updated reward
   };
 
   const reward = bonusRewards[bonusType] || 0;
@@ -94,3 +97,43 @@ export async function awardBonus(userId, bonusType, referenceId = "global") {
   }
   return null;
 }
+
+/**
+ * Claim daily streak bonus via dedicated API
+ */
+export async function claimDailyStreakBonus(userId) {
+  if (!userId) return null;
+
+  try {
+    const res = await fetch(`${PAYMENT_BACKEND_URL}/api/daily-streak`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("❌ Daily streak API error:", data);
+      return null;
+    }
+
+    const bonusApplied = data.bonusApplied || "none";
+    const bonusAmount = data.bonusAmount || 0;
+
+    console.log(
+      "📅 Daily streak bonus:",
+      bonusApplied,
+      "→",
+      bonusAmount,
+      "talents"
+    );
+
+    return { ...data, bonusApplied, bonusAmount };
+  } catch (err) {
+    console.error("❌ Daily streak fetch failed:", err);
+    return null;
+  }
+}
+
+

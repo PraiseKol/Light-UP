@@ -29,6 +29,7 @@ import PaymentSuccess from "pages/PaymentSuccess";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { useState, useEffect } from "react";
+import { claimDailyStreakBonus } from "utils/talentUtils";
 
 // ✅ create query client once (outside components)
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ function AppContent() {
   const [sound, setSound] = useState("default");
   const [effectsOn, setEffectsOn] = useState(true);
 
+  // Fetch user settings
   useEffect(() => {
     if (!user?.id) {
       setSound("default");
@@ -70,6 +72,19 @@ function AppContent() {
     };
 
     fetchSettings();
+  }, [user?.id]);
+
+  // ✅ Claim daily streak bonus once per login/game load
+  useEffect(() => {
+    if (!user?.id) return;
+
+    claimDailyStreakBonus(user.id).then((data) => {
+      if (data?.bonusApplied) {
+        console.log(
+          `Daily streak bonus applied! +${data.bonusAmount} talents for ${data.bonusApplied}`
+        );
+      }
+    });
   }, [user?.id]);
 
   return (

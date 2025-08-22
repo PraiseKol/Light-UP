@@ -5,6 +5,10 @@ import { useAuth } from "auth/AuthProvider";
 import { Card, CardContent } from "components/ui/card";
 import {
   BarChart,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
   Bar,
   XAxis,
   YAxis,
@@ -27,6 +31,44 @@ export default function AnalyticsDashboard() {
     highestLevel: "-",
   });
 
+  const POWERUP_COLORS = {
+    divine_hint: "#4f46e5",
+    grace_period: "#f59e0b",
+    holy_shield: "#10b981",
+    heavenly_match: "#ef4444",
+  };
+
+  // --- Power-Up Usage Pie Chart ---
+  const [powerupUsageData, setPowerupUsageData] = useState([]);
+
+  const fetchPowerupUsage = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("powerup_usage")
+        .select("powerup_key, quantity");
+
+      if (error) throw error;
+
+      const totals = {};
+
+      data.forEach((row) => {
+        if (!totals[row.powerup_key]) totals[row.powerup_key] = 0;
+        totals[row.powerup_key] += row.quantity;
+      });
+
+      const chartData = Object.entries(totals)
+        .map(([key, total]) => ({
+          name: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          total,
+        }))
+        .sort((a, b) => b.total - a.total);
+
+      setPowerupUsageData(chartData);
+    } catch (err) {
+      console.error("Error fetching power-up usage:", err);
+    }
+  };
+
   const [powerupData, setPowerupData] = useState([]);
 
   useEffect(() => {
@@ -37,6 +79,7 @@ export default function AnalyticsDashboard() {
     if (role === "super_admin") {
       fetchStats();
       fetchPowerupTotals();
+      fetchPowerupUsage(); // <-- add this
     }
   }, [role]);
 
@@ -91,36 +134,37 @@ export default function AnalyticsDashboard() {
   };
 
   // --- Dynamic Powerup Totals ---
-const fetchPowerupTotals = async () => {
-  try {
-    const { data, error } = await supabase
-      .from("game_users")
-      .select("powerups_inventory");
-    if (error) throw error;
+  const fetchPowerupTotals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("game_users")
+        .select("powerups_inventory");
+      if (error) throw error;
 
-    const totals = {};
+      const totals = {};
 
-    data.forEach((user) => {
-      const inv = user.powerups_inventory || {};
-      Object.entries(inv).forEach(([key, value]) => {
-        if (!totals[key]) totals[key] = 0;
-        totals[key] += value || 0;
+      data.forEach((user) => {
+        const inv = user.powerups_inventory || {};
+        Object.entries(inv).forEach(([key, value]) => {
+          if (!totals[key]) totals[key] = 0;
+          totals[key] += value || 0;
+        });
       });
-    });
 
-    const chartData = Object.entries(totals)
-      .map(([name, total]) => ({
-        name: name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-        total,
-      }))
-      .sort((a, b) => b.total - a.total); // Sort descending by total
+      const chartData = Object.entries(totals)
+        .map(([name, total]) => ({
+          name: name
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase()),
+          total,
+        }))
+        .sort((a, b) => b.total - a.total); // Sort descending by total
 
-    setPowerupData(chartData);
-  } catch (err) {
-    console.error("Error fetching powerup totals:", err);
-  }
-};
-
+      setPowerupData(chartData);
+    } catch (err) {
+      console.error("Error fetching powerup totals:", err);
+    }
+  };
 
   if (loading) {
     return (
@@ -205,8 +249,58 @@ const fetchPowerupTotals = async () => {
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="total" fill="#4f46e5" />
+                <Bar dataKey="total">
+                  {powerupData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={
+                        POWERUP_COLORS[
+                          entry.name.toLowerCase().replace(/\s/g, "_")
+                        ] || "#4f46e5"
+                      }
+                    />
+                  ))}
+                </Bar>
               </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Power-Up Usage Pie Chart */}
+      <Card className="col-span-1 md:col-span-2">
+        <CardContent className="p-4">
+          <h2 className="text-lg font-bold mb-2">
+            Power-Up Usage Distribution
+          </h2>
+          <div className="w-full h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={powerupUsageData}
+                  dataKey="total"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
+                >
+                  {powerupUsageData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={
+                        POWERUP_COLORS[
+                          entry.name.toLowerCase().replace(/\s/g, "_")
+                        ] || "#a1a1aa"
+                      }
+                    />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend verticalAlign="bottom" height={36} />
+              </PieChart>
             </ResponsiveContainer>
           </div>
         </CardContent>
