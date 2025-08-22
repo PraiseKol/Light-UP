@@ -8,7 +8,6 @@ import { Button } from "components/ui/button";
 import { useResetLevel } from "hooks/useResetLevel";
 import ProgressBar from "components/ui/progress";
 import { supabase } from "lib/supabaseClient";
-import { loseLife } from "utils/loseLife";
 import { playSound } from "utils/sound";
 
 export default function FourPicsMode({
@@ -16,6 +15,7 @@ export default function FourPicsMode({
   onBack,
   onCorrect = () => {},
   onScore = () => {},
+  onIncorrect,
   activePowerups,
   effectsOn = true,
 }) {
@@ -30,12 +30,11 @@ export default function FourPicsMode({
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
   const [score, setScore] = useState(null);
-
   const [divineHintApplied, setDivineHintApplied] = useState(false);
+  const [user, setUser] = useState(null);
 
   const hasAnswered = useRef(false);
   const lifeLostRef = useRef(false);
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -48,24 +47,6 @@ export default function FourPicsMode({
     getUser();
   }, []);
 
-  const handleLifeLoss = async () => {
-    if (lifeLostRef.current || !user?.id) return;
-    lifeLostRef.current = true;
-    try {
-      const { data } = await supabase
-        .from("game_users")
-        .select("lives")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      const currentLives = data?.lives;
-      if (currentLives > 0) {
-        await loseLife(user.id, currentLives);
-      }
-    } catch (err) {
-      console.error("❌ Error reducing life:", err.message);
-    }
-  };
-
   const { timeLeft, setTimeLeft, setIsRunning } = useTimer(INITIAL_TIME, () => {
     if (input.every((slot) => slot === "")) {
       handleLifeLoss();
@@ -74,9 +55,9 @@ export default function FourPicsMode({
     } else {
       checkAnswer();
     }
+    setIsRunning(false);
   });
 
-  // Grace Period powerup
   useEffect(() => {
     if (activePowerups?.grace_period) {
       setTimeLeft((prev) => prev + 15);
@@ -84,10 +65,9 @@ export default function FourPicsMode({
     }
   }, [activePowerups, setTimeLeft]);
 
-  // Load question
   useEffect(() => {
     setLoading(true);
-    const load = async () => {
+    const loadQuestion = async () => {
       const data = await getQuestion(level.phaseNumber, level.number);
       if (data) {
         setQuestion(data);
@@ -95,34 +75,30 @@ export default function FourPicsMode({
         setShuffledLetters(letters.sort(() => Math.random() - 0.5));
         setInput(Array(data.answer.length).fill(""));
         setUsedIndexes([]);
-        setDivineHintApplied(false); // allow hint on first load
-        setTimeLeft(INITIAL_TIME); // reset timer at load
+        setDivineHintApplied(false);
+        setTimeLeft(INITIAL_TIME);
         setIsRunning(true);
       }
       setLoading(false);
     };
-    load();
+    loadQuestion();
   }, [level, setIsRunning, setTimeLeft]);
 
-  // Divine Hint — just fill last N slots, no locking
   const applyDivineHint = useCallback(() => {
     if (!question?.hint_letters || divineHintApplied) return;
     const hintArr = question.hint_letters.toUpperCase().split("");
     const answerLength = question.answer.length;
-
     setInput((prev) => {
-      const newInput = [...prev];
+      const arr = [...prev];
       for (let i = 0; i < hintArr.length; i++) {
-        newInput[answerLength - hintArr.length + i] = hintArr[i];
+        arr[answerLength - hintArr.length + i] = hintArr[i];
       }
-      return newInput;
+      return arr;
     });
-
     setDivineHintApplied(true);
     activePowerups?.setDivineHintUsed?.();
   }, [question, divineHintApplied, activePowerups]);
 
-  // Auto-apply on first load if active
   useEffect(() => {
     if (activePowerups?.divine_hint && !divineHintApplied) {
       applyDivineHint();
@@ -135,41 +111,43 @@ export default function FourPicsMode({
     return 50;
   };
 
-  const saveScore = async (newScore) => {
-    if (!user || !level) return;
-    const levelId = level.id || `P${level.phaseNumber}-L${level.number}`;
-    const { data: existingData } = await supabase
-      .from("progress")
-      .select("id, score")
-      .eq("user_id", user.id)
-      .eq("level_id", levelId)
-      .maybeSingle();
+  const saveScore = async (earnedScore) => {
+    if (!user || !question) return;
+    const levelId = question.id || `P${level.phaseNumber}-L${level.number}`;
 
-    const existingScore = existingData?.score;
-
-    if (existingScore === undefined || existingScore === null) {
-      await supabase.from("progress").insert({
-        user_id: user.id,
-        level_id: levelId,
-        phase: level.phaseNumber,
-        mode: "FourPics",
-        score: newScore,
-        updated_at: new Date().toISOString(),
-      });
-    } else if (newScore > existingScore) {
-      await supabase
+    try {
+      const { data: existing } = await supabase
         .from("progress")
-        .update({
-          score: newScore,
-          updated_at: new Date().toISOString(),
-        })
+        .select("score")
         .eq("user_id", user.id)
-        .eq("level_id", levelId);
-    }
+        .eq("level_id", levelId)
+        .maybeSingle();
 
-    // ✅ Always show current attempt's score in modal
-    setScore(newScore);
-    onScore(newScore);
+      const oldScore = existing?.score ?? 0;
+
+      if (earnedScore > oldScore) {
+        await supabase.from("progress").upsert(
+          {
+            user_id: user.id,
+            level_id: levelId,
+            phase: level.phaseNumber,
+            mode: "FourPics",
+            score: earnedScore,
+          },
+          { onConflict: ["user_id", "level_id"] }
+        );
+      }
+      setScore(earnedScore);
+      onScore(earnedScore);
+    } catch (err) {
+      console.error("Failed to save FourPics score:", err);
+    }
+  };
+
+  const handleLifeLoss = async () => {
+    if (lifeLostRef.current || !user?.id) return;
+    lifeLostRef.current = true;
+    if (onIncorrect) onIncorrect();
   };
 
   const checkAnswer = () => {
@@ -182,7 +160,6 @@ export default function FourPicsMode({
     if (correct) {
       playSound("success", effectsOn);
       const earned = calculateScore();
-      setScore(earned); // ✅ set state
       saveScore(earned);
       setShowRightModal(true);
     } else {
@@ -212,50 +189,26 @@ export default function FourPicsMode({
     if (hasAnswered.current) return;
     for (let i = input.length - 1; i >= 0; i--) {
       if (input[i] !== "") {
-        const removedLetter = input[i];
+        const removed = input[i];
         setInput((prev) => {
           const arr = [...prev];
           arr[i] = "";
           return arr;
         });
-        setUsedIndexes((prev) => {
-          const idxToRemove = prev.find(
-            (uIdx) => shuffledLetters[uIdx] === removedLetter
-          );
-          return prev.filter((p) => p !== idxToRemove);
-        });
+        setUsedIndexes((prev) =>
+          prev.filter((idx) => shuffledLetters[idx] !== removed)
+        );
         break;
       }
     }
   };
 
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (
-        event.key === "Enter" &&
-        !hasAnswered.current &&
-        !input.includes("")
-      ) {
-        event.preventDefault();
-        checkAnswer();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [input, checkAnswer]);
-
   const resetLevel = useResetLevel({
-    setModals: {
-      setShowRightModal,
-      setShowWrongModal,
-      setShowTimeUpModal,
-    },
+    setModals: { setShowRightModal, setShowWrongModal, setShowTimeUpModal },
     setUserInput: () => {
       setInput(Array(question?.answer?.length || 0).fill(""));
       setUsedIndexes([]);
-      setDivineHintApplied(false); // allow hint after retry
+      setDivineHintApplied(false);
     },
     setTimeLeft: () => {
       setTimeLeft(INITIAL_TIME);
@@ -276,7 +229,7 @@ export default function FourPicsMode({
     },
   });
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex flex-col items-center justify-center p-6 text-gray-600">
         <svg
@@ -302,7 +255,6 @@ export default function FourPicsMode({
         <span className="text-sm">Loading question...</span>
       </div>
     );
-  }
 
   if (!question?.answer || !question?.image_urls)
     return (
@@ -409,15 +361,14 @@ export default function FourPicsMode({
       />
       <WrongAnswerModal
         isOpen={showWrongModal}
-        onRetry={() => resetLevel({ skipIncorrect: true })} // ✅ safe retry
+        onRetry={() => resetLevel({ skipIncorrect: true })}
         onBack={onBack}
         effectsOn={effectsOn}
       />
-
       <TimeUpModal
         isOpen={showTimeUpModal}
-        onTryAgain={() => resetLevel({ skipIncorrect: true })} // ✅ safe retry
-        onGoToMap={onBack} // ✅ consistent with other modes
+        onTryAgain={() => resetLevel({ skipIncorrect: true })}
+        onGoToMap={onBack}
         effectsOn={effectsOn}
       />
     </div>

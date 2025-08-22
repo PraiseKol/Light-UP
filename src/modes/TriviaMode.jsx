@@ -38,7 +38,7 @@ export default function TriviaMode({
   const [selected, setSelected] = useState(null);
   const [displayOptions, setDisplayOptions] = useState(options || []);
   const [status, setStatus] = useState("idle");
-  const [score, setscore] = useState(0);
+  const [score, setScore] = useState(0);
   const [showRightModal, setShowRightModal] = useState(false);
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
@@ -68,16 +68,15 @@ export default function TriviaMode({
     cardContentRef.current?.focus();
   }, []);
 
-  // ✅ Apply Grace Period
+  // Grace Period
   useEffect(() => {
     if (activePowerups?.grace_period) {
-      console.log("⏳ Grace Period active — adding 15 seconds");
       setTimeLeft((prev) => prev + 15);
       activePowerups?.setGraceUsed?.();
     }
   }, [activePowerups, setTimeLeft]);
 
-  // ✅ Apply Divine Hint: Remove two wrong answers
+  // Divine Hint: reduce options
   useEffect(() => {
     if (
       activePowerups?.divine_hint &&
@@ -87,15 +86,11 @@ export default function TriviaMode({
       const wrongOptions = options.filter(
         (opt) => opt.trim().toLowerCase() !== answer.trim().toLowerCase()
       );
-
       if (wrongOptions.length >= 2) {
-        // Pick 1 wrong answer to keep alongside correct
         const keepWrong =
           wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
         const newOptions = [answer, keepWrong].sort(() => Math.random() - 0.5);
-
         setDisplayOptions(newOptions);
-        console.log("✨ Divine Hint applied — reduced options:", newOptions);
         activePowerups?.setDivineHintUsed?.();
       }
     }
@@ -117,38 +112,36 @@ export default function TriviaMode({
     lifeLostRef,
   });
 
-  const saveScore = async (newScore) => {
-    if (!user) return;
+  const saveScore = async (earnedScore) => {
+    if (!user || !level) return;
 
-    const { data: existing, error: fetchError } = await supabase
-      .from("progress")
-      .select("score")
-      .eq("user_id", user.id)
-      .eq("level_id", level.id)
-      .eq("mode", "Trivia")
-      .maybeSingle();
+    const levelId = `phase-${level.phaseNumber}-level-${level.number}`; // unique levelId
 
-    if (fetchError) {
-      console.error("Failed to check existing score:", fetchError);
-      return;
-    }
+    try {
+      // Upsert score (only overwrite if new score is higher)
+      const { data: existing } = await supabase
+        .from("progress")
+        .select("score")
+        .eq("user_id", user.id)
+        .eq("level_id", levelId)
+        .maybeSingle();
 
-    const oldScore = existing?.score ?? 0;
+      const oldScore = existing?.score ?? 0;
 
-    if (newScore > oldScore) {
-      const { error: updateError } = await supabase.from("progress").upsert(
-        {
-          user_id: user.id,
-          level_id: level.id,
-          mode: "Trivia",
-          score: newScore,
-        },
-        { onConflict: ["user_id", "level_id"] }
-      );
-
-      if (updateError) {
-        console.error("Failed to update score:", updateError);
+      if (earnedScore > oldScore) {
+        await supabase.from("progress").upsert(
+          {
+            user_id: user.id,
+            level_id: levelId,
+            phase: level.phaseNumber,
+            mode: "Trivia",
+            score: earnedScore,
+          },
+          { onConflict: ["user_id", "level_id"] }
+        );
       }
+    } catch (err) {
+      console.error("Failed to save Trivia score:", err);
     }
   };
 
@@ -159,16 +152,15 @@ export default function TriviaMode({
 
     const isCorrect =
       selected?.trim().toLowerCase() === answer.trim().toLowerCase();
-
     setStatus(isCorrect ? "correct" : "wrong");
 
     setTimeout(() => {
       if (isCorrect) {
         playSound("success", effectsOn);
-        const score = getScoreFromTime(timeLeft);
-        setscore(score);
-        saveScore(score);
-        if (onScore) onScore(score);
+        const earned = getScoreFromTime(timeLeft);
+        setScore(earned);
+        saveScore(earned);
+        if (onScore) onScore(earned);
         setShowRightModal(true);
       } else {
         playSound("error", effectsOn);
@@ -206,7 +198,7 @@ export default function TriviaMode({
 
           <CardContent
             ref={cardContentRef}
-            tabIndex={0} // make focusable to capture keyboard events
+            tabIndex={0}
             onKeyDown={(e) => {
               if (
                 e.key === "Enter" &&
@@ -229,7 +221,7 @@ export default function TriviaMode({
                     disabled={isDisabled}
                     onClick={() => {
                       if (!hasAnswered.current) setSelected(opt);
-                      playSound("optionSelect", effectsOn); // 🔊 sound when clicking an option
+                      playSound("optionSelect", effectsOn);
                     }}
                     className={`w-full px-4 py-3 rounded-md text-left border transition ${
                       isSelected
@@ -267,14 +259,14 @@ export default function TriviaMode({
       />
 
       <WrongAnswerModal
-        isOpen={showWrongModal} // 👈 add this
+        isOpen={showWrongModal}
         onRetry={() => resetLevel({ skipIncorrect: true })}
         onBack={onBack}
         effectsOn={effectsOn}
       />
 
       <TimeUpModal
-        isOpen={showTimeUpModal} // 👈 add this
+        isOpen={showTimeUpModal}
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
         onGoToMap={onBack}
         effectsOn={effectsOn}

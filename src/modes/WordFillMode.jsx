@@ -1,4 +1,3 @@
-// WordFillMode.jsx
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "components/ui/card";
 import { Input } from "components/ui/input";
@@ -28,15 +27,14 @@ export default function WordFillMode({
   disableIfNoLives,
   activePowerups,
   effectsOn = true,
-  onBack, // 👈 add this
+  onBack,
 }) {
-
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
 
   const [userInput, setUserInput] = useState("");
   const [divineHint, setDivineHint] = useState("");
-  const [originalHint, setOriginalHint] = useState(""); // store hint to restore
+  const [originalHint, setOriginalHint] = useState("");
   const [status, setStatus] = useState("idle");
   const [score, setScore] = useState(null);
   const [showRightModal, setShowRightModal] = useState(false);
@@ -60,15 +58,15 @@ export default function WordFillMode({
     setIsRunning(false);
   });
 
-  // ✅ Grace Period
+  // Grace Period
   useEffect(() => {
     if (activePowerups?.grace_period) {
       setTimeLeft((prev) => prev + 15);
       activePowerups?.setGraceUsed?.();
     }
-  }, [activePowerups?.grace_period, activePowerups, setTimeLeft]);
+  }, [activePowerups, setTimeLeft]);
 
-  // ✅ Divine Hint logic
+  // Divine Hint
   useEffect(() => {
     if (activePowerups?.divine_hint && answer) {
       const cleanAnswer = answer.trim();
@@ -82,7 +80,7 @@ export default function WordFillMode({
         activePowerups?.setDivineHintUsed?.();
       }
     }
-  }, [activePowerups?.divine_hint, answer, activePowerups]);
+  }, [activePowerups, answer]);
 
   const stopTimer = () => setIsRunning(false);
 
@@ -102,32 +100,45 @@ export default function WordFillMode({
     lifeLostRef,
   });
 
-  const saveScore = async (scoreToSave) => {
-    if (!user) return;
+  const saveScore = async (earnedScore) => {
+    if (!user || !level) return;
+
+    const levelId = `phase-${level.phaseNumber}-level-${level.number}`; // unique levelId
+
     try {
-      const { error } = await supabase.from("progress").upsert(
-        {
-          user_id: user.id,
-          level_id: level.id,
-          mode: "Word Fill",
-          score: scoreToSave,
-        },
-        { onConflict: ["user_id", "level_id"] }
-      );
-      if (error) console.error("Failed to save WordFill score:", error);
+      const { data: existing } = await supabase
+        .from("progress")
+        .select("score")
+        .eq("user_id", user.id)
+        .eq("level_id", levelId)
+        .maybeSingle();
+
+      const oldScore = existing?.score ?? 0;
+
+      if (earnedScore > oldScore) {
+        await supabase.from("progress").upsert(
+          {
+            user_id: user.id,
+            level_id: levelId,
+            phase: level.phaseNumber,
+            mode: "Word Fill",
+            score: earnedScore,
+          },
+          { onConflict: ["user_id", "level_id"] }
+        );
+      }
     } catch (err) {
-      console.error("Unexpected error saving WordFill score:", err);
+      console.error("Failed to save WordFill score:", err);
     }
   };
 
   const checkAnswer = useCallback(() => {
     if (hasAnsweredCorrectly.current || disableIfNoLives) return;
-    
+
     stopTimer();
 
     const isCorrect =
       userInput.trim().toLowerCase() === answer.trim().toLowerCase();
-
     setStatus(isCorrect ? "correct" : "wrong");
 
     setTimeout(async () => {
@@ -179,13 +190,9 @@ export default function WordFillMode({
           <CardContent>
             <Input
               value={userInput}
-              onFocus={() => {
-                if (divineHint) setDivineHint(""); // hide hint on focus
-              }}
+              onFocus={() => divineHint && setDivineHint("")}
               onBlur={() => {
-                if (!userInput.trim() && originalHint) {
-                  setDivineHint(originalHint); // restore hint if empty
-                }
+                if (!userInput.trim() && originalHint) setDivineHint(originalHint);
               }}
               onChange={(e) => {
                 setUserInput(e.target.value);
@@ -219,15 +226,6 @@ export default function WordFillMode({
               }`}
             />
 
-            {status === "wrong" && !disableIfNoLives && (
-              <div className="text-sm text-red-500">Incorrect. Try again.</div>
-            )}
-            {status === "correct" && (
-              <div className="text-sm text-green-600 animate-pulse">
-                Correct! 🎉
-              </div>
-            )}
-
             <button
               onClick={() => {
                 playSound("submitAnswer", effectsOn);
@@ -249,7 +247,7 @@ export default function WordFillMode({
       <RightAnswerModal
         isOpen={showRightModal}
         score={score}
-        onClose={ onCorrect}
+        onClose={onCorrect}
         onNext={onCorrect}
         onBackToMap={onBack}
         effectsOn={effectsOn}

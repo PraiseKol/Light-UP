@@ -1,32 +1,50 @@
 // utils/talentUtils.js
 import { supabase } from "lib/supabaseClient";
 
-// Base URL for payment-backend API
 const PAYMENT_BACKEND_URL =
   process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL || "http://localhost:3000";
 
 /**
  * Adjust talents by amount (+ or -) via payment-backend API
- * @param {string} userId - The user's ID (must match game_users.user_id)
- * @param {number} amount - Number of talents to adjust (positive or negative)
- * @param {string} [transactionId] - Optional unique transaction ID (if not provided, auto-generated)
  */
-export async function adjustTalents(userId, amount, transactionId) {
+export async function adjustTalents(
+  userId,
+  amount,
+  transactionId,
+  bonusType,
+  referenceId
+) {
   try {
     if (!userId || typeof amount !== "number") {
-      console.error("❌ adjustTalents: Missing or invalid parameters", { userId, amount, transactionId });
+      console.error("❌ adjustTalents: Missing or invalid params", {
+        userId,
+        amount,
+        transactionId,
+      });
       throw new Error("Missing or invalid parameters for adjustTalents");
     }
 
     // Auto-generate a transactionId if not passed in
     const txId = transactionId || `${userId}-${Date.now()}-${amount}`;
 
-    console.log("📤 Sending adjustTalents request:", { userId, amount, transactionId: txId });
+    console.log("📤 Sending adjustTalents request:", {
+      userId,
+      amount,
+      transactionId: txId,
+      bonusType,
+      referenceId,
+    });
 
     const res = await fetch(`${PAYMENT_BACKEND_URL}/api/adjust-talents`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, amount, transactionId: txId }),
+      body: JSON.stringify({
+        userId,
+        amount,
+        transactionId: txId,
+        bonusType,
+        referenceId,
+      }),
     });
 
     const data = await res.json();
@@ -37,7 +55,7 @@ export async function adjustTalents(userId, amount, transactionId) {
     }
 
     console.log("✅ Talents adjusted successfully. New balance:", data.newBalance);
-    return data.newBalance; // The backend returns updated balance
+    return data.newBalance;
   } catch (err) {
     console.error("❌ Error adjusting talents:", err);
     return null;
@@ -56,23 +74,23 @@ export async function adjustPowerupInventory(userId, powerupName, amount) {
     console.error("❌ Error adjusting power-up inventory:", error);
     return null;
   }
-  return data; // Returns updated inventory JSON
+  return data;
 }
 
 // Award talents based on bonus type
-export async function awardBonus(userId, bonusType) {
+export async function awardBonus(userId, bonusType, referenceId = "global") {
   const bonusRewards = {
     accuracy: 2,
-    perfect_level: 5,
+    perfect_phase: 10,
     phase_completion: 3,
     daily_day3: 1,
     daily_day5: 2,
-    daily_day7plus: 2,
+    daily_day7plus: 3,
   };
 
   const reward = bonusRewards[bonusType] || 0;
   if (reward > 0) {
-    return adjustTalents(userId, reward);
+    return adjustTalents(userId, reward, undefined, bonusType, referenceId);
   }
   return null;
 }

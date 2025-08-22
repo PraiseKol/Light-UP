@@ -16,12 +16,18 @@ import ScriptureMatchMode from "modes/ScriptureMatchMode";
 
 import HolyShieldButton from "components/HolyShieldButton";
 import { playSound } from "utils/sound";
+import { awardBonus } from "utils/talentUtils";
 
-export default function GameScreen({ level, onBack, onComplete, onScore, effectsOn }) {
+export default function GameScreen({
+  level,
+  onBack,
+  onComplete,
+  onScore,
+  effectsOn,
+}) {
   const maybeUser = useUser();
   const user = maybeUser ?? null;
 
-  
   const [gameOver, setGameOver] = useState(false);
 
   const {
@@ -92,9 +98,25 @@ export default function GameScreen({ level, onBack, onComplete, onScore, effects
     loadScore();
   }, [user]);
 
-  const handleScoreEarned = (scoreForLevel) => {
+  const [consecutivePerfects, setConsecutivePerfects] = useState(0);
+
+  const handleScoreEarned = async (scoreForLevel) => {
     setUserScore((prev) => prev + scoreForLevel);
     onScore?.(scoreForLevel);
+
+    if (scoreForLevel === 100) {
+      setConsecutivePerfects((prev) => {
+        const newCount = prev + 1;
+        if (newCount > 0 && newCount % 5 === 0) {
+          // 🎯 Award accuracy bonus every 5 perfects in a row
+          awardBonus(user.id, "accuracy", `streak-${newCount}`);
+        }
+
+        return newCount;
+      });
+    } else {
+      setConsecutivePerfects(0); // reset streak
+    }
   };
 
   const handleIncorrect = async () => {
@@ -218,6 +240,60 @@ export default function GameScreen({ level, onBack, onComplete, onScore, effects
     );
   }
 
+  const handleLevelComplete = async () => {
+    // Run the existing callback
+    onComplete?.();
+
+    // 🔍 Now check if this phase is fully completed with perfect 100s
+    if (!user?.id || !level?.phaseNumber) return;
+
+    try {
+      // Get all level IDs in this phase from progress table
+      const { data: phaseLevels, error: levelError } = await supabase
+        .from("progress")
+        .select("level_id")
+        .eq("phase", level.phaseNumber)
+        .order("created_at"); // optional: keep order consistent
+
+      if (levelError || !phaseLevels?.length) return;
+
+      const levelIds = phaseLevels.map((lvl) => lvl.level_id);
+
+      // Get this player's scores for those levels
+      const { data: scores, error: scoreError } = await supabase
+        .from("progress")
+        .select("score, level_id")
+        .eq("user_id", user.id)
+        .in("level_id", levelIds);
+
+      if (scoreError || !scores) return;
+
+      const allPerfect =
+        scores.length === levelIds.length &&
+        scores.every((row) => row.score === 100);
+
+      if (allPerfect) {
+        console.log("🏆 Awarding perfect phase bonus");
+        await awardBonus(
+          user.id,
+          "perfect_phase",
+          `phase-${level.phaseNumber}`
+        );
+      }
+
+      if (scores.length === levelIds.length) {
+        console.log("✅ Awarding phase completion bonus");
+        await awardBonus(
+          user.id,
+          "phase_completion",
+          `phase-${level.phaseNumber}`
+        );
+      }
+    } catch (err) {
+      console.error("❌ Error checking perfect_phase:", err);
+    }
+  };
+
   const { mode } = questionData;
   const isHolyShieldActive =
     gameUser?.holy_shield_until &&
@@ -226,7 +302,7 @@ export default function GameScreen({ level, onBack, onComplete, onScore, effects
   const commonProps = {
     level,
     onBack,
-    onCorrect: onComplete,
+    onCorrect: handleLevelComplete, // 👈 swapped
     onIncorrect: handleIncorrect,
     onScore: handleScoreEarned,
     disableIfNoLives: gameUser?.lives <= 0,
@@ -319,12 +395,11 @@ export default function GameScreen({ level, onBack, onComplete, onScore, effects
             ⏳<span> Grace Period +15s</span>
             <span>x{gameUser.powerups_inventory.grace_period ?? 0}</span>
           </button>
-          <HolyShieldButton 
-          user={user} 
-          gameUser={gameUser} 
-          refetch={refetch} 
-          onActivate={() => playSound("holyShield", effectsOn)} 
-
+          <HolyShieldButton
+            user={user}
+            gameUser={gameUser}
+            refetch={refetch}
+            onActivate={() => playSound("holyShield", effectsOn)}
           />
           <button
             onClick={handleHeavenlyMatch}
