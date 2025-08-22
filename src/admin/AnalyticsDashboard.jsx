@@ -299,7 +299,7 @@ export default function AnalyticsDashboard() {
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend verticalAlign="bottom" height={36} />
+                <Legend verticalAlign="bottom" height={15} />
               </PieChart>
             </ResponsiveContainer>
           </div>
