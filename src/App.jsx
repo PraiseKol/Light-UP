@@ -26,7 +26,12 @@ import AdminLogin from "pages/AdminLogin";
 import AdminDashboard from "pages/AdminDashboard";
 import PaymentSuccess from "pages/PaymentSuccess";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { useState, useEffect } from "react";
+
+// ✅ create query client once (outside components)
+const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }) {
   const { user, authLoading } = useAuth();
@@ -45,28 +50,27 @@ function AppContent() {
       setEffectsOn(true);
       return;
     }
-  
+
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from("game_users")
         .select("sound, effects_on")
         .eq("user_id", user.id)
         .single();
-  
+
       if (error) {
         console.error("Error fetching user settings:", error);
         setSound("default");
         setEffectsOn(true);
         return;
       }
-  
+
       setSound(data?.sound || "default");
       setEffectsOn(data?.effects_on ?? true);
     };
-  
+
     fetchSettings();
   }, [user?.id]);
-  
 
   return (
     <>
@@ -96,7 +100,7 @@ function AppContent() {
           path="/weekly-challenge"
           element={
             <ProtectedRoute>
-              <WeeklyChallengeScreen 
+              <WeeklyChallengeScreen
                 sound={sound}
                 setSound={setSound}
                 effectsOn={effectsOn}
@@ -109,7 +113,7 @@ function AppContent() {
           path="/multiplayer/create"
           element={
             <ProtectedRoute>
-              <CreateMultiplayerGame 
+              <CreateMultiplayerGame
                 sound={sound}
                 setSound={setSound}
                 effectsOn={effectsOn}
@@ -122,7 +126,7 @@ function AppContent() {
           path="/multiplayer/lobby/:gameId"
           element={
             <ProtectedRoute>
-              <MultiplayerLobby 
+              <MultiplayerLobby
                 sound={sound}
                 setSound={setSound}
                 effectsOn={effectsOn}
@@ -135,7 +139,7 @@ function AppContent() {
           path="/multiplayer/join/:token"
           element={
             <ProtectedRoute>
-              <JoinMultiplayerGame 
+              <JoinMultiplayerGame
                 sound={sound}
                 setSound={setSound}
                 effectsOn={effectsOn}
@@ -148,7 +152,7 @@ function AppContent() {
           path="/multiplayer/game/:gameId"
           element={
             <ProtectedRoute>
-              <MultiplayerGame 
+              <MultiplayerGame
                 sound={sound}
                 setSound={setSound}
                 effectsOn={effectsOn}
@@ -164,7 +168,7 @@ function AppContent() {
           path="/admin/dashboard"
           element={
             <AdminRoute>
-              <AdminDashboard 
+              <AdminDashboard
                 sound={sound}
                 setSound={setSound}
                 effectsOn={effectsOn}
@@ -187,7 +191,10 @@ export default function App() {
     <SessionContextProvider supabaseClient={supabase}>
       <Router>
         <AuthProvider>
-          <AppContent />
+          {/* ✅ React Query provider here */}
+          <QueryClientProvider client={queryClient}>
+            <AppContent />
+          </QueryClientProvider>
         </AuthProvider>
       </Router>
     </SessionContextProvider>

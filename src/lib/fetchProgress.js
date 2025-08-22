@@ -1,30 +1,74 @@
 // src/lib/fetchProgress.js
 import { supabase } from "./supabaseClient";
 
-export async function fetchProgress() {
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+const TTL_MS = 5000; // cache for 5s
+const progressCache = new Map(); // userId -> { levels, ts }
+const inFlight = new Map(); // userId -> Promise
 
-  if (authError || !user) {
-    console.error("❌ Not authenticated:", authError?.message);
-    return [];
-  }
+export function invalidateProgressCache(userId) {
+if (userId) {
+progressCache.delete(userId);
+inFlight.delete(userId);
+} else {
+progressCache.clear();
+inFlight.clear();
+}
+}
 
-  try {
-    const { data, error } = await supabase
-      .from("progress")
-      .select("level_id")
-      .eq("user_id", user.id);
+export function addLevelToProgressCache(userId, levelId) {
+if (!userId || !levelId) return;
+const cached = progressCache.get(userId);
+const levels = cached?.levels || [];
+if (!levels.includes(levelId)) {
+progressCache.set(userId, { levels: [...levels, levelId], ts: Date.now() });
+}
+}
 
-    if (error) throw error;
+export async function fetchProgress(passedUserId, { force = false } = {}) {
+let userId = passedUserId;
 
-    const uniqueLevels = [...new Set(data.map((row) => row.level_id))];
-    console.log("✅ Fetched completed levels:", uniqueLevels);
-    return uniqueLevels;
-  } catch (error) {
-    console.error("❌ Error fetching progress:", error.message);
-    return [];
-  }
+if (!userId) {
+const {
+data: { user },
+error: authError,
+} = await supabase.auth.getUser();
+if (authError || !user) {
+console.error("❌ Not authenticated:", authError?.message);
+return [];
+}
+userId = user.id;
+}
+
+const cached = progressCache.get(userId);
+const now = Date.now();
+if (!force && cached && now - cached.ts < TTL_MS) {
+return cached.levels;
+}
+
+if (inFlight.has(userId)) return inFlight.get(userId);
+
+const p = (async () => {
+try {
+const { data, error } = await supabase
+.from("progress")
+.select("level_id")
+.eq("user_id", userId);
+
+if (error) throw error;
+
+const uniqueLevels = [...new Set((data || []).map((r) => r.level_id))];
+// console.log("✅ Fetched completed levels:", uniqueLevels);
+
+progressCache.set(userId, { levels: uniqueLevels, ts: Date.now() });
+return uniqueLevels;
+} catch (err) {
+console.error("❌ Error fetching progress:", err.message);
+return [];
+} finally {
+inFlight.delete(userId);
+}
+})();
+
+inFlight.set(userId, p);
+return p;
 }

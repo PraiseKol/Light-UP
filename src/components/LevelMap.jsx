@@ -142,7 +142,7 @@ export default function LevelMap({
             />
 
             {isCurrent && (
-              <div className="absolute -top-20 left-1/4 -translate-x-1/2 flex flex-col items-center">
+              <div className="absolute -top-7 left-1/4 -translate-x-1/2 flex flex-col items-center">
                 
 
                 {/* Avatar */}

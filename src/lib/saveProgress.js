@@ -1,73 +1,86 @@
 // src/lib/saveProgress.js
 import { supabase } from "./supabaseClient";
+import {
+addLevelToProgressCache,
+invalidateProgressCache,
+} from "./fetchProgress";
+import { invalidateScoreCache } from "./fetchTotalScore";
 
 export const saveProgress = async ({ level_id, phase, mode, score }) => {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+const {
+data: { user },
+error: userError,
+} = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    console.error("No user logged in:", userError?.message);
-    return { error: "Not logged in" };
-  }
+if (userError || !user) {
+console.error("No user logged in:", userError?.message);
+return { error: "Not logged in" };
+}
 
-  const user_id = user.id;
+const user_id = user.id;
 
-  try {
-    // Step 1: Check if a record already exists
-    const { data: existingProgress, error: fetchError } = await supabase
-      .from("progress")
-      .select("id, score")
-      .eq("user_id", user_id)
-      .eq("level_id", level_id)
-      .single();
+try {
+// 1) Try to find existing row (no throw if empty)
+const { data: existing, error: fetchError } = await supabase
+.from("progress")
+.select("id, score")
+.eq("user_id", user_id)
+.eq("level_id", level_id)
+.maybeSingle();
 
-    // Step 2: If record exists
-    if (existingProgress) {
-      if (score > existingProgress.score) {
-        // Update with the new higher score
-        const { error: updateError } = await supabase
-          .from("progress")
-          .update({ score })
-          .eq("id", existingProgress.id);
+if (fetchError && fetchError.code && fetchError.code !== "PGRST116") {
+// ignore "no rows" noise; anything else we log
+console.error("Error reading progress:", fetchError.message);
+}
 
-        if (updateError) {
-          console.error("Error updating progress:", updateError.message);
-          return { error: updateError.message };
-        }
+// 2) If exists, only update when new score is higher
+if (existing) {
+if ((existing.score ?? 0) < score) {
+const { data: updated, error: updateError } = await supabase
+.from("progress")
+.update({ score })
+.eq("id", existing.id)
+.select();
 
-        console.log("Score updated: new high score");
-        return { data: { updated: true, newScore: score }, error: null };
-      } else {
-        console.log("Existing score is higher or equal. No update made.");
-        return { data: { updated: false, reason: "lower_score" }, error: null };
-      }
-    }
+if (updateError) {
+console.error("Error updating progress:", updateError.message);
+return { error: updateError.message };
+}
 
-    // Step 3: If no record exists, insert new
-    const { data: insertData, error: insertError } = await supabase
-      .from("progress")
-      .insert([
-        {
-          user_id,
-          level_id,
-          phase,
-          mode,
-          score,
-        },
-      ])
-      .select();
+// Optimistic cache updates
+addLevelToProgressCache(user_id, level_id);
+invalidateScoreCache(user_id);
 
-    if (insertError) {
-      console.error("Error inserting new progress:", insertError.message);
-      return { error: insertError.message };
-    }
+// console.log("Score updated: new high score");
+return { data: { updated: true, newScore: score, row: updated?.[0] }, error: null };
+}
 
-    console.log("Progress inserted:", insertData);
-    return { data: insertData, error: null };
-  } catch (err) {
-    console.error("Unexpected error in saveProgress:", err.message);
-    return { error: err.message };
-  }
+// console.log("Existing score is higher or equal. No update made.");
+return { data: { updated: false, reason: "lower_or_equal" }, error: null };
+}
+
+// 3) Not exists: insert new row
+const { data: inserted, error: insertError } = await supabase
+.from("progress")
+.insert([{ user_id, level_id, phase, mode, score }])
+.select();
+
+if (insertError) {
+console.error("Error inserting new progress:", insertError.message);
+return { error: insertError.message };
+}
+
+// Optimistic cache updates
+addLevelToProgressCache(user_id, level_id);
+invalidateScoreCache(user_id);
+
+// console.log("Progress inserted:", inserted);
+return { data: inserted?.[0] ?? null, error: null };
+} catch (err) {
+console.error("Unexpected error in saveProgress:", err.message);
+// If something weird happened, clear caches so next fetch is fresh
+invalidateProgressCache(user_id);
+invalidateScoreCache(user_id);
+return { error: err.message };
+}
 };

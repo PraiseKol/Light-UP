@@ -9,7 +9,6 @@ import { fetchRandomScripture } from "lib/fetchRandomScripture";
 import { fetchLeaderboard } from "lib/fetchLeaderboard";
 import { fetchMainLeaderboard } from "lib/api/leaderboard";
 import { supabase } from "lib/supabaseClient";
-
 import { useGameUser } from "hooks/useGameUser";
 import { LivesDisplay } from "components/LivesDisplay";
 import SpiritualParallaxBackground from "components/SpiritualParallaxBackground";
@@ -24,7 +23,7 @@ import { markInGame, clearInGame } from "utils/inGame";
 import { loseLife } from "utils/loseLife";
 import { playSound } from "utils/sound";
 import DonationsButton from "components/DonationsButton";
-
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PowerUpStore from "components/PowerUpStore";
 import Modal from "components/ui/modal";
 import GlobalChat from "components/GlobalChat";
@@ -33,7 +32,6 @@ import {
   wrapLevelsWithStatus,
   getPowerUpIcon,
 } from "utils/gameHelpers";
-
 import {
   getWeeklyChallengeStatus,
   hasPlayedThisWeek,
@@ -42,16 +40,12 @@ import {
 export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const safelyNavigatingRef = useRef(false);
-
-  const [completedLevels, setCompletedLevels] = useState([]);
   const [unlockedPhases, setUnlockedPhases] = useState([]);
   const [showUnlockAnimation, setShowUnlockAnimation] = useState(false);
   const [pendingNextLevel, setPendingNextLevel] = useState(null);
   const [showScriptureModal, setShowScriptureModal] = useState(false);
   const [scriptureText, setScriptureText] = useState("");
-  const [userScore, setUserScore] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-
   const [challengeAllowed, setChallengeAllowed] = useState(false);
   const [challengePlayed, setChallengePlayed] = useState(false);
   const [countdownText, setCountdownText] = useState("");
@@ -64,6 +58,33 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // progress query
+  const { data: completedLevels = [], isLoading: progressLoading } = useQuery({
+    queryKey: ["progress", user?.id],
+    queryFn: () => fetchProgress(user?.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60, // 1 min
+  });
+
+  // score query
+  const { data: userScore = 0, isLoading: scoreLoading } = useQuery({
+    queryKey: ["totalScore", user?.id],
+    queryFn: () => fetchTotalScore(user?.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60,
+  });
+
+  // mutation for saving progress
+  const saveProgressMutation = useMutation({
+    mutationFn: saveProgress,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["progress", user?.id]);
+      queryClient.invalidateQueries(["totalScore", user?.id]);
+    },
+  });
+
   const phaseRefs = useRef([]);
   const [showNextLevelModal, setShowNextLevelModal] = useState(false);
 
@@ -75,11 +96,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       setWeeklyLeaderboard(weekly);
       setTotalLeaderboard(total);
     };
+
     const loadLeaderboardsDebounced = () => {
       clearTimeout(leaderboardTimeout);
       leaderboardTimeout = setTimeout(loadLeaderboards, 200);
     };
+
     loadLeaderboards();
+
     const weeklyChannel = supabase
       .channel("weekly_leaderboard_updates")
       .on(
@@ -88,6 +112,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         () => loadLeaderboardsDebounced()
       )
       .subscribe();
+
     let totalChannel;
     if (showTotalLeaderboard) {
       totalChannel = supabase
@@ -99,6 +124,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         )
         .subscribe();
     }
+
     return () => {
       supabase.removeChannel(weeklyChannel);
       if (totalChannel) supabase.removeChannel(totalChannel);
@@ -106,11 +132,28 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     };
   }, [showTotalLeaderboard]);
 
+
+  const startLevel = async (level) => {
+    if (!user || !level) return;
+    safelyNavigatingRef.current = true;
+    try {
+      await markInGame(user.id);
+      await refetch?.();
+      setSelectedLevel(level);
+      setShowNextLevelModal(false);
+    } catch (err) {
+      console.error("Failed starting level:", err);
+    } finally {
+      setTimeout(() => {
+        safelyNavigatingRef.current = false;
+      }, 500);
+    }
+  };
+
   useEffect(() => {
     const penalizeIfStaleInGame = async () => {
       if (!user?.id || !gameUser) return;
       if (safelyNavigatingRef.current) return; // 👈 do not penalize during intentional exits
-
       // If DB says user is in-game but local UI has no selected level,
       // it usually means user refreshed/left mid-level -> lose a life.
       if (gameUser.in_game && !selectedLevel) {
@@ -120,7 +163,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           ? new Date(gameUser.in_game_started_at).getTime()
           : 0;
         const justStarted = Date.now() - startedAt < 2000; // 2 seconds
-
         if (justStarted) return; // skip quick races
 
         toast.error("You left a level in progress — 1 life deducted.");
@@ -143,44 +185,22 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       return;
     }
 
-    const startLevel = async (level) => {
-      // Set local selected level first so UI knows user is entering a level
-      setSelectedLevel(level);
-
-      try {
-        if (user?.id) {
-          await markInGame(user.id, level.id);
-          // optionally refresh the gameUser state to surface in_game quickly
-          await refetch?.();
-        }
-      } catch (err) {
-        console.error("Failed to mark in-game:", err);
-        // still let the player start the level locally
-      }
-    };
-
-    const loadProgressAndScore = async () => {
-      const completed = await fetchProgress(user.id);
-      setCompletedLevels(completed);
-
-      const unlocked = determineUnlockedPhases(completed, levelPhases);
-      setUnlockedPhases(unlocked);
-
-      setUserScore(await fetchTotalScore(user.id));
-
-      if (unlocked.length > 0) {
-        const highestIndex = Math.max(...unlocked);
-        setTimeout(() => {
-          phaseRefs.current[highestIndex]?.scrollIntoView({
-            behavior: "smooth",
-            block: "end", // so it aligns at the bottom
-          });
-        }, 500);
-      }
-    };
-
-    loadProgressAndScore();
+    
   }, [user, navigate, levelPhases]);
+
+  useEffect(() => {
+    if (completedLevels.length > 0) {
+      const unlocked = determineUnlockedPhases(completedLevels, levelPhases);
+      setUnlockedPhases(unlocked);
+      const highestIndex = Math.max(...unlocked);
+      setTimeout(() => {
+        phaseRefs.current[highestIndex]?.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+        });
+      }, 500);
+    }
+  }, [completedLevels, levelPhases]);
 
   useEffect(() => {
     if (showNextLevelModal) {
@@ -225,6 +245,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         setChallengePlayed(await hasPlayedThisWeek(user.id));
       }
     };
+
     updateChallengeStatus();
     const interval = setInterval(updateChallengeStatus, 60000);
     return () => clearInterval(interval);
@@ -248,13 +269,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const handleLevelComplete = async () => {
     if (!user || !selectedLevel?.id) return;
 
-    await saveProgress({
-      level_id: selectedLevel.id,
-      phase: selectedLevel.phaseNumber,
-      mode: selectedLevel.mode,
-      score: 0,
-    });
-
     safelyNavigatingRef.current = true;
     try {
       await clearInGame(user.id);
@@ -263,12 +277,17 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       console.error("Failed clearing in_game after complete:", err);
     }
 
-    const updatedCompleted = await fetchProgress(user.id);
-    setCompletedLevels(updatedCompleted);
-    setSelectedLevel(null);
+    await saveProgressMutation.mutateAsync({
+      level_id: selectedLevel.id,
+      phase: selectedLevel.phaseNumber,
+      mode: selectedLevel.mode,
+      score: 0,
+    });
 
-    setUnlockedPhases(determineUnlockedPhases(updatedCompleted, levelPhases));
-    setUserScore(await fetchTotalScore(user.id));
+    // build an updated list of completed levels including the current one
+    const updatedCompleted = [...completedLevels, selectedLevel.id];
+
+    setSelectedLevel(null);
 
     const currentPhase = levelPhases.find(
       (p) => p.phaseNumber === selectedLevel.phaseNumber
@@ -282,7 +301,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       setPendingNextLevel({
         ...nextLevel,
         number: currentIdx + 2,
-        completed: updatedCompleted.includes(nextLevel.id),
+        completed: updatedCompleted.includes(nextLevel.id), // ✅ now defined
         phaseNumber: currentPhase.phaseNumber,
       });
       setShowNextLevelModal(true);
@@ -302,13 +321,13 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
   const handleScore = async (score) => {
     if (!user || !selectedLevel?.id) return;
-    await saveProgress({
+
+    await saveProgressMutation.mutateAsync({
       level_id: selectedLevel.id,
       phase: selectedLevel.phaseNumber,
       mode: selectedLevel.mode,
       score,
     });
-    setUserScore(await fetchTotalScore(user.id));
   };
 
   const handleNextPhaseScroll = () => {
@@ -331,7 +350,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     toast.success("Settings saved!");
   };
 
-  if (!user || gameUserLoading || !completedLevels) {
+  if (!user || gameUserLoading || progressLoading || scoreLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100 text-gray-800">
         <div className="text-4xl font-extrabold mb-4 animate-pulse text-blue-600 drop-shadow-md">
@@ -350,10 +369,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         </p>
       </div>
     );
-  }
-
-  function startLevel(level) {
-    setSelectedLevel(level);
   }
 
   return (
@@ -382,9 +397,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         )}
         {/* Mobile Sidebar */}
         <div
-          className={`fixed top-0 left-0 h-full w-64 bg-white/60 backdrop-blur-md p-4 border-r border-gray-300 z-50 transform transition-transform duration-300 ease-in-out
-          ${mobileActionsOpen ? "translate-x-0" : "-translate-x-full"}
-           `}
+          className={`fixed top-0 left-0 h-full w-64 bg-white/60 backdrop-blur-md p-4 border-r border-gray-300 z-50 transform transition-transform duration-300 ease-in-out ${
+            mobileActionsOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
         >
           {/* Close button (optional) */}
           <button
@@ -484,7 +499,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               setSound={setSound}
             />
 
-            <DonationsButton effectsOn={effectsOn} playSound={playSound} />
+            <DonationsButton
+              userId={user?.id}
+              effectsOn={effectsOn}
+              playSound={playSound}
+              sound={sound}
+            />
           </div>
         </div>
 
@@ -525,7 +545,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           {/* Global Chat */}
           <GlobalChat user={user} />
         </div>
-
         {/* CENTER CONTENT */}
         <div className="flex-1 overflow-y-auto max-h-screen p-4">
           {/* Sticky Header */}

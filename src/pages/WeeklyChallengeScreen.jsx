@@ -25,6 +25,7 @@ const STORAGE_KEY_TIME = "weeklyChallengeStartTime";
 const STORAGE_KEY_SCORE = "weeklyChallengeScore";
 const STORAGE_KEY_CORRECT = "weeklyChallengeCorrect";
 const STORAGE_KEY_INCORRECT = "weeklyChallengeIncorrect";
+const STORAGE_KEY_FINISHED = "weeklyChallengeFinished";
 
 export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   const [questions, setQuestions] = useState(null);
@@ -32,7 +33,10 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   const [score, setScore] = useState(() =>
     parseInt(localStorage.getItem(STORAGE_KEY_SCORE) || "0", 10)
   );
-  const [isFinished, setIsFinished] = useState(false);
+  const [isFinished, setIsFinished] = useState(
+    () => localStorage.getItem(STORAGE_KEY_FINISHED) === "true"
+  );
+
   const [timeLeft, setTimeLeft] = useState(CHALLENGE_DURATION);
   const [correctCount, setCorrectCount] = useState(() =>
     parseInt(localStorage.getItem(STORAGE_KEY_CORRECT) || "0", 10)
@@ -123,7 +127,10 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     if (isFinished && !submittedRef.current && user) {
       submittedRef.current = true;
 
-      // Clear stored data when challenge ends
+      // Mark finished
+      localStorage.setItem(STORAGE_KEY_FINISHED, "true");
+
+      // Clear other progress
       localStorage.removeItem(STORAGE_KEY_TIME);
       localStorage.removeItem(STORAGE_KEY_SCORE);
       localStorage.removeItem(STORAGE_KEY_CORRECT);
