@@ -1,8 +1,8 @@
 // utils/talentUtils.js
 import { supabase } from "lib/supabaseClient";
 
-const PAYMENT_BACKEND_URL =
-  process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL || "http://localhost:3000";
+const PAYMENT_BACKEND_URL = process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL;
+
 
 /**
  * Adjust talents by amount (+ or -) via payment-backend API
