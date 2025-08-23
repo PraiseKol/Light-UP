@@ -38,11 +38,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-yellow-200 via-blue-50 to-white text-charcoal">
-      <div className="backdrop-blur-xl bg-white/40 border border-white/20 rounded-2xl shadow-2xl p-10 max-w-lg w-full text-center animate-fadeIn">
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-yellow-300 via-blue-100 to-white text-charcoal">
+      <div className="backdrop-blur-xl bg-gold/10 border border-black rounded-2xl  shadow-2xl p-10 max-w-lg w-full text-center animate-fadeIn ">
 
         <h1 className="text-4xl font-extrabold flex items-center justify-center gap-2">
-          🕹️ <span className="text-blue-700 drop-shadow-lg">LightUP</span> Game App 🎮
+        💡 <span className="text-blue-700 drop-shadow-lg">LightUP</span> Game App 🎮
         </h1>
 
         <div className="mt-6 mb-4">
@@ -54,7 +54,7 @@ export default function LoginPage() {
               type="text"
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
-              className="flex-1 border border-blue-300 rounded-lg px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-900 focus:outline-none"
+              className="flex-1 border border-blue-400 rounded-lg px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
               placeholder="Your Invite Code"
             />
             <button
