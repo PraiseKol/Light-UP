@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { supabase } from "lib/supabaseClient";
 
-
 export default function LoginPage() {
   const { login } = useAuth();
   const [inviteCode, setInviteCode] = useState("");
@@ -39,10 +38,23 @@ export default function LoginPage() {
 
   return (
     <div className="h-screen flex items-center justify-center bg-gradient-to-br from-yellow-300 via-blue-100 to-white text-charcoal">
-      <div className="backdrop-blur-xl bg-gold/10 border border-black rounded-2xl  shadow-2xl p-10 max-w-lg w-full text-center animate-fadeIn ">
-
+      <div
+        className="
+    backdrop-blur-xl 
+    bg-gold/10 
+    border border-black 
+    rounded-2xl  
+    shadow-2xl 
+    p-6 sm:p-4 md:p-6   // 👈 smaller padding on mobile, larger on bigger screens
+    max-w-sm sm:max-w-md md:max-w-lg // 👈 narrower width on mobile
+    w-full 
+    text-center 
+    animate-fadeIn
+  "
+      >
         <h1 className="text-4xl font-extrabold flex items-center justify-center gap-2">
-        💡 <span className="text-blue-700 drop-shadow-lg">LightUP</span> Game App 🎮
+          💡 <span className="text-blue-700 drop-shadow-lg">LightUP</span> Game
+          App 🎮
         </h1>
 
         <div className="mt-6 mb-4">
@@ -72,7 +84,9 @@ export default function LoginPage() {
             </p>
           )}
           {status === "invalid" && (
-            <p className="text-sm text-red-500 mt-1">❌ Invalid or expired code</p>
+            <p className="text-sm text-red-500 mt-1">
+              ❌ Invalid or expired code
+            </p>
           )}
         </div>
 
