@@ -41,6 +41,23 @@ export default function AnalyticsDashboard() {
   // --- Power-Up Usage Pie Chart ---
   const [powerupUsageData, setPowerupUsageData] = useState([]);
 
+  const fetchActivePlayers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("daily_streaks")
+        .select("user_id")
+        .gte("streak_count", 2); // Only users with streak >= 2
+      if (error) throw error;
+      return data?.length || 0;
+    } catch (err) {
+      console.error("Error fetching active players:", err);
+      return 0;
+    }
+  };
+
+  
+  
+
   const fetchPowerupUsage = async () => {
     try {
       const { data, error } = await supabase
@@ -111,16 +128,20 @@ export default function AnalyticsDashboard() {
     };
   };
 
+  
+
   const fetchStats = async () => {
     try {
       const { data, error } = await supabase.rpc("get_admin_analytics");
       if (error) throw error;
 
       const { phase, level } = await fetchHighestPhaseLevel();
+      const activePlayersCount = await fetchActivePlayers();
+
 
       if (data) {
         setStats({
-          activePlayers: data.active_players || 0,
+          activePlayers: activePlayersCount, // <-- replace old activePlayers
           mostPlayedMode: data.most_played_mode || "-",
           avgScorePerMode: data.avg_score_per_mode || [],
           retentionRate: data.retention_rate || 0,
