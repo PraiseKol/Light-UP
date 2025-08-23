@@ -19,8 +19,17 @@ const BONUS_COLORS = {
   phase_completion: "from-pink-100 to-pink-200",
 };
 
+// Talent values per bonus
+const BONUS_VALUES = {
+  accuracy: 2,
+  perfect_phase: 10,
+  phase_completion: 3,
+  daily_day3: 1,
+  daily_day5: 2,
+  daily_day7plus: 3,
+};
+
 export default function BonusesTab({ userId }) {
-  const [bonuses, setBonuses] = useState([]);
   const [bonusCount, setBonusCount] = useState({});
   const [bonusRecentDate, setBonusRecentDate] = useState({});
   const [animatedCounts, setAnimatedCounts] = useState({});
@@ -42,8 +51,6 @@ export default function BonusesTab({ userId }) {
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-
-        setBonuses(data || []);
 
         const counts = {};
         const recentDates = {};
@@ -89,7 +96,7 @@ export default function BonusesTab({ userId }) {
     const date = new Date(dateStr);
     const now = new Date();
     const diffHours = (now - date) / (1000 * 60 * 60);
-    return diffHours <= 24; // highlight if received in last 24h
+    return diffHours <= 24;
   };
 
   if (loading) return <div>Loading bonuses...</div>;
@@ -97,30 +104,63 @@ export default function BonusesTab({ userId }) {
 
   return (
     <div className="p-4 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Your Bonuses</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
+        Your Bonuses
+      </h2>
       {Object.keys(bonusCount).length === 0 ? (
         <p className="text-center text-gray-500">No bonuses awarded yet.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {Object.entries(bonusCount).map(([type, count]) => (
-            <div
-              key={type}
-              className={`flex flex-col justify-between p-5 rounded-2xl shadow-lg hover:shadow-xl transition-shadow 
-                bg-gradient-to-r ${BONUS_COLORS[type] || "from-gray-100 to-gray-200"} 
-                ${isRecent(bonusRecentDate[type]) ? "animate-pulse ring-2 ring-yellow-400/60" : ""}`}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-3xl">{BONUS_ICONS[type] || "🎁"}</span>
-                <span className="text-lg font-semibold capitalize">{type.replace(/_/g, " ")}</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {Object.entries(bonusCount).map(([type, count]) => {
+            const earnedTalents = count * (BONUS_VALUES[type] || 0);
+
+            return (
+              <div
+                key={type}
+                className={`relative flex flex-col justify-between p-3 rounded-lg shadow-sm hover:shadow-md transition 
+    bg-gradient-to-r ${BONUS_COLORS[type] || "from-gray-100 to-gray-200"} 
+    ${
+      isRecent(bonusRecentDate[type])
+        ? "animate-pulse ring-2 ring-yellow-400/60"
+        : ""
+    }`}
+              >
+                {/* Floating Icon */}
+                <div className="absolute -top-3 -left-3 w-8 h-8 flex items-center justify-center rounded-full bg-white shadow">
+                  <span className="text-lg">{BONUS_ICONS[type] || "🎁"}</span>
+                </div>
+
+                {/* Title */}
+                <div className="pl-6 mt-1">
+                  <span className="text-sm font-semibold text-gray-800 capitalize">
+                    {type.replace(/_/g, " ")}
+                  </span>
+                </div>
+
+                {/* Bottom section */}
+                <div className="flex justify-between items-end mt-4 text-xs text-gray-600">
+                  {/* Count + Gems */}
+                  <div className="flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded-md shadow-inner">
+                    <span className="font-semibold text-gray-700">
+                      {animatedCounts[type] ?? 0}×
+                    </span>
+                    <span className="text-gray-500">•</span>
+                    <span className="font-semibold text-blue-600">
+                      {earnedTalents}
+                    </span>
+                    <span className="ml-0.5">💎</span>
+                  </div>
+
+                  {/* Last earned */}
+                  <span className="italic">
+                    {bonusRecentDate[type]
+                      ? new Date(bonusRecentDate[type]).toLocaleDateString()
+                      : "-"}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center text-sm font-medium text-gray-700">
-                <span className="bg-white/50 px-2 py-1 rounded-full">{animatedCounts[type] ?? 0}×</span>
-                <span className="text-gray-600">
-                  Last received: {bonusRecentDate[type] ? new Date(bonusRecentDate[type]).toLocaleDateString() : "-"}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
