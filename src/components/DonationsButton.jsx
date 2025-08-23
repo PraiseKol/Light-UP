@@ -19,22 +19,25 @@ export default function DonationsButton({ userId }) {
 
   const handleDonate = async () => {
     if (!amount || amount <= 0) return alert("Enter a valid amount");
-  
-    const payload = { userId, amount };
-    console.log("Sending donation payload:", payload); // 👈 log
-  
+
+    // Decide currency: NGN if >= 1,000, else USD
+    const currency = amount >= 1000 ? "NGN" : "USD";
+
+    const payload = { userId, amount, currency };
+    console.log("Sending donation payload:", payload);
+
     try {
       const res = await fetch(`${API_BASE}/api/create-donation-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-  
+
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`HTTP ${res.status}: ${errorText}`);
       }
-  
+
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url; // redirect to payment provider
@@ -46,7 +49,6 @@ export default function DonationsButton({ userId }) {
       alert("Failed to start donation");
     }
   };
-  
 
   return (
     <>
@@ -80,7 +82,7 @@ export default function DonationsButton({ userId }) {
 
             <input
               type="number"
-              placeholder="Enter custom amount (NGN)"
+              placeholder="Enter custom amount (NGN or USD)"
               className="border w-full px-3 py-2 rounded mb-4"
               onChange={(e) => setAmount(Number(e.target.value))}
             />

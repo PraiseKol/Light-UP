@@ -1,20 +1,32 @@
 import { useState } from "react";
 import { supabase } from "lib/supabaseClient";
-import { playSound } from "utils/sound"; // import sound utility
+import { playSound } from "utils/sound";
 
 export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
   const [loadingButton, setLoadingButton] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [currency, setCurrency] = useState("NGN"); // default currency
 
-  const handleBuyTalentsWithMoney = async (talents, price) => {
-    playSound("click", effectsOn); // 🔊 play sound on click
+  // Talent price options (price in NGN and USD)
+  const talentOptions = [
+    { talents: 100, priceNGN: 750, priceUSD: 0.5 },
+    { talents: 500, priceNGN: 3000, priceUSD: 2.0 },
+  ];
+
+  const handleBuyTalentsWithMoney = async (talents, price, currency) => {
+    playSound("click", effectsOn);
     setLoadingButton(talents);
     try {
       const baseUrl = process.env.REACT_APP_PAYMENT_API;
       const res = await fetch(`${baseUrl}/api/create-payment-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: gameUser.user_id, talents, price }),
+        body: JSON.stringify({
+          userId: gameUser.user_id,
+          talents,
+          price,
+          currency,
+        }),
       });
 
       const data = await res.json();
@@ -38,8 +50,7 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
     }
     if (!window.confirm(`Spend ${cost} talents for ${lives} lives?`)) return;
 
-    playSound("click", effectsOn); // 🔊 play sound on click
-
+    playSound("click", effectsOn);
     setLoading(true);
     try {
       const baseUrl = process.env.REACT_APP_PAYMENT_API;
@@ -72,7 +83,6 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
 
   return (
     <div className="p-6 max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-yellow-100">
-      {/* Talent Store header */}
       <div className="space-y-4 mb-8">
         <h2 className="text-2xl font-extrabold mb-3 text-yellow-700 text-center">
           Talent Store
@@ -81,47 +91,56 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
           Top up your talents and lives here.
         </p>
 
+        <div className="flex justify-center mb-4">
+          <label className="mr-2 font-semibold text-gray-700">Currency:</label>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="border px-2 py-1 rounded"
+          >
+            <option value="NGN">NGN</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+
         <div className="text-right text-sm mb-4">
           <span className="font-semibold text-gray-700">Your Talents:</span>{" "}
           <span className="text-yellow-600 font-bold">💎 {gameUser?.talents ?? 0}</span>
         </div>
 
         {/* Money → Talents */}
-        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 p-4 rounded-xl shadow-sm">
-          <div>
-            <p className="font-semibold text-blue-900">💎 100 Talents</p>
-            <p className="text-sm text-gray-600">₦750 / $0.50</p>
-          </div>
-          <button
-            disabled={loadingButton === 100}
-            onClick={() => handleBuyTalentsWithMoney(100, 750)}
-            className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded flex items-center gap-2"
-          >
-            {loadingButton === 100 ? (
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              "Buy"
-            )}
-          </button>
-        </div>
-
-        <div className="flex justify-between items-center bg-yellow-50 border border-yellow-200 p-4 rounded-xl shadow-sm">
-          <div>
-            <p className="font-semibold text-yellow-900">💎 500 Talents</p>
-            <p className="text-sm text-gray-600">₦3000 / $2.00</p>
-          </div>
-          <button
-            disabled={loadingButton === 500}
-            onClick={() => handleBuyTalentsWithMoney(500, 3000)}
-            className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-500 text-white rounded flex items-center gap-2"
-          >
-            {loadingButton === 500 ? (
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              "Buy"
-            )}
-          </button>
-        </div>
+        {talentOptions.map(({ talents, priceNGN, priceUSD }) => {
+          const price = currency === "NGN" ? priceNGN : priceUSD;
+          const display = currency === "NGN" ? `₦${price}` : `$${price.toFixed(2)}`;
+          return (
+            <div
+              key={talents}
+              className={`flex justify-between items-center p-4 mb-2 rounded-xl shadow-sm ${
+                talents === 100 ? "bg-blue-50 border border-blue-200" : "bg-yellow-50 border border-yellow-200"
+              }`}
+            >
+              <div>
+                <p className={`font-semibold ${talents === 100 ? "text-blue-900" : "text-yellow-900"}`}>
+                  💎 {talents} Talents
+                </p>
+                <p className="text-sm text-gray-600">{display}</p>
+              </div>
+              <button
+                disabled={loadingButton === talents}
+                onClick={() => handleBuyTalentsWithMoney(talents, price, currency)}
+                className={`px-3 py-1 text-sm ${
+                  talents === 100 ? "bg-blue-600 hover:bg-blue-500" : "bg-yellow-600 hover:bg-yellow-500"
+                } text-white rounded flex items-center gap-2`}
+              >
+                {loadingButton === talents ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  "Buy"
+                )}
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {/* Talents → Lives */}
