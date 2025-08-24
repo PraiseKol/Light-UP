@@ -242,7 +242,6 @@ export default function MultiplayerGame({ effectsOn }) {
       fetchAllPowerupUsage(); // ✅ still runs on finish
     }
   }, [game?.status, effectsOn, gameId]);
-  
 
   const startGame = async () => {
     const endAt = new Date(
@@ -297,11 +296,13 @@ export default function MultiplayerGame({ effectsOn }) {
     setLastAnswerStatus(isCorrect ? "correct" : "wrong");
     if (isCorrect) earned = getScoreForAnswerTime(elapsed);
 
-    await supabase.from("multiplayer_answers").insert({
-      game_id: gameId,
-      player_id: playerId,
-      question_id: currentQ.id,
-    });
+    await supabase
+      .from("multiplayer_answers")
+      .insert(
+        { game_id: gameId, player_id: playerId, question_id: currentQ.id },
+        { onConflict: "game_id,player_id,question_id", ignoreDuplicates: true }
+      );
+
     const updatedAnswered = [...answeredQIds, currentQ.id];
     setAnsweredQIds(updatedAnswered);
     await supabase.rpc("increment_multiplayer_score", {
@@ -351,24 +352,63 @@ export default function MultiplayerGame({ effectsOn }) {
 
   const handleUsePowerup = async (type) => {
     if (!canUsePowerup(type) || !currentQ) return;
-
-    // ✅ Update inventory
+  
+    // ✅ Update inventory immediately in UI
     const updatedInventory = { ...inventory };
     updatedInventory[type] = (updatedInventory[type] || 0) - 1;
     setInventory(updatedInventory);
-    await supabase
-      .from("game_users")
-      .update({ powerups_inventory: updatedInventory })
-      .eq("user_id", user.id);
-
-    // 🧩 Log power-up usage in multiplayer_answers.meta
-    await supabase.from("multiplayer_answers").upsert({
-      game_id: gameId,
-      player_id: playerId,
-      question_id: currentQ.id,
-      meta: { powerups_used: [type] },
-    });
-
+  
+    try {
+      await supabase
+        .from("game_users")
+        .update({ powerups_inventory: updatedInventory })
+        .eq("user_id", user.id);
+    } catch (err) {
+      console.error("Error updating inventory:", err);
+    }
+  
+    // 🧩 Safe logging to multiplayer_answers.meta
+    (async () => {
+      try {
+        // Always fetch fresh meta first
+        const { data: existing, error: fetchError } = await supabase
+          .from("multiplayer_answers")
+          .select("id, meta")
+          .eq("game_id", gameId)
+          .eq("player_id", playerId)
+          .eq("question_id", currentQ.id)
+          .maybeSingle();
+  
+        if (fetchError) {
+          console.error("Error fetching existing meta:", fetchError);
+          return;
+        }
+  
+        // Merge power-ups without overwriting
+        const prev = Array.isArray(existing?.meta?.powerups_used)
+          ? existing.meta.powerups_used
+          : [];
+  
+        const merged = Array.from(new Set([...prev, type])); // de-duplicate
+  
+        if (existing) {
+          await supabase
+            .from("multiplayer_answers")
+            .update({ meta: { powerups_used: merged } })
+            .eq("id", existing.id);
+        } else {
+          await supabase.from("multiplayer_answers").insert({
+            game_id: gameId,
+            player_id: playerId,
+            question_id: currentQ.id,
+            meta: { powerups_used: merged },
+          });
+        }
+      } catch (err) {
+        console.error("Error logging power-up usage:", err);
+      }
+    })();
+  
     // ✅ Power-up effect logic
     if (type === "divine_hint") {
       if (currentQ.mode === "word-fill") {
@@ -389,11 +429,14 @@ export default function MultiplayerGame({ effectsOn }) {
         setCurrentQ({ ...currentQ, options: reducedOptions });
       }
     }
-
+  
     if (type === "heavenly_match") {
       handleAnswer(currentQ.answer); // auto-submit correct answer
     }
   };
+  
+  
+  
 
   // --- Pre-countdown screen ---
   if (preCountdown !== null && preCountdown > 0) {
