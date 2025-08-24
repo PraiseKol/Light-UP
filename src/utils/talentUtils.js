@@ -1,8 +1,9 @@
 // utils/talentUtils.js
 import { supabase } from "lib/supabaseClient";
 
-const PAYMENT_BACKEND_URL = process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL;
-
+// Use the public env variable or fallback to localhost
+const PAYMENT_BACKEND_URL =
+  process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL || "http://localhost:3000";
 
 /**
  * Adjust talents by amount (+ or -) via payment-backend API
@@ -14,26 +15,18 @@ export async function adjustTalents(
   bonusType,
   referenceId
 ) {
-  try {
-    if (!userId || typeof amount !== "number") {
-      console.error("❌ adjustTalents: Missing or invalid params", {
-        userId,
-        amount,
-        transactionId,
-      });
-      throw new Error("Missing or invalid parameters for adjustTalents");
-    }
-
-    const txId = transactionId || `${userId}-${Date.now()}-${amount}`;
-
-    console.log("📤 Sending adjustTalents request:", {
+  if (!userId || typeof amount !== "number") {
+    console.error("❌ adjustTalents: Missing or invalid params", {
       userId,
       amount,
-      transactionId: txId,
-      bonusType,
-      referenceId,
+      transactionId,
     });
+    return null;
+  }
 
+  const txId = transactionId || `${userId}-${Date.now()}-${amount}`;
+
+  try {
     const res = await fetch(`${PAYMENT_BACKEND_URL}/api/adjust-talents`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -46,15 +39,21 @@ export async function adjustTalents(
       }),
     });
 
-    const data = await res.json();
+    // safe JSON parsing
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
 
     if (!res.ok) {
       console.error("❌ API returned error:", data);
-      throw new Error(data.error || `API error: ${res.status}`);
+      return null;
     }
 
-    console.log("✅ Talents adjusted successfully. New balance:", data.newBalance);
-    return data.newBalance;
+    console.log("✅ Talents adjusted successfully. New balance:", data?.newBalance);
+    return data?.newBalance ?? null;
   } catch (err) {
     console.error("❌ Error adjusting talents:", err);
     return null;
@@ -88,7 +87,7 @@ export async function awardBonus(userId, bonusType, referenceId = "global") {
     phase_completion: 3,
     daily_day3: 1,
     daily_day5: 2,
-    daily_day7plus: 3, // updated reward
+    daily_day7plus: 3,
   };
 
   const reward = bonusRewards[bonusType] || 0;
@@ -111,15 +110,21 @@ export async function claimDailyStreakBonus(userId) {
       body: JSON.stringify({ userId }),
     });
 
-    const data = await res.json();
+    // safe JSON parsing
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
 
     if (!res.ok) {
       console.error("❌ Daily streak API error:", data);
       return null;
     }
 
-    const bonusApplied = data.bonusApplied || "none";
-    const bonusAmount = data.bonusAmount || 0;
+    const bonusApplied = data?.bonusApplied || "none";
+    const bonusAmount = data?.bonusAmount || 0;
 
     console.log(
       "📅 Daily streak bonus:",
@@ -135,5 +140,3 @@ export async function claimDailyStreakBonus(userId) {
     return null;
   }
 }
-
-
