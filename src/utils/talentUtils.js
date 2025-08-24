@@ -3,7 +3,8 @@ import { supabase } from "lib/supabaseClient";
 
 // Use the public env variable or fallback to localhost
 const PAYMENT_BACKEND_URL =
-  process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL || "http://localhost:3000";
+  process.env.REACT_APP_PAYMENT_API || "http://localhost:3000";
+
 
 /**
  * Adjust talents by amount (+ or -) via payment-backend API
@@ -103,7 +104,7 @@ export async function awardBonus(userId, bonusType, referenceId = "global") {
 export async function claimDailyStreakBonus(userId) {
   if (!userId) return null;
 
-  const PAYMENT_BACKEND_URL = process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL;
+  const PAYMENT_BACKEND_URL = process.env.REACT_APP_PAYMENT_API;
   if (!PAYMENT_BACKEND_URL) {
     console.error("❌ PAYMENT_BACKEND_URL not set in environment");
     return null;
