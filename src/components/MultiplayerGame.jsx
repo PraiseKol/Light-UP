@@ -368,46 +368,44 @@ export default function MultiplayerGame({ effectsOn }) {
     }
   
     // 🧩 Safe logging to multiplayer_answers.meta
-    (async () => {
-      try {
-        // Always fetch fresh meta first
-        const { data: existing, error: fetchError } = await supabase
-          .from("multiplayer_answers")
-          .select("id, meta")
-          .eq("game_id", gameId)
-          .eq("player_id", playerId)
-          .eq("question_id", currentQ.id)
-          .maybeSingle();
+    try {
+      // 1. Fetch fresh meta if row exists
+      const { data: existing, error: fetchError } = await supabase
+        .from("multiplayer_answers")
+        .select("id, meta")
+        .eq("game_id", gameId)
+        .eq("player_id", playerId)
+        .eq("question_id", currentQ.id)
+        .maybeSingle();
   
-        if (fetchError) {
-          console.error("Error fetching existing meta:", fetchError);
-          return;
-        }
+      if (fetchError) {
+        console.error("Error fetching existing meta:", fetchError);
+        return;
+      }
   
-        // Merge power-ups without overwriting
-        const prev = Array.isArray(existing?.meta?.powerups_used)
-          ? existing.meta.powerups_used
-          : [];
+      // 2. Merge power-ups without overwriting
+      const prev = Array.isArray(existing?.meta?.powerups_used)
+        ? existing.meta.powerups_used
+        : [];
   
-        const merged = Array.from(new Set([...prev, type])); // de-duplicate
+      const merged = Array.from(new Set([...prev, type])); // de-duplicate
   
-        if (existing) {
-          await supabase
-            .from("multiplayer_answers")
-            .update({ meta: { powerups_used: merged } })
-            .eq("id", existing.id);
-        } else {
-          await supabase.from("multiplayer_answers").insert({
+      // 3. Upsert instead of separate insert/update (prevents 409 conflict)
+      await supabase
+        .from("multiplayer_answers")
+        .upsert(
+          {
+            id: existing?.id, // if row exists, update it
             game_id: gameId,
             player_id: playerId,
             question_id: currentQ.id,
             meta: { powerups_used: merged },
-          });
-        }
-      } catch (err) {
-        console.error("Error logging power-up usage:", err);
-      }
-    })();
+          },
+          { onConflict: "game_id,player_id,question_id" } // ensures uniqueness
+        );
+    } catch (err) {
+      console.error("Error logging power-up usage:", err);
+    }
   
     // ✅ Power-up effect logic
     if (type === "divine_hint") {
@@ -434,6 +432,7 @@ export default function MultiplayerGame({ effectsOn }) {
       handleAnswer(currentQ.answer); // auto-submit correct answer
     }
   };
+  
   
   
   
