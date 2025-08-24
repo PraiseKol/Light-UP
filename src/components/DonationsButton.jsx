@@ -1,8 +1,14 @@
 import { useState } from "react";
+import { Button } from "components/ui/button";
 
 const API_BASE = process.env.REACT_APP_API_URL;
 
-export default function DonationsButton({ userId }) {
+export default function DonationsButton({
+  userId,
+  small,
+  fullWidth,
+  effectsOn = true,
+}) {
   const [showModal, setShowModal] = useState(false);
   const [amount, setAmount] = useState(null);
   const [currency, setCurrency] = useState("NGN"); // default to NGN
@@ -60,12 +66,14 @@ export default function DonationsButton({ userId }) {
 
   return (
     <>
-      <button
-        className="bg-green-600 text-white text-[16px] px-3 py-2 rounded-lg shadow-md"
+      <Button
+        className={`${fullWidth ? "w-full" : ""} text-xs px-2 py-1
+    bg-green-600 hover:bg-green-400 text-white 
+    fixed bottom-4 z-50 rounded-lg shadow-md`}
         onClick={() => setShowModal(true)}
       >
-        Donations
-      </button>
+        ☕️ Donations
+      </Button>
 
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
@@ -76,9 +84,7 @@ export default function DonationsButton({ userId }) {
             <div className="flex gap-3 mb-4">
               <button
                 className={`flex-1 py-2 rounded-lg border ${
-                  currency === "NGN"
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-100"
+                  currency === "NGN" ? "bg-green-500 text-white" : "bg-gray-100"
                 }`}
                 onClick={() => {
                   setCurrency("NGN");
@@ -89,9 +95,7 @@ export default function DonationsButton({ userId }) {
               </button>
               <button
                 className={`flex-1 py-2 rounded-lg border ${
-                  currency === "USD"
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-100"
+                  currency === "USD" ? "bg-green-500 text-white" : "bg-gray-100"
                 }`}
                 onClick={() => {
                   setCurrency("USD");
