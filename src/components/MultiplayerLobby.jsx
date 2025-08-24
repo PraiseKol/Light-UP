@@ -126,9 +126,13 @@ export default function MultiplayerLobby({ effectsOn }) {
       .from("multiplayer_games")
       .update({ allow_powerups: newValue })
       .eq("id", gameId);
-    if (error) playSound("error", effectsOn);
-    console.error("Failed to toggle power-ups:", error);
+  
+    if (error) {
+      playSound("error", effectsOn);
+      console.error("❌ Failed to toggle power-ups:", error);
+    }
   };
+  
 
   const handleJoinSlot = async (slot) => {
     const filledSlots = Array.isArray(players)
