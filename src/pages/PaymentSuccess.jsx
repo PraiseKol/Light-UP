@@ -7,13 +7,15 @@ export default function PaymentSuccess() {
   const navigate = useNavigate();
 
   // Works for both Paystack (reference) and Stripe (session_id)
-  const reference = searchParams.get("reference") || searchParams.get("session_id");
+  const reference =
+    searchParams.get("reference") || searchParams.get("session_id");
 
   const [status, setStatus] = useState("Checking payment status...");
   const [newBalance, setNewBalance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [showText, setShowText] = useState(false);
+  const [isDonation, setIsDonation] = useState(false);
 
   useEffect(() => {
     if (!reference) {
@@ -25,7 +27,9 @@ export default function PaymentSuccess() {
     const checkPaymentStatus = async () => {
       try {
         const baseUrl = process.env.REACT_APP_PAYMENT_API;
-        const res = await fetch(`${baseUrl}/api/payment-status?reference=${reference}`);
+        const res = await fetch(
+          `${baseUrl}/api/payment-status?reference=${reference}`
+        );
         const result = await res.json();
 
         if (!res.ok || result.error) {
@@ -33,8 +37,13 @@ export default function PaymentSuccess() {
         }
 
         if (result.success) {
-          setNewBalance(result.newBalance);
-          setStatus(`🎉 Payment confirmed!`);
+          setNewBalance(result.newBalance || null);
+          setIsDonation(!!result.donation); // ✅ Save donation flag into state
+          if (result.donation) {
+            setStatus("🎉 Thank you for your donation!");
+          } else {
+            setStatus("🎉 Payment confirmed!");
+          }
           setSuccess(true);
           setShowText(true);
         } else {
@@ -46,7 +55,13 @@ export default function PaymentSuccess() {
       } finally {
         setLoading(false);
         setTimeout(() => {
-          navigate("/store");
+          if (newBalance !== null) {
+            // Talent purchase → go back to store
+            navigate("/store");
+          } else {
+            // Donation → maybe redirect somewhere else
+            navigate("/map");
+          }
         }, 5000);
       }
     };
@@ -57,7 +72,9 @@ export default function PaymentSuccess() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-gray-50">
       <div className="max-w-md w-full bg-white shadow-lg rounded-xl p-6 text-center">
-        <h1 className="text-2xl font-bold mb-4 text-green-700">Payment Status</h1>
+        <h1 className="text-2xl font-bold mb-4 text-green-700">
+          Payment Status
+        </h1>
 
         {loading ? (
           <div className="flex flex-col items-center">
@@ -117,9 +134,11 @@ export default function PaymentSuccess() {
                 {showText && (
                   <div className="transition-opacity duration-500 opacity-100">
                     <p className="mb-4 text-gray-700">{status}</p>
-                    <p className="mb-6 text-lg font-semibold text-blue-600">
-                      Your new balance: 💎 {newBalance} Talents
-                    </p>
+                    {!isDonation && newBalance !== null && (
+                      <p className="mb-6 text-lg font-semibold text-blue-600">
+                        Your new balance: 💎 {newBalance} Talents
+                      </p>
+                    )}
                   </div>
                 )}
               </>
