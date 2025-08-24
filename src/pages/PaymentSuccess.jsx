@@ -17,6 +17,7 @@ export default function PaymentSuccess() {
   const [showText, setShowText] = useState(false);
   const [isDonation, setIsDonation] = useState(false);
   const [donationAmount, setDonationAmount] = useState(null);
+  const [playerName, setPlayerName] = useState(null);
 
   useEffect(() => {
     if (!reference) {
@@ -38,11 +39,11 @@ export default function PaymentSuccess() {
         }
 
         if (result.success) {
-          // Check if this is a donation or talent purchase
           setIsDonation(!!result.donation);
 
           if (result.donation) {
             setDonationAmount(result.amount);
+            setPlayerName(result.player_name || "Player");
             setStatus(
               `🎉 Thank you, ${result.player_name || "Player"}, for your donation of ₦${Number(
                 result.amount
@@ -150,7 +151,7 @@ export default function PaymentSuccess() {
 
                     {isDonation && donationAmount !== null && (
                       <p className="mb-6 text-lg font-semibold text-purple-600">
-                        Your donation has been successfully received.
+                        Your donation of ₦{Number(donationAmount).toLocaleString()} has been successfully received.
                       </p>
                     )}
                   </div>
@@ -165,7 +166,7 @@ export default function PaymentSuccess() {
             </p>
 
             <button
-              onClick={() => navigate(isDonation ? "/map" : "/store")}
+              onClick={() => navigate(isDonation ? "/store" : "/store")}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded"
             >
               {isDonation ? "Return to Map" : "Return to Store"}
