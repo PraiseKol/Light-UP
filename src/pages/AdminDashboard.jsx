@@ -10,7 +10,8 @@ import MultiplayerQuizManager from "admin/MultiplayerQuizManager";
 import LeaderboardManager from "admin/LeaderboardManager";
 import AnalyticsDashboard from "admin/AnalyticsDashboard";
 import FeedbackManager from "admin/FeedbackManager";
-import DonationsManager from "admin/DonationsManager";
+import FinanceManager from "admin/FinanceManager";
+
 
 
 export default function AdminDashboard() {
@@ -46,8 +47,8 @@ export default function AdminDashboard() {
         return isSuperAdmin ? <FeedbackManager /> : null
       case "leaderboard":
         return isSuperAdmin ? <LeaderboardManager /> : null;
-        case "donations":
-        return isSuperAdmin ? <DonationsManager /> : null;
+        case "finance":
+        return isSuperAdmin ? <FinanceManager /> : null;
       case "analytics":
         return isSuperAdmin ? <AnalyticsDashboard /> : null;
       default:
@@ -93,7 +94,7 @@ export default function AdminDashboard() {
           {tabButton("multiplayer", "Multiplayer Quiz")}
           {tabButton("feedback", "Feedback", isSuperAdmin)}
           {tabButton("leaderboard", "Leaderboards", isSuperAdmin)}
-          {tabButton("donations", "Donations", isSuperAdmin)}
+          {tabButton("finance", "Finance", isSuperAdmin)}
           {tabButton("analytics", "Analytics", isSuperAdmin)}
         </div>
 

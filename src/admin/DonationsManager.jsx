@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "lib/supabaseClient";
 import { Button } from "components/ui/button";
 
+
 export default function DonationsManager() {
   const [activeTab, setActiveTab] = useState("success");
   const [donations, setDonations] = useState([]);
@@ -10,6 +11,8 @@ export default function DonationsManager() {
   const [pageInput, setPageInput] = useState("");
   const [totalCount, setTotalCount] = useState(0);
   const [totals, setTotals] = useState({ naira: 0, usd: 0 });
+
+  
 
   const pageSize = 20;
 

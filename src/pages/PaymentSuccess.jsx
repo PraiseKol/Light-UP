@@ -16,6 +16,7 @@ export default function PaymentSuccess() {
   const [success, setSuccess] = useState(false);
   const [showText, setShowText] = useState(false);
   const [isDonation, setIsDonation] = useState(false);
+  const [donationAmount, setDonationAmount] = useState(null);
 
   useEffect(() => {
     if (!reference) {
@@ -37,13 +38,21 @@ export default function PaymentSuccess() {
         }
 
         if (result.success) {
-          setNewBalance(result.newBalance || null);
-          setIsDonation(!!result.donation); // ✅ Save donation flag into state
+          // Check if this is a donation or talent purchase
+          setIsDonation(!!result.donation);
+
           if (result.donation) {
-            setStatus("🎉 Thank you for your donation!");
+            setDonationAmount(result.amount);
+            setStatus(
+              `🎉 Thank you, ${result.player_name || "Player"}, for your donation of ₦${Number(
+                result.amount
+              ).toLocaleString()}!`
+            );
           } else {
+            setNewBalance(result.newBalance || null);
             setStatus("🎉 Payment confirmed!");
           }
+
           setSuccess(true);
           setShowText(true);
         } else {
@@ -55,12 +64,10 @@ export default function PaymentSuccess() {
       } finally {
         setLoading(false);
         setTimeout(() => {
-          if (newBalance !== null) {
-            // Talent purchase → go back to store
-            navigate("/store");
+          if (!isDonation) {
+            navigate("/store"); // Talent purchase → go back to store
           } else {
-            // Donation → maybe redirect somewhere else
-            navigate("/map");
+            navigate("/map"); // Donation → redirect elsewhere
           }
         }, 5000);
       }
@@ -134,9 +141,16 @@ export default function PaymentSuccess() {
                 {showText && (
                   <div className="transition-opacity duration-500 opacity-100">
                     <p className="mb-4 text-gray-700">{status}</p>
+
                     {!isDonation && newBalance !== null && (
                       <p className="mb-6 text-lg font-semibold text-blue-600">
                         Your new balance: 💎 {newBalance} Talents
+                      </p>
+                    )}
+
+                    {isDonation && donationAmount !== null && (
+                      <p className="mb-6 text-lg font-semibold text-purple-600">
+                        Your donation has been successfully received.
                       </p>
                     )}
                   </div>
@@ -147,14 +161,14 @@ export default function PaymentSuccess() {
             )}
 
             <p className="text-xs text-gray-500 mb-4">
-              Redirecting you to the store in 5 seconds...
+              Redirecting in 5 seconds...
             </p>
 
             <button
-              onClick={() => navigate("/store")}
+              onClick={() => navigate(isDonation ? "/map" : "/store")}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded"
             >
-              Return to Store
+              {isDonation ? "Return to Map" : "Return to Store"}
             </button>
           </div>
         )}
