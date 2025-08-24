@@ -122,16 +122,28 @@ export default function MultiplayerLobby({ effectsOn }) {
     if (!isCreator) return;
     playSound("switch", effectsOn);
     setAllowPowerups(newValue);
-    const { error } = await supabase
+  
+    const { data, error } = await supabase
       .from("multiplayer_games")
       .update({ allow_powerups: newValue })
-      .eq("id", gameId);
+      .eq("id", gameId)
+      .select();
   
     if (error) {
       playSound("error", effectsOn);
       console.error("❌ Failed to toggle power-ups:", error);
+      return;
     }
+  
+    if (!data || data.length === 0) {
+      console.warn("⚠️ No game row found for id:", gameId);
+      return;
+    }
+  
+    // Optional: success log
+    console.log("✅ Power-ups toggled:", data[0].allow_powerups);
   };
+  
   
 
   const handleJoinSlot = async (slot) => {
