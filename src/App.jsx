@@ -31,7 +31,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { claimDailyStreakBonus } from "utils/talentUtils";
 
-// ✅ create query client once (outside components)
+// ✅ Create query client once (outside components)
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }) {
@@ -78,13 +78,20 @@ function AppContent() {
   useEffect(() => {
     if (!user?.id) return;
 
-    claimDailyStreakBonus(user.id).then((data) => {
-      if (data?.bonusApplied) {
-        console.log(
-          `Daily streak bonus applied! +${data.bonusAmount} talents for ${data.bonusApplied}`
-        );
+    (async () => {
+      try {
+        const data = await claimDailyStreakBonus(user.id);
+        if (data?.bonusApplied) {
+          console.log(
+            `Daily streak bonus applied! +${data.bonusAmount} talents for ${data.bonusApplied}`
+          );
+        } else if (data?.message) {
+          console.log(`Daily streak info: ${data.message}`);
+        }
+      } catch (err) {
+        console.error("❌ Failed to claim daily streak bonus:", err);
       }
-    });
+    })();
   }, [user?.id]);
 
   return (
@@ -97,7 +104,7 @@ function AppContent() {
         {/* Payment redirect */}
         <Route path="/payment-success" element={<PaymentSuccess />} />
 
-        {/* Game */}
+        {/* Game routes */}
         <Route
           path="/map"
           element={
@@ -206,7 +213,7 @@ export default function App() {
     <SessionContextProvider supabaseClient={supabase}>
       <Router>
         <AuthProvider>
-          {/* ✅ React Query provider here */}
+          {/* ✅ React Query provider */}
           <QueryClientProvider client={queryClient}>
             <AppContent />
           </QueryClientProvider>

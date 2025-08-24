@@ -103,6 +103,12 @@ export async function awardBonus(userId, bonusType, referenceId = "global") {
 export async function claimDailyStreakBonus(userId) {
   if (!userId) return null;
 
+  const PAYMENT_BACKEND_URL = process.env.NEXT_PUBLIC_PAYMENT_BACKEND_URL;
+  if (!PAYMENT_BACKEND_URL) {
+    console.error("❌ PAYMENT_BACKEND_URL not set in environment");
+    return null;
+  }
+
   try {
     const res = await fetch(`${PAYMENT_BACKEND_URL}/api/daily-streak`, {
       method: "POST",
@@ -110,31 +116,35 @@ export async function claimDailyStreakBonus(userId) {
       body: JSON.stringify({ userId }),
     });
 
-    // safe JSON parsing
-    let data;
+    let data = {};
     try {
       data = await res.json();
-    } catch {
-      data = null;
-    }
-
-    if (!res.ok) {
-      console.error("❌ Daily streak API error:", data);
+    } catch (parseErr) {
+      const text = await res.text();
+      console.error("❌ Daily streak response not JSON:", text);
       return null;
     }
 
-    const bonusApplied = data?.bonusApplied || "none";
-    const bonusAmount = data?.bonusAmount || 0;
+    if (!res.ok) {
+      console.error("❌ Daily streak API returned error:", data);
+      return null;
+    }
+
+    // Ensure these fields always have safe values
+    const bonusApplied = data.bonusApplied ?? null;
+    const bonusAmount = Number(data.bonusAmount ?? 0);
+    const newBalance = Number(data.newBalance ?? 0);
 
     console.log(
       "📅 Daily streak bonus:",
       bonusApplied,
       "→",
       bonusAmount,
-      "talents"
+      "talents",
+      "| New balance:", newBalance
     );
 
-    return { ...data, bonusApplied, bonusAmount };
+    return { ...data, bonusApplied, bonusAmount, newBalance };
   } catch (err) {
     console.error("❌ Daily streak fetch failed:", err);
     return null;
