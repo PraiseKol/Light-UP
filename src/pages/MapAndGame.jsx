@@ -554,7 +554,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         <div className="flex-1 overflow-y-auto max-h-screen p-4">
           {/* Sticky Header */}
           <div
-            className="sticky top-6 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-200 
+            className="sticky top-10 md:top-5 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-200 
               py-0.5 px-1 sm:py-1 sm:px-2 md:py-2 md:px-3 shadow-sm 
               flex flex-col md:flex-row md:justify-between md:items-center 
               text-[6px] sm:text-[11px] md:text-[15px] font-medium text-gray-700 
