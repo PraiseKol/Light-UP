@@ -69,15 +69,17 @@ export default function LoginPage() {
       </div>
 
       {/* Avatar + Greeting */}
-      <div className="relative z-10 flex items-center gap-4 mb-6 animate-fadeInDown">
-        <img
-          src="/images/avatar.png"
-          alt="avatar"
-          className="w-16 h-16 sm:w-20 sm:h-20 rounded-full shadow-lg border-2 border-white/10 bg-white/5 object-cover ml-5"
-        />
+      <div className="relative z-10 flex items-center gap-4 mb-6 animate-fadeInDown object-cover object-[10%]">
+        <div className="relative w-16 h-16 sm:w-25 sm:h-25 rounded-full shadow-lg border-4 border-white/10 bg-white/5 overflow-hidden object-cover object-[10%]">
+          <img
+            src="/images/avatar.png"
+            alt="avatar"
+            className="w-full h-full rounded-full object-cover absolute animate-orbit"
+          />
+        </div>
 
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 tracking-tight">
-          👋 Welcome!
+          👋 Welcoe!
         </h2>
       </div>
 
@@ -272,6 +274,18 @@ export default function LoginPage() {
         .animate-pulseSlow {
           animation: pulseSlow 6s ease-in-out infinite;
         }
+
+        @keyframes orbit {
+          0%   { transform: translate(0, 0); }
+          25%  { transform: translate(6px, -4px); }
+          50%  { transform: translate(0, -8px); }
+          75%  { transform: translate(-6px, -4px); }
+          100% { transform: translate(0, 0); }
+        }
+        .animate-orbit {
+          animation: orbit 6s ease-in-out infinite;
+        }
+
       `}</style>
     </div>
   );
