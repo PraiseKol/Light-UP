@@ -61,9 +61,7 @@ export default function HolyShieldButton({ user, gameUser, refetch, effectsOn })
       return;
     }
 
-    // ✅ Play sound effect only when successful
-    playSound("holyShield", effectsOn);
-
+    playSound("holyShield", effectsOn); // ✅ Play sound only when successful
     await refetch();
   };
 
@@ -74,13 +72,20 @@ export default function HolyShieldButton({ user, gameUser, refetch, effectsOn })
     <button
       onClick={handleActivate}
       disabled={!hasInventory || isActive}
-      className={`flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-lg bg-gradient-to-b from-green-200 to-green-300 hover:from-green-300 hover:to-green-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition ${
-        hasInventory && !isActive
-          ? "bg-yellow-100 hover:bg-yellow-200 text-gray-800 active:scale-95"
-          : isActive
-          ? "bg-yellow-300 text-gray-800 animate-pulse shadow-lg shadow-yellow-400/70"
-          : "bg-gray-200 text-gray-400 cursor-not-allowed"
-      }`}
+      className={`flex flex-col items-center 
+        text-[10px] sm:text-xs font-semibold 
+        w-[22%] px-1 sm:px-2 py-1 rounded-lg
+        bg-gradient-to-b from-green-200 to-green-300 
+        hover:from-green-300 hover:to-green-400 
+        disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 
+        transition
+        ${
+          hasInventory && !isActive
+            ? "bg-yellow-100 hover:bg-yellow-200 text-gray-800 active:scale-95"
+            : isActive
+            ? "bg-yellow-300 text-gray-800 animate-pulse shadow-lg shadow-yellow-400/70"
+            : "bg-gray-200 text-gray-400 cursor-not-allowed"
+        }`}
       style={
         isActive
           ? { boxShadow: "0 0 15px 3px rgba(255, 223, 0, 0.7)" }
@@ -88,12 +93,12 @@ export default function HolyShieldButton({ user, gameUser, refetch, effectsOn })
       }
     >
       <span className="text-lg">🛡️</span>
-      <span className="mt-1 text-center">
+      <span className="mt-1 text-center text-[10px] sm:text-xs leading-tight">
         {isActive
-          ? `🛡️Holy Shield (${formatTime(timeLeft)})`
-          : "🛡️Holy Shield (5 mins)"}
+          ? `Holy Shield (${formatTime(timeLeft)})`
+          : "Holy Shield (5 mins)"}
       </span>
-      <span className="mt-0.5 text-[10px]">
+      <span className="mt-0.5 text-[9px] sm:text-[10px]">
         x{gameUser?.powerups_inventory?.holy_shield ?? 0}
       </span>
     </button>

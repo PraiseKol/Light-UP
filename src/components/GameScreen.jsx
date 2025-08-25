@@ -310,9 +310,9 @@ export default function GameScreen({
   };
 
   return (
-    <div className="pb-28 p-4 space-y-4 relative min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100">
+    <div className="pb-24 sm:pb-28 p-2 sm:p-4 space-y-3 sm:space-y-4 relative min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100">
       {/* Top HUD */}
-      <div className="flex justify-between items-center px-4 py-3 bg-white/40 backdrop-blur-md rounded-xl shadow-md">
+      <div className="flex justify-between items-center px-4 py-3 bg-white/40 backdrop-blur-md rounded-xl shadow-md text-sm sm:text-base">
         <span className="flex items-center gap-2">
           <span className="text-lg">📜</span> Level {level?.number}
         </span>
@@ -333,7 +333,7 @@ export default function GameScreen({
       </div>
 
       {/* Game mode area */}
-      <div className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-lg p-4">
+      <div className="bg-white/70 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg p-3 sm:p-4 text-sm sm:text-base">
         {mode === "word-fill" && (
           <WordFillMode
             {...commonProps}
@@ -378,14 +378,16 @@ export default function GameScreen({
 
       {/* Power-Up Bar */}
       {gameUser?.powerups_inventory && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-300 p-3 flex justify-around items-center z-50 shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-300 p-2 sm:p-3 flex justify-around items-center z-50 shadow-lg text-[10px] sm:text-xs">
           <button
             onClick={handleDivineHint}
             disabled={!gameUser.powerups_inventory.divine_hint}
-            className="flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-lg bg-gradient-to-b from-blue-200 to-blue-300 hover:from-blue-300 hover:to-blue-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition"
+            className="flex flex-col items-center font-semibold w-[22%] px-1 sm:px-2 py-1 rounded-lg bg-gradient-to-b from-blue-200 to-blue-300 hover:from-blue-300 hover:to-blue-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition"
           >
             🧩<span>Divine Hint</span>
-            <span>x{gameUser.powerups_inventory.divine_hint ?? 0}</span>
+            <span className="text-[10px] sm:text-xs">
+              x{gameUser.powerups_inventory.divine_hint ?? 0}
+            </span>
           </button>
           <button
             onClick={handleGracePeriod}
@@ -393,21 +395,26 @@ export default function GameScreen({
             className="flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-lg bg-gradient-to-b from-purple-200 to-purple-300 hover:from-purple-300 hover:to-purple-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition"
           >
             ⏳<span> Grace Period +15s</span>
-            <span>x{gameUser.powerups_inventory.grace_period ?? 0}</span>
+            <span className="text-[10px] sm:text-xs">x{gameUser.powerups_inventory.grace_period ?? 0}</span>
           </button>
-          <HolyShieldButton
-            user={user}
-            gameUser={gameUser}
-            refetch={refetch}
-            effectsOn={effectsOn} // 👈 just pass the flag
-          />
+          
+            <HolyShieldButton
+              user={user}
+              gameUser={gameUser}
+              refetch={refetch}
+              effectsOn={effectsOn}
+            />
+        
+
           <button
             onClick={handleHeavenlyMatch}
             disabled={!gameUser.powerups_inventory.heavenly_match}
-            className="flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-lg bg-gradient-to-b from-yellow-200 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition"
+            className="flex flex-col items-center text-[10px] sm:text-xs font-semibold w-[22%] px-1 sm:px-2 py-1 rounded-lg bg-gradient-to-b from-yellow-200 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition"
           >
             👑<span>Heavenly Match</span>
-            <span>x{gameUser.powerups_inventory.heavenly_match ?? 0}</span>
+            <span className="text-[10px] sm:text-xs">
+              x{gameUser.powerups_inventory.heavenly_match ?? 0}
+            </span>
           </button>
         </div>
       )}
