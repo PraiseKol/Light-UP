@@ -294,37 +294,40 @@ export default function MultiplayerLobby({ effectsOn }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-4">
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl h-full">
-    
-    {/* Global Chat */}
-    <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-5 border border-white/20
+    <div className="min-h-screen flex flex-col justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-4">
+  {/* Global Chat */}
+  <div className=" bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-5 border border-white/20
                     md:col-span-1 order-2 md:order-1
                     h-48 md:h-auto overflow-y-auto">
       <GlobalChat user={user} gameId={gameId} effectsOn={effectsOn} />
     </div>
+  
+  <div className=" grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl h-full">
+    
+    
 
     {/* Lobby Card */}
     <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20
                     md:col-span-2 order-1 md:order-2 flex flex-col">
       {/* Back Button */}
+      
       <button
         onClick={handleBack}
-        className="mb-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition"
+        className="mb-2 md:mb-4 px-2 md:px-4 py-1 md:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs md:text-sm transition"
       >
         ← Back
       </button>
 
       {/* Lobby Header */}
-      <h2 className="text-2xl font-bold text-center mb-1">
+      <h2 className="text-xl md:text-2xl font-bold text-center mb-1">
         {game.mode} Lobby • {game.duration_seconds / 60} min
       </h2>
-      <p className="text-center text-sm text-gray-300 mb-4">
+      <p className="text-center text-xs md:text-sm text-gray-300 mb-2 md:mb-4">
         Match Code: <span className="font-mono">{game.token}</span>
       </p>
 
       {/* Join Link */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row gap-2 mb-3 md:mb-6">
         <input
           type="text"
           value={joinUrl}
@@ -333,15 +336,15 @@ export default function MultiplayerLobby({ effectsOn }) {
         />
         <button
           onClick={copyToClipboard}
-          className="px-4 py-2 bg-blue-500 rounded-lg hover:bg-blue-400 text-sm font-medium"
+          className="px-2 md:px-4 py-2 md:py-2 bg-blue-500 rounded-lg hover:bg-blue-400 text-xs md:text-sm font-medium"
         >
           Copy
         </button>
       </div>
 
       {/* Power-ups Toggle */}
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-sm font-medium text-gray-300">
+      <div className="flex items-center justify-between b-3 md:mb-6">
+        <span className="text-xs md:text-sm font-medium text-gray-300">
           Allow Power-ups
         </span>
         <Switch
@@ -350,13 +353,13 @@ export default function MultiplayerLobby({ effectsOn }) {
           disabled={!isCreator}
         />
         {!allowPowerups && (
-          <span className="text-xs text-red-400 ml-2">Disabled</span>
+          <span className="text[10px] md:text-xs text-red-400 ml-1 md:ml-2">Disabled</span>
         )}
       </div>
 
       {/* Slots Section */}
-      <div className="mt-4">
-        <h3 className="text-center font-semibold text-gray-200 mb-2">
+      <div className="mt-2 md:mt-4">
+        <h3 className="text-center font-semibold text-gray-200 mb-1 md:mb-2">
           Players
         </h3>
         <div className="w-full">{renderSlots()}</div>
@@ -367,7 +370,7 @@ export default function MultiplayerLobby({ effectsOn }) {
         <button
           onClick={handleStartGame}
           disabled={players.filter((p) => p.slot_number).length < totalSlots}
-          className={`w-full mt-6 py-3 rounded-lg font-semibold transition-all ${
+          className={`w-full mt-4 md:mt-6 py-2 md:py-3 rounded-lg font-semibold transition-all ${
             players.filter((p) => p.slot_number).length >= totalSlots
               ? "bg-green-500 hover:bg-green-400"
               : "bg-gray-500 cursor-not-allowed"

@@ -79,7 +79,7 @@ export default function LoginPage() {
         </div>
 
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 tracking-tight">
-          👋 Welcoe!
+          👋 Welcome!
         </h2>
       </div>
 

@@ -92,7 +92,7 @@ export default function CreateMultiplayerGame({ effectsOn }) {
 
   {/* 🔹 Game Creation UI */}
   <div className="flex-1 flex items-center justify-center order-1 lg:order-2">
-    <div className="max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20 text-white">
+    <div className="fixed top-0 max-w-md w-full bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20 text-white">
 
       {/* Back Button */}
       <button

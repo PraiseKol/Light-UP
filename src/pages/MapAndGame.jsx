@@ -378,7 +378,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           <br></br>
           <button
             onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
-            className="p-2 bg-blue-600 text-white rounded-md shadow-lg focus:outline-none px-1 py-1 text-sm"
+            className="p-2 bg-gray-500 text-white rounded-md shadow-lg focus:outline-none px-3 py-2 text-sm"
             aria-label="Toggle menu"
           >
             {mobileActionsOpen ? "✕" : "☰"}
@@ -455,49 +455,58 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </button>
 
           <div className="overflow-y-auto max-h-[50vh] mt-4">
-  {totalLeaderboard.length > 0 && (
-    <div className="bg-white border border-blue-400 rounded-md shadow p-2 mb-1">
-      <h2 className="text-[6px] font-bold text-blue-700 mb-1">
-        🏆 Top Players
-      </h2>
-      <ol className="space-y-0.5 text-[5px]">
-        {totalLeaderboard.map((entry, index) => (
-          <li key={index} className="flex items-center">
-            <span className="whitespace-nowrap">
-              {index + 1}. {entry.player_name || "Unnamed"}
-            </span>
-            {/* dotted connector */}
-            <span className="flex-1 border-b border-dotted border-gray-300 mx-1"></span>
-            <span className="whitespace-nowrap">{entry.total_score} pts</span>
-          </li>
-        ))}
-      </ol>
-    </div>
-  )}
+            {totalLeaderboard.length > 0 && (
+              <div className="bg-white border border-blue-400 rounded-md shadow p-2 mb-1">
+                <h2 className="text-[6px] font-bold text-blue-700 mb-1">
+                  🏆 Overall Top Players
+                </h2>
+                <ol className="space-y-0.5 text-[5px]">
+                  {totalLeaderboard.map((entry, index) => (
+                    <li key={index} className="flex items-center">
+                      <span className="whitespace-nowrap">
+                        {index + 1}. {entry.player_name || "Unnamed"}
+                      </span>
+                      {/* dotted connector */}
+                      <span className="flex-1 border-b border-dotted border-gray-300 mx-1"></span>
+                      <span className="whitespace-nowrap">
+                        {entry.total_score} pts
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
-  {weeklyLeaderboard.length > 0 && (
-    <div className="bg-white border border-yellow-400 rounded-md shadow p-2">
-      <h2 className="text-[6px] font-bold text-yellow-600 mb-1">
-        🏆 Weekly Top 10
-      </h2>
-      <ol className="space-y-0.5 text-[5px]">
-        {weeklyLeaderboard.map((entry, index) => (
-          <li key={index} className="flex items-center">
-            <span className="whitespace-nowrap">
-              {index + 1}. {entry.player_name || "Unnamed"}
-            </span>
-            {/* dotted connector */}
-            <span className="flex-1 border-b border-dotted border-gray-300 mx-1"></span>
-            <span className="whitespace-nowrap">{entry.score} pts</span>
-          </li>
-        ))}
-      </ol>
-    </div>
-  )}
-</div>
+            {weeklyLeaderboard.length > 0 && (
+              <div className="bg-white border border-yellow-400 rounded-md shadow p-2">
+                <h2 className="text-[6px] font-bold text-yellow-600 mb-1">
+                  🏆 Weekend Challenge Top 10
+                </h2>
+                <ol className="space-y-0.5 text-[5px]">
+                  {weeklyLeaderboard.map((entry, index) => (
+                    <li key={index} className="flex items-center">
+                      <span className="whitespace-nowrap">
+                        {index + 1}. {entry.player_name || "Unnamed"}
+                      </span>
+                      {/* dotted connector */}
+                      <span className="flex-1 border-b border-dotted border-gray-300 mx-1"></span>
+                      <span className="whitespace-nowrap">
+                        {entry.score} pts
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
+            {/* Spacer to push chat to the bottom */}
+            
+            
+            {/* Global Chat */}
+            <GlobalChat user={user} />
+          </div>
 
-          <div className="mt-auto flex gap-2">
+          <div className="mt-auto flex gap-2 ">
             <FeedbackButton
               effectsOn={effectsOn}
               sound={sound}
@@ -554,7 +563,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         <div className="flex-1 overflow-y-auto max-h-screen p-4">
           {/* Sticky Header */}
           <div
-            className="sticky top-10 md:top-5 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-200 
+            className="sticky top-20 md:top-5 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-200 
               py-0.5 px-1 sm:py-1 sm:px-2 md:py-2 md:px-3 shadow-sm 
               flex flex-col md:flex-row md:justify-between md:items-center 
               text-[6px] sm:text-[11px] md:text-[15px] font-medium text-gray-700 
@@ -684,11 +693,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             {showTotalLeaderboard ? "🌟 Hide Leaderboard" : " 🌟 Leaderboard"}
           </button>
           {showTotalLeaderboard && totalLeaderboard.length > 0 && (
-            <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-4 overflow-y-auto max-h-full">
-              <h2 className="text-lg font-bold text-blue-700 mb-2">
-                🏆 Top Players
+            <div className="bg-white border border-blue-400 rounded-md shadow p-1 mb-1">
+              <h2 className="text-[8px] font-bold text-blue-700 mb-0.5">
+                🏆 Overall Top Players
               </h2>
-              <ol className="space-y-1 text-sm">
+              <ol className="space-y-0.5 text-[7px]">
                 {totalLeaderboard.map((entry, index) => (
                   <li key={index} className="flex justify-between">
                     <span>
@@ -700,12 +709,13 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               </ol>
             </div>
           )}
+
           {weeklyLeaderboard.length > 0 && (
-            <div className="bg-white border border-yellow-400 rounded-lg shadow-lg p-4 overflow-y-auto max-h-full">
-              <h2 className="text-lg font-bold text-yellow-600 mb-2">
-                🏆 Weekly Top 10
+            <div className="bg-white border border-yellow-400 rounded-md shadow p-1">
+              <h2 className="text-[8px] font-bold text-yellow-600 mb-0.5">
+                🏆 Weekend Challenge Top 10
               </h2>
-              <ol className="space-y-1 text-sm">
+              <ol className="space-y-0.5 text-[7px]">
                 {weeklyLeaderboard.map((entry, index) => (
                   <li key={index} className="flex justify-between">
                     <span>
@@ -717,6 +727,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               </ol>
             </div>
           )}
+
           <div className="mt-auto flex gap-1">
             <div>
               <FeedbackButton

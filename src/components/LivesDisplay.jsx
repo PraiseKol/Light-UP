@@ -29,7 +29,7 @@ export function LivesDisplay({ lives, lastLostAt }) {
   return (
     <div className="text-black">
       ❤️ Lives: {lives}/5
-      {nextLifeIn && <div className="text-[7px] md:text-sm">Next life in: {nextLifeIn}</div>}
+      {nextLifeIn && <div className="text-[5px] md:text-sm">Next life in: {nextLifeIn}</div>}
     </div>
   );
 }

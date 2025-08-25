@@ -83,12 +83,12 @@ export default function PowerUpStore({
   return (
     <div>
       {/* Tabs */}
-      <div className="flex justify-center mb-4 gap-2">
+      <div className="flex justify-center mb-2 md:mb-3 gap-2">
         {["powerups", "talents", "bonuses"].map((tab) => (
           <button
             key={tab}
             onClick={() => handleTabSwitch(tab)}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-1.5 md:px-4 py-1 md:py-2 text-[10px] md:text-xs rounded-lg ${
               activeTab === tab
                 ? tab === "powerups"
                   ? "bg-blue-600 text-white"
@@ -105,44 +105,47 @@ export default function PowerUpStore({
 
       {/* Tab Contents */}
       {activeTab === "powerups" && (
-        <div className="p-6 max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-blue-100">
-          <h2 className="text-2xl font-extrabold mb-3 text-blue-700 text-center">
+        <div className="p-4 sm:p-6 max-w-sm sm:max-w-2xl mx-auto bg-white rounded-xl sm:rounded-2xl shadow-xl border border-blue-100">
+          <h2 className="text-4xs sm:text-2xl font-extrabold mb-2 sm:mb-3 text-blue-700 text-center">
             Power-Up Store
           </h2>
-          <p className="text-center text-sm text-gray-500 mb-6">
+          <p className="text-center text-[8px] sm:text-sm text-gray-500 mb-1 sm:mb-6">
             Exchange your talents for divine advantages (bonuses).
           </p>
-          <div className="text-right text-sm mb-4">
+          <div className="text-right text-[9px] md:text-sm mb-2 md:mb-3 ">
             <span className="font-semibold text-gray-700">Your Talents:</span>{" "}
             <span className="text-blue-600 font-bold">
               💎 {gameUser?.talents ?? 0}
             </span>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-1 md:space-y-3">
             {powerUps.map((pu) => (
               <div
                 key={pu.key}
-                className="flex justify-between items-center bg-blue-50 border border-blue-200 p-4 rounded-xl shadow-sm"
+                className="flex justify-between items-center bg-blue-50 border border-blue-200 p-2 sm:p-4 rounded-lg sm:rounded-xl shadow-sm"
               >
                 <div className="flex flex-col gap-1">
-                  <div className="text-lg font-semibold text-blue-900 flex items-center gap-2">
-                    <span className="text-xl">{pu.icon}</span> {pu.name}
+                  <div className="text-[11px] md:text-lg font-semibold text-blue-900 flex items-center gap-1 md:gap-2">
+                    <span className="text-base sm:text-xl">{pu.icon}</span>{" "}
+                    {pu.name}
                   </div>
-                  <p className="text-sm text-gray-600">{pu.description}</p>
+                  <p className="text-[7px] md:text-sm text-gray-600">
+                    {pu.description}
+                  </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-1 md:gap-2">
                   <button
                     disabled={loading || gameUser.talents < pu.costs.one}
                     onClick={() => handlePurchase(pu, "one")}
-                    className="px-2 py-1 text-sm bg-blue-600 hover:bg-blue-500 text-white disabled:bg-gray-300 rounded"
+                    className="px-1 md:px-2 py-0.5 md:py-1 text-[8px] md:text-sm bg-blue-600 hover:bg-blue-500 text-white disabled:bg-gray-300 rounded"
                   >
                     1x for 💎 {pu.costs.one}
                   </button>
                   <button
                     disabled={loading || gameUser.talents < pu.costs.three}
                     onClick={() => handlePurchase(pu, "three")}
-                    className="px-2 py-1 text-sm bg-green-600 hover:bg-green-500 text-white disabled:bg-gray-300 rounded"
+                    className="px-1 md:px-2 py-0.5 md:py-1 text-[8px] md:text-sm bg-green-600 hover:bg-green-500 text-white disabled:bg-gray-300 rounded"
                   >
                     3x for 💎 {pu.costs.three}
                   </button>

@@ -103,45 +103,45 @@ export default function BonusesTab({ userId }) {
   if (error) return <div>{error}</div>;
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
+    <div className="p-2 md:p-4 max-w-xl md:max-w-3xl mx-auto">
+      <h2 className="text-sm md:text-2xl font-bold mb-2 md:mb-6 text-center text-gray-800">
         Your Bonuses
       </h2>
       {Object.keys(bonusCount).length === 0 ? (
         <p className="text-center text-gray-500">No bonuses awarded yet.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Object.entries(bonusCount).map(([type, count]) => {
             const earnedTalents = count * (BONUS_VALUES[type] || 0);
 
             return (
               <div
                 key={type}
-                className={`relative flex flex-col justify-between p-3 rounded-lg shadow-sm hover:shadow-md transition 
-    bg-gradient-to-r ${BONUS_COLORS[type] || "from-gray-100 to-gray-200"} 
-    ${
-      isRecent(bonusRecentDate[type])
-        ? "animate-pulse ring-2 ring-yellow-400/60"
-        : ""
-    }`}
+                className={`relative flex flex-col justify-between p-2 md:p-3 rounded-lg shadow-sm hover:shadow-md transition 
+                      bg-gradient-to-r ${BONUS_COLORS[type] || "from-gray-100 to-gray-200"} 
+                      ${
+                        isRecent(bonusRecentDate[type])
+                          ? "animate-pulse ring-2 ring-yellow-400/60"
+                          : ""
+                      }`}
               >
                 {/* Floating Icon */}
-                <div className="absolute -top-3 -left-3 w-8 h-8 flex items-center justify-center rounded-full bg-white shadow">
+                <div className="absolute -top-3 -left-3 w-5 md:w-8 h-5 md:h-8 flex items-center justify-center rounded-full bg-white shadow">
                   <span className="text-lg">{BONUS_ICONS[type] || "🎁"}</span>
                 </div>
 
                 {/* Title */}
-                <div className="pl-6 mt-1">
-                  <span className="text-sm font-semibold text-gray-800 capitalize">
+                <div className="pl-3 md:pl-6 mt-0.5 md:mt-1">
+                  <span className="text-xs md:text-sm font-semibold text-gray-800 capitalize">
                     {type.replace(/_/g, " ")}
                   </span>
                 </div>
 
                 {/* Bottom section */}
-                <div className="flex justify-between items-end mt-4 text-xs text-gray-600">
+                <div className="flex justify-between items-end mt-2 md:mt-4 text-[10px] md:text-xs text-gray-600">
                   {/* Count + Gems */}
-                  <div className="flex items-center gap-1 bg-white/80 px-2 py-0.5 rounded-md shadow-inner">
-                    <span className="font-semibold text-gray-700">
+                  <div className="flex items-center gap-1 bg-white/80 px-1 md:px-2 py-0.5 rounded-md shadow-inner text-[10px] md:text-sm">
+                    <span className="font-semibold text-gray-700 ">
                       {animatedCounts[type] ?? 0}×
                     </span>
                     <span className="text-gray-500">•</span>
@@ -152,7 +152,7 @@ export default function BonusesTab({ userId }) {
                   </div>
 
                   {/* Last earned */}
-                  <span className="italic">
+                  <span className="italic text-[10px] md:text-sm" >
                     {bonusRecentDate[type]
                       ? new Date(bonusRecentDate[type]).toLocaleDateString()
                       : "-"}
