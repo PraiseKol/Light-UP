@@ -5,7 +5,7 @@ import { useMultiplayerStore } from "store/useMultiplayerStore";
 import { useAuth } from "auth/AuthProvider";
 import Switch from "components/ui/Switch"; // shadcn/ui switch
 import { playSound } from "utils/sound";
-import GlobalChat from "components/GlobalChat";
+import MGlobalChat from "components/MGlobalChat";
 
 export default function MultiplayerLobby({ effectsOn }) {
   const { gameId } = useParams();
@@ -122,29 +122,27 @@ export default function MultiplayerLobby({ effectsOn }) {
     if (!isCreator) return;
     playSound("switch", effectsOn);
     setAllowPowerups(newValue);
-  
+
     const { data, error } = await supabase
       .from("multiplayer_games")
       .update({ allow_powerups: newValue })
       .eq("id", gameId)
       .select();
-  
+
     if (error) {
       playSound("error", effectsOn);
       console.error("❌ Failed to toggle power-ups:", error);
       return;
     }
-  
+
     if (!data || data.length === 0) {
       console.warn("⚠️ No game row found for id:", gameId);
       return;
     }
-  
+
     // Optional: success log
     console.log("✅ Power-ups toggled:", data[0].allow_powerups);
   };
-  
-  
 
   const handleJoinSlot = async (slot) => {
     const filledSlots = Array.isArray(players)
@@ -294,95 +292,102 @@ export default function MultiplayerLobby({ effectsOn }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-4">
-  {/* Global Chat */}
-  <div className=" bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-5 border border-white/20
-                    md:col-span-1 order-2 md:order-1
-                    h-48 md:h-auto overflow-y-auto">
-      <GlobalChat user={user} gameId={gameId} effectsOn={effectsOn} />
-    </div>
-  
-  <div className=" grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl h-full">
-    
-    
-
-    {/* Lobby Card */}
-    <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20
-                    md:col-span-2 order-1 md:order-2 flex flex-col">
-      {/* Back Button */}
-      
-      <button
-        onClick={handleBack}
-        className="mb-2 md:mb-4 px-2 md:px-4 py-1 md:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs md:text-sm transition"
-      >
-        ← Back
-      </button>
-
-      {/* Lobby Header */}
-      <h2 className="text-xl md:text-2xl font-bold text-center mb-1">
-        {game.mode} Lobby • {game.duration_seconds / 60} min
-      </h2>
-      <p className="text-center text-xs md:text-sm text-gray-300 mb-2 md:mb-4">
-        Match Code: <span className="font-mono">{game.token}</span>
-      </p>
-
-      {/* Join Link */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-3 md:mb-6">
-        <input
-          type="text"
-          value={joinUrl}
-          readOnly
-          className="flex-1 bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-sm"
-        />
-        <button
-          onClick={copyToClipboard}
-          className="px-2 md:px-4 py-2 md:py-2 bg-blue-500 rounded-lg hover:bg-blue-400 text-xs md:text-sm font-medium"
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl mx-auto h-full">
+        {/* Lobby Card */}
+        <div
+          className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20
+                     order-1 md:order-2 md:col-span-2 flex flex-col
+                     sticky top-0 z-10"
         >
-          Copy
-        </button>
-      </div>
+          {/* Back Button */}
+          <button
+            onClick={handleBack}
+            className="mb-2 md:mb-4 px-2 md:px-4 py-1 md:py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs md:text-sm transition"
+          >
+            ← Back
+          </button>
 
-      {/* Power-ups Toggle */}
-      <div className="flex items-center justify-between b-3 md:mb-6">
-        <span className="text-xs md:text-sm font-medium text-gray-300">
-          Allow Power-ups
-        </span>
-        <Switch
-          checked={allowPowerups}
-          onChange={handleTogglePowerups}
-          disabled={!isCreator}
-        />
-        {!allowPowerups && (
-          <span className="text[10px] md:text-xs text-red-400 ml-1 md:ml-2">Disabled</span>
-        )}
-      </div>
+          {/* Lobby Header */}
+          <h2 className="text-xl md:text-2xl font-bold text-center mb-1">
+            {game.mode} Lobby • {game.duration_seconds / 60} min
+          </h2>
+          <p className="text-center text-xs md:text-sm text-gray-300 mb-2 md:mb-4">
+            Match Code: <span className="font-mono">{game.token}</span>
+          </p>
 
-      {/* Slots Section */}
-      <div className="mt-2 md:mt-4">
-        <h3 className="text-center font-semibold text-gray-200 mb-1 md:mb-2">
-          Players
-        </h3>
-        <div className="w-full">{renderSlots()}</div>
-      </div>
+          {/* Join Link */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-3 md:mb-6">
+            <input
+              type="text"
+              value={joinUrl}
+              readOnly
+              className="flex-1 bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-sm"
+            />
+            <button
+              onClick={copyToClipboard}
+              className="px-2 md:px-4 py-2 md:py-2 bg-blue-500 rounded-lg hover:bg-blue-400 text-xs md:text-sm font-medium"
+            >
+              Copy
+            </button>
+          </div>
 
-      {/* Start Game Button */}
-      {game.creator_id === user?.id && (
-        <button
-          onClick={handleStartGame}
-          disabled={players.filter((p) => p.slot_number).length < totalSlots}
-          className={`w-full mt-4 md:mt-6 py-2 md:py-3 rounded-lg font-semibold transition-all ${
-            players.filter((p) => p.slot_number).length >= totalSlots
-              ? "bg-green-500 hover:bg-green-400"
-              : "bg-gray-500 cursor-not-allowed"
-          }`}
+          {/* Power-ups Toggle */}
+          <div className="flex items-center justify-between mb-3 md:mb-6">
+            <span className="text-xs md:text-sm font-medium text-gray-300">
+              Allow Power-ups
+            </span>
+            <Switch
+              checked={allowPowerups}
+              onChange={handleTogglePowerups}
+              disabled={!isCreator}
+            />
+            {!allowPowerups && (
+              <span className="text-[10px] md:text-xs text-red-400 ml-1 md:ml-2">
+                Disabled
+              </span>
+            )}
+          </div>
+
+          {/* Slots Section */}
+          <div className="mt-2 md:mt-4">
+            <h3 className="text-center font-semibold text-gray-200 mb-1 md:mb-2">
+              Players
+            </h3>
+            <div className="w-full">{renderSlots()}</div>
+          </div>
+
+          {/* Start Game Button */}
+          {game.creator_id === user?.id && (
+            <button
+              onClick={handleStartGame}
+              disabled={
+                players.filter((p) => p.slot_number).length < totalSlots
+              }
+              className={`w-full mt-4 md:mt-6 py-2 md:py-3 rounded-lg font-semibold transition-all ${
+                players.filter((p) => p.slot_number).length >= totalSlots
+                  ? "bg-green-500 hover:bg-green-400"
+                  : "bg-gray-500 cursor-not-allowed"
+              }`}
+            >
+              Start Game
+            </button>
+          )}
+        </div>
+
+        {/* MGlobal Chat */}
+        <div
+          className="
+    bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-5 border border-white/20
+    order-2 md:order-1 md:col-span-1
+    h-[420px] md:h-auto overflow-y-auto
+    fixed bottom-0 left-0 right-0 md:static
+    z-20
+  "
         >
-          Start Game
-        </button>
-      )}
+          <MGlobalChat user={user} gameId={gameId} effectsOn={effectsOn} />
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-
-
   );
 }
