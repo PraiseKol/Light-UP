@@ -94,7 +94,7 @@ export default function SettingsModal({
         <h2 className="text-2xl font-bold text-blue-800 mb-4 text-center">
           ⚙️ Player Settings
         </h2>
-
+        <div className="text-center text-xs text-blue-900"><i>Refresh after saving to see changes </i> </div>
         {/* Player Name */}
         <div className="mb-4">
           <label className="text-sm text-gray-700 mb-1 block font-medium">

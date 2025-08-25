@@ -378,7 +378,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           <br></br>
           <button
             onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
-            className="p-2 bg-blue-600 text-white rounded-md shadow-lg focus:outline-none px-1 py-1 text-[10px]"
+            className="p-2 bg-blue-600 text-white rounded-md shadow-lg focus:outline-none px-1 py-1 text-sm"
             aria-label="Toggle menu"
           >
             {mobileActionsOpen ? "✕" : "☰"}
@@ -394,7 +394,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         )}
         {/* Mobile Sidebar */}
         <div
-          className={`fixed top-0 left-0 h-full w-64 bg-white/60 backdrop-blur-md p-4 border-r border-gray-300 z-50 transform transition-transform duration-300 ease-in-out ${
+          className={`fixed top-0 left-0 h-full w-64 bg-white/60 backdrop-blur-md p-5 border-r border-gray-300 z-50 transform transition-transform duration-300 ease-in-out ${
             mobileActionsOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -404,7 +404,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               playSound("switch", effectsOn); // 🔊 play switch sound
               setMobileActionsOpen(false);
             }}
-            className="mb-4 p-2 bg-red-500 text-white text-[8px] rounded-md"
+            className="mb-2 px-2 py-1 bg-red-600 text-white text-[10px] rounded-md"
           >
             ✕
           </button>
@@ -414,25 +414,27 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               playSound("optionSelect", effectsOn);
               setShowSettings(true);
             }}
-            className="w-full mb-2 text-left text-sm text-blue-700 font-medium border border-blue-500 rounded-full px-2 py-1 shadow hover:bg-blue-50"
+            className="w-full mb-0.5 text-left text-[9px] text-blue-700 font-medium border border-blue-500 rounded-lg px-3 py-1 shadow hover:bg-blue-50"
           >
             ⚙️ Settings
           </button>
+
           <button
             onClick={() => {
               playSound("optionSelect", effectsOn);
               setShowStore(true);
             }}
-            className="w-full mb-2 text-left bg-yellow-800 text-white text-sm font-medium rounded-full px-2 py-1 shadow hover:bg-yellow-900"
+            className="w-full mb-0.5 text-left bg-yellow-800 text-white text-[9px] font-medium rounded-lg px-3 py-1 shadow hover:bg-yellow-900"
           >
             🛒 🎁 Store
           </button>
+
           <button
             onClick={() => {
               playSound("optionSelect", effectsOn);
               navigate("/multiplayer/create");
             }}
-            className="w-full mb-2 text-left bg-green-500 text-white text-sm font-medium rounded-full px-2 py-1 shadow hover:bg-green-600"
+            className="w-full mb-0.5 text-left bg-green-500 text-white text-[9px] font-medium rounded-lg px-3 py-1 shadow hover:bg-green-600"
           >
             🎮 Multiplayer
           </button>
@@ -443,7 +445,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               handleWeeklyChallengeClick();
             }}
             disabled={!challengeAllowed}
-            className="w-full mb-2 text-left bg-blue-500 text-white text-sm font-medium rounded-full px-2 py-1 shadow hover:bg-blue-600 disabled:opacity-50"
+            className="w-full mb-0.5 text-left bg-blue-500 text-white text-[9px] font-medium rounded-lg px-3 py-1 shadow hover:bg-blue-600 disabled:opacity-50"
           >
             {challengeAllowed && !challengePlayed
               ? "🥊 Weekly Challenge"
@@ -453,41 +455,47 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </button>
 
           <div className="overflow-y-auto max-h-[50vh] mt-4">
-            {totalLeaderboard.length > 0 && (
-              <div className="bg-white border border-blue-400 rounded-lg shadow-lg p-3 mb-4">
-                <h2 className="text-[10px] font-bold text-blue-700 mb-2">
-                  🏆 Top Players
-                </h2>
-                <ol className="space-y-1 text-[8px]">
-                  {totalLeaderboard.map((entry, index) => (
-                    <li key={index} className="flex justify-between">
-                      <span>
-                        {index + 1}. {entry.player_name || "Unnamed"}
-                      </span>
-                      <span>{entry.total_score} pts</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-            {weeklyLeaderboard.length > 0 && (
-              <div className="bg-white border border-yellow-400 rounded-lg shadow-lg p-3">
-                <h2 className="text-[10px] font-bold text-yellow-600 mb-2">
-                  🏆 Weekly Top 10
-                </h2>
-                <ol className="space-y-1 text-[8px]">
-                  {weeklyLeaderboard.map((entry, index) => (
-                    <li key={index} className="flex justify-between">
-                      <span>
-                        {index + 1}. {entry.player_name || "Unnamed"}
-                      </span>
-                      <span>{entry.score} pts</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-          </div>
+  {totalLeaderboard.length > 0 && (
+    <div className="bg-white border border-blue-400 rounded-md shadow p-2 mb-1">
+      <h2 className="text-[6px] font-bold text-blue-700 mb-1">
+        🏆 Top Players
+      </h2>
+      <ol className="space-y-0.5 text-[5px]">
+        {totalLeaderboard.map((entry, index) => (
+          <li key={index} className="flex items-center">
+            <span className="whitespace-nowrap">
+              {index + 1}. {entry.player_name || "Unnamed"}
+            </span>
+            {/* dotted connector */}
+            <span className="flex-1 border-b border-dotted border-gray-300 mx-1"></span>
+            <span className="whitespace-nowrap">{entry.total_score} pts</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )}
+
+  {weeklyLeaderboard.length > 0 && (
+    <div className="bg-white border border-yellow-400 rounded-md shadow p-2">
+      <h2 className="text-[6px] font-bold text-yellow-600 mb-1">
+        🏆 Weekly Top 10
+      </h2>
+      <ol className="space-y-0.5 text-[5px]">
+        {weeklyLeaderboard.map((entry, index) => (
+          <li key={index} className="flex items-center">
+            <span className="whitespace-nowrap">
+              {index + 1}. {entry.player_name || "Unnamed"}
+            </span>
+            {/* dotted connector */}
+            <span className="flex-1 border-b border-dotted border-gray-300 mx-1"></span>
+            <span className="whitespace-nowrap">{entry.score} pts</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )}
+</div>
+
 
           <div className="mt-auto flex gap-2">
             <FeedbackButton
@@ -545,47 +553,50 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         {/* CENTER CONTENT */}
         <div className="flex-1 overflow-y-auto max-h-screen p-4">
           {/* Sticky Header */}
-<div className="sticky top-0 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-200 
-                py-2 px-3 shadow-sm flex flex-col md:flex-row md:justify-between 
-                md:items-center text-[11px] md:text-sm font-medium text-gray-700 
-                gap-2 md:gap-4 text-center md:text-left">
+          <div
+            className="sticky top-6 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-200 
+              py-0.5 px-1 sm:py-1 sm:px-2 md:py-2 md:px-3 shadow-sm 
+              flex flex-col md:flex-row md:justify-between md:items-center 
+              text-[6px] sm:text-[11px] md:text-[15px] font-medium text-gray-700 
+              gap-1 sm:gap-2 md:gap-4 text-center md:text-left"
+          >
+            {/* Player Name */}
+            <div className="truncate font-semibold text-blue-700 ">
+              {gameUser.player_name || "Unnamed"}
 
-  {/* Player Name */}
-  <div className="truncate font-semibold text-blue-700">
-    {gameUser.player_name || "Unnamed"}
-  </div>
+              {/* Total Score */}
+              <div className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full shadow-sm">
+                ⭐ Total: {userScore}
+              </div>
+            </div>
 
-  {/* Total Score */}
-  <div className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full shadow-sm">
-    ⭐ Total: {userScore}
-  </div>
+            {/* Lives */}
+            <div className="flex justify-center">
+              <LivesDisplay
+                lives={gameUser.lives}
+                lastLostAt={gameUser.last_life_lost_at}
+              />
 
-  {/* Lives */}
-  <div className="flex justify-center">
-    <LivesDisplay
-      lives={gameUser.lives}
-      lastLostAt={gameUser.last_life_lost_at}
-    />
-  </div>
+              {/* Talents */}
+              <div className="inline-block px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full shadow-sm">
+                💎 {gameUser.talents ?? 0}
+              </div>
+            </div>
 
-  {/* Talents */}
-  <div className="inline-block px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full shadow-sm">
-    💎 {gameUser.talents ?? 0}
-  </div>
-
-  {/* Powerups */}
-  <div className="flex justify-center gap-2 md:gap-3 flex-wrap">
-    {Object.entries(gameUser.powerups_inventory || {}).map(([key, count]) => (
-      <div
-        key={key}
-        className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full shadow-sm"
-      >
-        {getPowerUpIcon(key)} {count}
-      </div>
-    ))}
-  </div>
-</div>
-
+            {/* Powerups */}
+            <div className="flex justify-center gap-2 md:gap-3 flex-wrap">
+              {Object.entries(gameUser.powerups_inventory || {}).map(
+                ([key, count]) => (
+                  <div
+                    key={key}
+                    className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full shadow-sm"
+                  >
+                    {getPowerUpIcon(key)} {count}
+                  </div>
+                )
+              )}
+            </div>
+          </div>
 
           {!selectedLevel ? (
             <div className="flex flex-col gap-8">

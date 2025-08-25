@@ -52,15 +52,18 @@ export default function FeedbackButton({ small, fullWidth, effectsOn = true }) {
     <>
       {/* Feedback Button */}
       <Button
-        className={`${fullWidth ? "w-full" : ""} text-xs ${ 
-          small
-            ? "text-xs px-2 py-1"
-            : "fixed bottom-4 right-4 z-50 rounded-lg shadow-md"
-        }`}
+        className={`${fullWidth ? "w-full" : ""} 
+          text-[8px] md:text-xs px-2.5 py-1 md:px-2 md:py-1
+    bg-gray-800 hover:bg-gray-600 text-white 
+    fixed bottom-2 md:bottom-4 z-50 right-4 rounded-md shadow`}
         onClick={() => setIsOpen(true)}
       >
         💬 Feedback
       </Button>
+
+      
+
+      
 
       {/* Modal */}
       {isOpen && (

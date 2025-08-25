@@ -67,9 +67,10 @@ export default function DonationsButton({
   return (
     <>
       <Button
-        className={`${fullWidth ? "w-full" : ""} text-xs px-2 py-1
+        className={`${fullWidth ? "w-full" : ""} 
+    text-[8px] md:text-xs px-2.5 py-1 md:px-2 md:py-1
     bg-green-600 hover:bg-green-400 text-white 
-    fixed bottom-4 z-50 rounded-lg shadow-md`}
+    fixed bottom-2 md:bottom-4 left-50 z-50 rounded-md shadow`}
         onClick={() => setShowModal(true)}
       >
         ☕️ Donations
