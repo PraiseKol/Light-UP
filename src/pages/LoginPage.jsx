@@ -53,7 +53,7 @@ export default function LoginPage() {
   "
       >
         <h1 className="text-4xl font-extrabold flex items-center justify-center gap-2">
-          💡 <span className="text-blue-700 drop-shadow-lg">LightUP</span> Game
+          💡 <span className="text-blue-700 drop-shadow-lg">Light-UP</span> Game
           App 🎮
         </h1>
 
