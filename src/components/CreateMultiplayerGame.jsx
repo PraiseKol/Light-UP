@@ -4,7 +4,7 @@ import { supabase } from "lib/supabaseClient";
 import { useAuth } from "auth/AuthProvider";
 import { useMultiplayerStore } from "store/useMultiplayerStore";
 import { playSound } from "utils/sound"; 
-import GlobalChat from "components/GlobalChat"; // ✅ import chat
+import MGlobalChat from "components/MGlobalChat"; // ✅ import chat
 
 export default function CreateMultiplayerGame({ effectsOn }) {
   const { user } = useAuth();
@@ -87,7 +87,7 @@ export default function CreateMultiplayerGame({ effectsOn }) {
   
   {/* 🔹 Global Chat (Responsive: left on desktop, bottom on mobile) */}
   <div className="w-full lg:w-1/3 order-2 lg:order-1 max-h-[300px] lg:max-h-none overflow-y-auto">
-    <GlobalChat user={user} />
+    <MGlobalChat user={user} />
   </div>
 
   {/* 🔹 Game Creation UI */}

@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Light UP App",
+  "name": "Light UP Interactive Bible Game App",
   "icons": [
     {
       "src": "favicon.ico",

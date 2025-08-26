@@ -130,9 +130,9 @@ export default function GlobalChat({ user }) {
     w-full 
     bg-white/10 backdrop-blur-md border border-gray-800 rounded-t-xl shadow-lg overflow-hidden
     fixed bottom-16 left-0 right-0 z-50    /* Mobile pinned + lifted above bottom */
-    h-[var(--chat-vh,40%)]                 /* Mobile dynamic height */
+    h-[var(--chat-vh,50%)]                 /* Mobile dynamic height */
     md:static md:bottom-auto md:left-auto md:right-auto md:rounded-xl
-    md:h-[90vh]                          /* ⬆️ Taller desktop height */
+    md:h-[70vh]                          /* ⬆️ Taller desktop height */
   "
     >
       {/* 🔹 Mobile drag handle / toggle */}
