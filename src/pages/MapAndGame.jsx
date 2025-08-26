@@ -414,7 +414,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               playSound("optionSelect", effectsOn);
               setShowSettings(true);
             }}
-            className="w-full mb-0.5 text-left text-[9px] text-blue-700 font-medium border border-blue-500 rounded-lg px-3 py-1 shadow hover:bg-blue-50"
+            className="w-full mb-0.5 text-left text-[10px] text-blue-700 font-medium border border-blue-500 rounded-lg px-3 py-1 shadow hover:bg-blue-50"
           >
             ⚙️ Settings
           </button>
@@ -424,7 +424,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               playSound("optionSelect", effectsOn);
               setShowStore(true);
             }}
-            className="w-full mb-0.5 text-left bg-yellow-800 text-white text-[9px] font-medium rounded-lg px-3 py-1 shadow hover:bg-yellow-900"
+            className="w-full mb-0.5 text-left bg-yellow-800 text-white text-[10px] font-medium rounded-lg px-3 py-1 shadow hover:bg-yellow-900"
           >
             🛒 🎁 Store
           </button>
@@ -434,7 +434,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               playSound("optionSelect", effectsOn);
               navigate("/multiplayer/create");
             }}
-            className="w-full mb-0.5 text-left bg-green-500 text-white text-[9px] font-medium rounded-lg px-3 py-1 shadow hover:bg-green-600"
+            className="w-full mb-0.5 text-left bg-green-500 text-white text-[10px] font-medium rounded-lg px-3 py-1 shadow hover:bg-green-600"
           >
             🎮 Multiplayer
           </button>
@@ -445,7 +445,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               handleWeeklyChallengeClick();
             }}
             disabled={!challengeAllowed}
-            className="w-full mb-0.5 text-left bg-blue-500 text-white text-[9px] font-medium rounded-lg px-3 py-1 shadow hover:bg-blue-600 disabled:opacity-50"
+            className="w-full mb-0.5 text-left bg-blue-500 text-white text-[10px] font-medium rounded-lg px-3 py-1 shadow hover:bg-blue-600 disabled:opacity-50"
           >
             {challengeAllowed && !challengePlayed
               ? "🥊 Weekly Challenge"
@@ -566,7 +566,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             className="sticky top-20 md:top-5 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-200 
               py-0.5 px-1 sm:py-1 sm:px-2 md:py-2 md:px-3 shadow-sm 
               flex flex-col md:flex-row md:justify-between md:items-center 
-              text-[6px] sm:text-[11px] md:text-[15px] font-medium text-gray-700 
+              text-[11px] sm:text-[11px] md:text-[15px] font-medium text-gray-700 
               gap-1 sm:gap-2 md:gap-4 text-center md:text-left"
           >
             {/* Player Name */}
@@ -593,7 +593,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             </div>
 
             {/* Powerups */}
-            <div className="flex justify-center gap-2 md:gap-3 flex-wrap">
+            <div className="text-[10px] md:text-auto flex justify-center gap-2 md:gap-3 flex-wrap">
               {Object.entries(gameUser.powerups_inventory || {}).map(
                 ([key, count]) => (
                   <div
