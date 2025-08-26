@@ -24,7 +24,7 @@ export default function PowerUpStore({
     {
       key: "grace_period",
       name: "Grace Period",
-      description: "Adds +15 seconds to the timer.",
+      description: "Adds +15 seconds to the timer (Main Game only).",
       icon: "⏳",
       costs: { one: 8, three: 20 },
     },

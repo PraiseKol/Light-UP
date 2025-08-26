@@ -7,7 +7,7 @@ export default function GlobalChat({ user }) {
   const [playerName, setPlayerName] = useState("");
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
-  const [open, setOpen] = useState(true); // chat panel toggle
+  const [open, setOpen] = useState(true); // ✅ default open
 
   const scrollToBottom = (force = false) => {
     const el = scrollContainerRef.current;
@@ -18,7 +18,7 @@ export default function GlobalChat({ user }) {
     }
   };
 
-  // ✅ Handle mobile keyboard (resize chat height)
+  // ✅ Mobile height handling
   useEffect(() => {
     const handleResize = () => {
       document.documentElement.style.setProperty(
@@ -125,25 +125,24 @@ export default function GlobalChat({ user }) {
 
   return (
     <div
-      className="
-    flex flex-col 
-    w-full 
-    bg-white/10 backdrop-blur-md border border-gray-800 rounded-t-xl shadow-lg overflow-hidden
-    fixed bottom-16 left-0 right-0 z-50    /* Mobile pinned + lifted above bottom */
-    h-[var(--chat-vh,50%)]                 /* Mobile dynamic height */
-    md:static md:bottom-auto md:left-auto md:right-auto md:rounded-xl
-    md:h-[70vh]                          /* ⬆️ Taller desktop height */
-  "
+      className={`
+        flex flex-col w-full
+        bg-white/10 backdrop-blur-md border border-gray-800 rounded-t-xl shadow-lg overflow-hidden
+        fixed bottom-16 left-0 right-0 z-50    
+        transition-all duration-300 ease-in-out
+        ${open ? "h-[var(--chat-vh,50%)]" : "h-8"}   /* collapsible height */
+        md:static md:h-[70vh] md:rounded-xl
+      `}
     >
-      {/* 🔹 Mobile drag handle / toggle */}
+      {/* 🔹 Toggle bar */}
       <div
-        className="md:hidden w-full flex items-center justify-center cursor-pointer bg-gray-200/30 hover:bg-gray-200/50"
+        className="w-full flex items-center justify-center cursor-pointer bg-gray-200/30 hover:bg-gray-200/50"
         onClick={() => setOpen(!open)}
       >
         <div className="w-10 h-1.5 bg-gray-400 rounded-full mt-1 mb-1" />
       </div>
 
-      {/* Only show chat contents if open */}
+      {/* Show contents only if open */}
       {open && (
         <>
           {/* 🔹 Super Admin Announcement */}
