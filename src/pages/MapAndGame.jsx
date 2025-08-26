@@ -694,10 +694,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </button>
           {showTotalLeaderboard && totalLeaderboard.length > 0 && (
             <div className="bg-white border border-blue-400 rounded-md shadow p-1 mb-1">
-              <h2 className="text-[8px] font-bold text-blue-700 mb-0.5">
+              <h2 className="text-[11px] font-bold text-blue-700 mb-0.5">
                 🏆 Overall Top Players
               </h2>
-              <ol className="space-y-0.5 text-[7px]">
+              <ol className="space-y-0.5 text-[10px]">
                 {totalLeaderboard.map((entry, index) => (
                   <li key={index} className="flex justify-between">
                     <span>
@@ -712,10 +712,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
           {weeklyLeaderboard.length > 0 && (
             <div className="bg-white border border-yellow-400 rounded-md shadow p-1">
-              <h2 className="text-[8px] font-bold text-yellow-600 mb-0.5">
+              <h2 className="text-[11px] font-bold text-yellow-600 mb-0.5">
                 🏆 Weekend Challenge Top 10
               </h2>
-              <ol className="space-y-0.5 text-[7px]">
+              <ol className="space-y-0.5 text-[10px]">
                 {weeklyLeaderboard.map((entry, index) => (
                   <li key={index} className="flex justify-between">
                     <span>

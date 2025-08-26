@@ -1,3 +1,4 @@
+// src/components/LevelMap.jsx
 import { useEffect, useRef, useState } from "react";
 import LevelButton from "./LevelButton";
 import { Lock } from "lucide-react";
@@ -14,35 +15,25 @@ export default function LevelMap({
   isLocked,
 }) {
   const containerRef = useRef(null);
-  const [svgSize, setSvgSize] = useState({ width: 0, height: 0 });
-
   const { gameUser } = useGameUser();
 
-  // 👇 NEW: refs for each level
+  // refs for each level
   const levelRefs = useRef({});
+  const [paths, setPaths] = useState([]);
 
-  useEffect(() => {
-    if (containerRef.current) {
-      const { width, height } = containerRef.current.getBoundingClientRect();
-      setSvgSize({ width, height });
-    }
-  }, []);
-
-  // ✅ Auto-scroll logic
+  // scroll logic for mobile
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const isMobile = window.innerWidth < 768; // tailwind md breakpoint
+    const isMobile = window.innerWidth < 768;
     if (!isMobile) return;
 
     if (!currentLevelId && completedLevels.length === 0) {
-      // New user → scroll to bottom (level 1)
       containerRef.current.scrollTo({
         top: containerRef.current.scrollHeight,
         behavior: "smooth",
       });
     } else if (currentLevelId && levelRefs.current[currentLevelId]) {
-      // Existing user → scroll to their current level
       levelRefs.current[currentLevelId].scrollIntoView({
         behavior: "smooth",
         block: "center",
@@ -69,63 +60,96 @@ export default function LevelMap({
     }
   }, [phaseUnlocked]);
 
+  // helper: get button center relative to container
+  function getButtonCenter(levelId) {
+    const el = levelRefs.current[levelId];
+    if (!el || !containerRef.current) return null;
+    const rect = el.getBoundingClientRect();
+    const containerRect = containerRef.current.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2 - containerRect.left,
+      y: rect.top + rect.height / 2 - containerRect.top,
+    };
+  }
+
+  // recompute paths when levels render or resize
+  useEffect(() => {
+    function computePaths() {
+      const newPaths = [];
+      phase.levels.forEach((level, i) => {
+        if (i === 0) return;
+        const prev = phase.levels[i - 1];
+
+        const prevCenter = getButtonCenter(prev.id);
+        const currCenter = getButtonCenter(level.id);
+        if (!prevCenter || !currCenter) return;
+
+        const prevCompleted = completedLevels.includes(prev.id);
+        const glowColor = prevCompleted ? "#e0be12" : "#2c2c2c";
+        const strokeW = prevCompleted ? 16 : 12;
+
+        // midpoint curve control points
+        const cx1 = (prevCenter.x + currCenter.x) / 2;
+        const cy1 = prevCenter.y;
+        const cx2 = (prevCenter.x + currCenter.x) / 2;
+        const cy2 = currCenter.y;
+
+        newPaths.push({
+          id: `${prev.id}-${level.id}`,
+          d: `M ${prevCenter.x} ${prevCenter.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${currCenter.x} ${currCenter.y}`,
+          color: glowColor,
+          width: strokeW,
+          glow: prevCompleted,
+        });
+      });
+      setPaths(newPaths);
+    }
+
+    computePaths();
+    window.addEventListener("resize", computePaths);
+    return () => window.removeEventListener("resize", computePaths);
+  }, [phase, completedLevels]);
+
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[150vh] overflow-y-auto rounded-xl shadow-lg bg-transparent"
+      className="
+    relative 
+    w-full 
+    h-[120vh] sm:h-[150vh]   // shorter scroll area on mobile
+    overflow-y-auto 
+    rounded-xl 
+    shadow-lg 
+    bg-transparent
+    max-w-sm sm:max-w-full   // keeps it narrow on mobile, full width on desktop
+    mx-auto                  // centers on mobile
+  "
     >
       {/* Background Phase Title */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <h1 className="text-[5rem] font-extrabold text-black/20 text-center tracking-wider select-none">
+        <h1 className="text-3xl sm:text-[5rem] font-extrabold text-black/20 text-center tracking-wider select-none">
           {`Phase ${phase.phaseNumber} : ${phase.title}`}
         </h1>
       </div>
 
-      {/* SVG curved path connections */}
+      {/* SVG curved paths */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none">
-        {phase.levels.map((level, i) => {
-          if (i === 0) return null;
-          const prev = phase.levels[i - 1];
-          const curr = level;
-
-          const prevCompleted = completedLevels.includes(prev.id);
-          const glowColor = prevCompleted ? "#e0be12" : "#2c2c2c";
-          const strokeW = prevCompleted ? 16 : 12;
-
-          const x1 = (prev.position.x / 100) * svgSize.width;
-          const y1 = (prev.position.y / 100) * svgSize.height;
-          const x2 = (curr.position.x / 100) * svgSize.width;
-          const y2 = (curr.position.y / 100) * svgSize.height;
-
-          const edgeMargin = svgSize.width * 0.07;
-          const minX = edgeMargin;
-          const maxX = svgSize.width - edgeMargin;
-
-          const adjX1 = Math.min(Math.max(x1, minX), maxX);
-          const adjX2 = Math.min(Math.max(x2, minX), maxX);
-
-          const cx1 = (adjX1 + adjX2) / 2;
-          const cy1 = y1;
-          const cx2 = (adjX1 + adjX2) / 2;
-          const cy2 = y2;
-
-          return (
-            <path
-              key={`curve-${prev.id}-${curr.id}`}
-              d={`M ${adjX1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${adjX2} ${y2}`}
-              fill="none"
-              stroke={glowColor}
-              strokeWidth={strokeW}
-              strokeLinecap="round"
-              style={{
-                filter: prevCompleted
-                  ? "drop-shadow(0 0 8px rgba(255,215,0,0.8))"
-                  : "none",
-              }}
-              vectorEffect="non-scaling-stroke"
-            />
-          );
-        })}
+        {paths.map((p) => (
+          <path
+            key={p.id}
+            d={p.d}
+            fill="none"
+            stroke={p.color}
+            strokeWidth={p.width}
+            strokeLinecap="round"
+            style={{
+              filter: p.glow
+                ? "drop-shadow(0 0 8px rgba(255,215,0,0.8))"
+                : "none",
+            }}
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
       </svg>
 
       {/* Levels */}
@@ -141,7 +165,7 @@ export default function LevelMap({
         return (
           <div
             key={level.id}
-            ref={(el) => (levelRefs.current[level.id] = el)} // 👈 store ref
+            ref={(el) => (levelRefs.current[level.id] = el)}
             className="absolute"
             style={{
               left: `${level.position.x}%`,
@@ -161,11 +185,11 @@ export default function LevelMap({
             />
 
             {isCurrent && (
-              <div className="absolute -top-7 left-1/4 -translate-x-1/2 flex flex-col items-center">
+              <div className="absolute -top-6 left-1/4 -translate-x-1/2 flex flex-col items-center">
                 <img
                   src={avatarIcon}
                   alt="Avatar"
-                  className="w-12 h-12 rounded-full shadow-md animate-bounce"
+                  className="w-8 h-8 sm:w-12 sm:h-12 rounded-full shadow-md animate-bounce"
                 />
               </div>
             )}
