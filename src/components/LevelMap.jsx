@@ -1,4 +1,3 @@
-// src/components/LevelMap.jsx
 import { useEffect, useRef, useState } from "react";
 import LevelButton from "./LevelButton";
 import { Lock } from "lucide-react";
@@ -17,17 +16,39 @@ export default function LevelMap({
   const containerRef = useRef(null);
   const [svgSize, setSvgSize] = useState({ width: 0, height: 0 });
 
-  // 👇 Get player info and rank
   const { gameUser } = useGameUser();
 
+  // 👇 NEW: refs for each level
+  const levelRefs = useRef({});
 
-  // Measure container size so SVG coordinates match pixel size
   useEffect(() => {
     if (containerRef.current) {
       const { width, height } = containerRef.current.getBoundingClientRect();
       setSvgSize({ width, height });
     }
   }, []);
+
+  // ✅ Auto-scroll logic
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const isMobile = window.innerWidth < 768; // tailwind md breakpoint
+    if (!isMobile) return;
+
+    if (!currentLevelId && completedLevels.length === 0) {
+      // New user → scroll to bottom (level 1)
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    } else if (currentLevelId && levelRefs.current[currentLevelId]) {
+      // Existing user → scroll to their current level
+      levelRefs.current[currentLevelId].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [currentLevelId, completedLevels]);
 
   const isPhase1 = phaseIndex === 0;
   const prevPhaseLastLevelId = !isPhase1
@@ -51,7 +72,7 @@ export default function LevelMap({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[150vh] overflow-hidden rounded-xl shadow-lg bg-transparent"
+      className="relative w-full h-[150vh] overflow-y-auto rounded-xl shadow-lg bg-transparent"
     >
       {/* Background Phase Title */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -69,15 +90,13 @@ export default function LevelMap({
 
           const prevCompleted = completedLevels.includes(prev.id);
           const glowColor = prevCompleted ? "#e0be12" : "#2c2c2c";
-          const strokeW = prevCompleted ? 16 : 12; // thicker path
+          const strokeW = prevCompleted ? 16 : 12;
 
-          // Map % to actual container pixel coordinates
           const x1 = (prev.position.x / 100) * svgSize.width;
           const y1 = (prev.position.y / 100) * svgSize.height;
           const x2 = (curr.position.x / 100) * svgSize.width;
           const y2 = (curr.position.y / 100) * svgSize.height;
 
-          // Keep horizontal swing near edges but not touching
           const edgeMargin = svgSize.width * 0.07;
           const minX = edgeMargin;
           const maxX = svgSize.width - edgeMargin;
@@ -85,7 +104,6 @@ export default function LevelMap({
           const adjX1 = Math.min(Math.max(x1, minX), maxX);
           const adjX2 = Math.min(Math.max(x2, minX), maxX);
 
-          // Smooth Bézier control points for flowing curve
           const cx1 = (adjX1 + adjX2) / 2;
           const cy1 = y1;
           const cx2 = (adjX1 + adjX2) / 2;
@@ -123,6 +141,7 @@ export default function LevelMap({
         return (
           <div
             key={level.id}
+            ref={(el) => (levelRefs.current[level.id] = el)} // 👈 store ref
             className="absolute"
             style={{
               left: `${level.position.x}%`,
@@ -143,9 +162,6 @@ export default function LevelMap({
 
             {isCurrent && (
               <div className="absolute -top-7 left-1/4 -translate-x-1/2 flex flex-col items-center">
-                
-
-                {/* Avatar */}
                 <img
                   src={avatarIcon}
                   alt="Avatar"

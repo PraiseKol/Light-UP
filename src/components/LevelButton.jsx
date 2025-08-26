@@ -5,7 +5,7 @@ import { MdLightbulb } from "react-icons/md";
 
 export default function LevelButton({ level, isUnlocked, onClick }) {
   const baseClass =
-    "w-16 h-16 rounded-full font-bold shadow-xl transition-all duration-300 flex items-center justify-center";
+    "w-14 h-14 sm:w-16 sm:h-16 rounded-full font-bold shadow-xl transition-all duration-300 flex items-center justify-center";
 
   const completedStyle = "bg-black text-yellow-300 ring-4 ring-blue-400 ";
   const unlockedStyle = "bg-black text-white glow-ring";
@@ -30,13 +30,16 @@ export default function LevelButton({ level, isUnlocked, onClick }) {
     >
       {level.completed ? (
         <MdLightbulb
-          size={30}
-          className="text-yellow-300 drop-shadow-[0_0_6px_rgba(253,224,71,0.8)] animate-flicker"
+          size={26} // smaller on mobile
+          className="sm:size-30 text-yellow-300 drop-shadow-[0_0_6px_rgba(253,224,71,0.8)] animate-flicker"
         />
       ) : isUnlocked ? (
         level.number
       ) : (
-        <Lightbulb size={25} className="animate-pulse text-yellow-300" />
+        <Lightbulb
+          size={22} // smaller on mobile
+          className="sm:size-25 animate-pulse text-yellow-300"
+        />
       )}
     </motion.button>
   );
