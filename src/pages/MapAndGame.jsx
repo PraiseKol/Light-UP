@@ -500,8 +500,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             )}
 
             {/* Spacer to push chat to the bottom */}
-            
-            
+
             {/* Global Chat */}
             <GlobalChat user={user} />
           </div>
@@ -570,17 +569,17 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               gap-1 sm:gap-2 md:gap-4 text-center md:text-left"
           >
             {/* Player Name */}
-            <div className="truncate font-semibold text-blue-700 ">
+            <div className="flex justify-center items-center truncate font-semibold text-blue-700 gap-4 ">
               {gameUser.player_name || "Unnamed"}
 
               {/* Total Score */}
               <div className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full shadow-sm">
-                ⭐ Total: {userScore}
+                Total: ⭐ {userScore}
               </div>
             </div>
 
             {/* Lives */}
-            <div className="flex justify-center">
+            <div className="flex justify-center items-center gap-4">
               <LivesDisplay
                 lives={gameUser.lives}
                 lastLostAt={gameUser.last_life_lost_at}
@@ -593,7 +592,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             </div>
 
             {/* Powerups */}
-            <div className="text-[10px] md:text-auto flex justify-center gap-2 md:gap-3 flex-wrap">
+            <div className="text-[10px] md:text-[13px] flex justify-center gap-2 md:gap-3 flex-wrap">
               {Object.entries(gameUser.powerups_inventory || {}).map(
                 ([key, count]) => (
                   <div

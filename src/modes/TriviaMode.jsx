@@ -175,24 +175,26 @@ export default function TriviaMode({
 
   return (
     <div
-      className="min-h-screen flex justify-center items-center bg-cover bg-center px-4"
+      className="min-h-screen flex justify-center items-center bg-cover bg-center px2 md:px-4"
       style={{ backgroundImage: `url(${triviaBackground})` }}
     >
       <div className="w-full max-w-xl animate-fadeInUp">
-        <Card className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-xl p-6">
-          <div className="space-y-1">
+        <Card className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-xl p-3 md:p-6">
+          <div className="space-y-1 mb-2 md:mb-4">
             <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600 font-medium">
+              <div className="text-xs md:text-sm text-gray-600 font-normal md:font-medium">
                 Phase {level?.phaseNumber} • Level {level?.number} Trivia
               </div>
-              <div className="text-xs text-gray-500 font-semibold">
+              <div className="text-[10px] md:text-xs text-gray-500 font-semibold">
                 {timeLeft}s
               </div>
             </div>
+            
             <ProgressBar value={timeLeft} max={30} />
+          
           </div>
 
-          <CardHeader className="text-xl text-gray-800 mb-4">
+          <CardHeader className="text-sm md:text-xl text-gray-800 mb-4">
             {question}
           </CardHeader>
 
@@ -210,7 +212,7 @@ export default function TriviaMode({
               }
             }}
           >
-            <div className="space-y-3 mb-6">
+            <div className="space-y-2 md:space-y-3 mb-3 md:mb-6">
               {displayOptions.map((opt, i) => {
                 const isSelected = selected === opt;
                 const isDisabled = hasAnswered.current;
@@ -223,7 +225,7 @@ export default function TriviaMode({
                       if (!hasAnswered.current) setSelected(opt);
                       playSound("optionSelect", effectsOn);
                     }}
-                    className={`w-full px-4 py-3 rounded-md text-left border transition ${
+                    className={`w-full px-3 md:px-4 py-2 md:py-3 rounded-md text-left border transition ${
                       isSelected
                         ? "border-blue-600 bg-blue-100 font-semibold"
                         : "border-gray-300 hover:bg-gray-100"

@@ -267,21 +267,21 @@ export default function FourPicsMode({
   const images = question.image_urls.split(",").map((url) => url.trim());
 
   return (
-    <div className="p-6 bg-gradient-to-br from-yellow-50 to-orange-100 rounded-xl shadow-lg max-w-2xl mx-auto animate-fadeInUp">
-      <div className="space-y-1 mb-4">
+    <div className="p-8 md:p-6 bg-gradient-to-br from-yellow-50 to-orange-100 rounded-xl shadow-lg max-w-2xl mx-auto animate-fadeInUp">
+      <div className="space-y-1 mb-2 md:mb-4">
         <div className="flex justify-between items-center">
-          <div className="text-xs text-gray-500 mb-2">
+          <div className="text-xs text-gray-500 mb-1 md:mb-2">
             Phase {level?.phaseNumber} • Level {level?.number} Four Pics One
             Word
           </div>
-          <span className="text-sm text-gray-600 font-semibold">
+          <span className="text-xs md:text-sm text-gray-600 font-semibold">
             {timeLeft}s
           </span>
         </div>
         <ProgressBar value={timeLeft} max={INITIAL_TIME} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
         {images.map((src, idx) => (
           <img
             key={idx}
@@ -292,7 +292,7 @@ export default function FourPicsMode({
         ))}
       </div>
 
-      <div className="flex justify-center gap-2 mb-4 text-xl font-semibold tracking-wide">
+      <div className="flex justify-center gap-1.5 md:gap-2 mb-3 md:mb-4 text-sm md:text-xl font-semibold tracking-wide">
         {input.map((ch, i) => (
           <div key={i} className="w-10 h-10 border-b-4 border-gold text-center">
             {ch || ""}
@@ -300,7 +300,7 @@ export default function FourPicsMode({
         ))}
       </div>
 
-      <div className="grid grid-cols-6 gap-3 max-w-md mx-auto mb-6">
+      <div className="grid grid-cols-4 md:grid-cols-6 gap-2 md:gap-3 max-w-md mx-auto mb-3 md:mb-6">
         {shuffledLetters.map((ltr, idx) => (
           <button
             key={idx}
@@ -309,7 +309,7 @@ export default function FourPicsMode({
               handleLetterClick(ltr, idx);
             }}
             disabled={usedIndexes.includes(idx) || hasAnswered.current}
-            className={`w-10 h-10 text-lg font-bold rounded-lg transition shadow ${
+            className={`w-8 md:w-10 h-8 md:h-10 text-3xs md:text-lg font-semibold md:font-bold rounded-lg transition shadow ${
               usedIndexes.includes(idx)
                 ? "bg-gray-300 text-gray-500"
                 : "bg-gold text-black hover:bg-yellow-400"
@@ -320,7 +320,7 @@ export default function FourPicsMode({
         ))}
       </div>
 
-      <div className="flex justify-center gap-4">
+      <div className="flex justify-center gap-3 md:gap-4">
         <Button
           onClick={() => {
             playSound("back", effectsOn);

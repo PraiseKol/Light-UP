@@ -166,24 +166,24 @@ export default function WordFillMode({
 
   return (
     <div
-      className="min-h-screen flex justify-center items-center bg-cover bg-center px-4"
+      className="min-h-[50vh] md:min-h-screen flex justify-center items-center bg-cover bg-center px-4 " 
       style={{ backgroundImage: `url(${backgroundUrl})` }}
     >
-      <div className="w-full max-w-xl animate-fadeInUp">
-        <Card className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-xl p-6">
+      <div className="w-full max-w-xl animate-fadeInUp ">
+        <Card className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-xl p-4 md:p-6">
           <div className="space-y-1">
             <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600 font-medium">
+              <div className="text-xs md:text-sm text-gray-600 font-normal md:font-medium">
                 Phase {level?.phaseNumber} • Level {level?.number} Word Fill
               </div>
-              <div className="text-xs text-gray-500 font-semibold">
+              <div className="text-[10px] md:text-xs text-gray-500 font-semibold">
                 {timeLeft}s
               </div>
             </div>
             <ProgressBar value={timeLeft} max={30} />
           </div>
 
-          <CardHeader className="text-xl text-gray-800 leading-snug">
+          <CardHeader className="text-sm md:text-xl text-gray-800 leading-snug">
             {question}
           </CardHeader>
 
@@ -217,7 +217,7 @@ export default function WordFillMode({
                   ? "Out of lives. Please wait..."
                   : "Type your answer..."
               }
-              className={`mb-3 ${
+              className={`mb-2 md:mb-3 ${
                 status === "wrong"
                   ? "border-red-500"
                   : status === "correct"
@@ -232,7 +232,7 @@ export default function WordFillMode({
                 checkAnswer();
               }}
               disabled={hasAnsweredCorrectly.current || disableIfNoLives}
-              className={`mt-6 w-full py-3 rounded-lg transition ${
+              className={`mt-4 md:mt-6 w-full py-2 md:py-3 rounded-lg transition ${
                 disableIfNoLives
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-blue-600 text-white hover:bg-blue-700"

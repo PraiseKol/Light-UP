@@ -197,23 +197,24 @@ export default function ScriptureMatchMode({
       />
       <div className="relative z-10 flex justify-center items-center px-4 py-10">
         <div className="w-full max-w-4xl animate-fade-in-up">
-          <div className="p-6 rounded-xl shadow-lg bg-white/90 border space-y-6">
+        <div className="mb-20 md:mb-auto"></div>
+          <div className="p-6 rounded-xl shadow-lg bg-white/90 border space-y-4 md:space-y-6">
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-600 font-medium">
+                <div className="text-xs md:text-sm text-gray-600 font-medium">
                   Phase {level?.phaseNumber} • Level {level?.number} Scripture
                   Match
                 </div>
-                <div className="text-xs text-gray-500 font-semibold">
+                <div className="text-[10px] md:text-xs text-gray-500 font-semibold">
                   {timeLeft}s
                 </div>
               </div>
               <ProgressBar value={timeLeft} max={30} />
             </div>
 
-            <div className="grid grid-cols-2 gap-6 mt-4">
+            <div className="grid grid-cols-2 gap-5 md:gap-6 mt-3 md:mt-4">
               <div>
-                <h3 className="font-semibold mb-2">📖 References</h3>
+                <h3 className="font-semibold mb-1 md:mb-2">📖 References</h3>
                 {pairs.map(({ reference }) => (
                   <div
                     key={reference}
@@ -221,7 +222,7 @@ export default function ScriptureMatchMode({
                       e.preventDefault();
                     }}
                     onDrop={() => handleDrop(reference)}
-                    className="border p-3 min-h-[60px] mb-3 bg-gray-50 flex items-center justify-between"
+                    className="border p-2 md:p-3 min-h[40px] md:min-h-[60px] mb-2 md:mb-3 bg-gray-50 flex items-center justify-between"
                   >
                     <span>{reference}</span>
                     {matches[reference] && (
@@ -234,13 +235,13 @@ export default function ScriptureMatchMode({
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">📜 Verses</h3>
+                <h3 className="font-semibold mb-1 md:mb-2">📜 Verses</h3>
                 {shuffledVerses.map(({ verse }) => (
                   <div
                     key={verse}
                     draggable={!isMatched(verse)}
                     onDragStart={() => setDraggedVerse({ verse })}
-                    className={`cursor-move border p-3 rounded-lg mb-3 transition ${
+                    className={`cursor-move border p-2 md:p-3 rounded-lg mb-2 md:mb-3 transition ${
                       isMatched(verse)
                         ? "bg-green-200 text-gray-700"
                         : "bg-yellow-100 hover:bg-yellow-200 text-black"
@@ -252,7 +253,7 @@ export default function ScriptureMatchMode({
               </div>
             </div>
 
-            <div className="flex justify-center mt-6">
+            <div className="flex justify-center mt-5 md:mt-6">
               <Button
                 disabled={
                   hasAnswered.current ||

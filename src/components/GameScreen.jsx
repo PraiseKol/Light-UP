@@ -315,7 +315,7 @@ export default function GameScreen({
       <div className="w-full sm:max-w-full md:max-w-2xl lg:max-w-3xl mx-auto h-[calc(100vh-120px)] overflow-y-auto p-2 text-sm sm:p-4 sm:text-base bg-white/70 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg">
 
         {/* Top HUD (fixed) */}
-        <div className="flex justify-between items-center px-3 py-2 bg-white/40 backdrop-blur-md rounded-xl shadow-md text-sm sm:text-base sticky top-0 z-20">
+        <div className="flex justify-between items-center px-2 md:px-3 py-1 md:py-2 bg-white/40 backdrop-blur-md rounded-xl shadow-md text-sm sm:text-base sticky top-0 z-20">
           <span className="flex items-center gap-2">
             <span className="text-lg">📜</span> Level {level?.number}
           </span>
@@ -336,8 +336,8 @@ export default function GameScreen({
         </div>
   
         {/* Scrollable Game mode area */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
-          <div className="bg-white/70 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg p-2 sm:p-4 text-sm sm:text-base">
+        <div className="flex-1 overflow-y-auto p-1 md:p-2 spcae-y-1 md:space-y-2">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg p-1 md:p-2 sm:p-4 text-sm sm:text-base">
             {mode === "word-fill" && (
               <WordFillMode
                 {...commonProps}
@@ -380,11 +380,11 @@ export default function GameScreen({
             )}
           </div>
         </div>
-      </div>
-  
-      {/* Power-Up Bar (fixed at bottom) */}
+
+        {/* Power-Up Bar (fixed at bottom) */}
+        
       {gameUser?.powerups_inventory && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-300 p-2 sm:p-3 flex justify-around items-center z-50 shadow-lg text-[10px] sm:text-xs">
+        <div className="sticky bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-300 p-2 sm:p-3 flex justify-around items-center z-50 shadow-lg text-[10px] sm:text-xs">
           <button
             onClick={handleDivineHint}
             disabled={!gameUser.powerups_inventory.divine_hint}
@@ -425,6 +425,10 @@ export default function GameScreen({
           </button>
         </div>
       )}
+     
+      </div>
+  
+      
     </div>
   );
   
