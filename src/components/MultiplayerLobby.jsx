@@ -5,7 +5,7 @@ import { useMultiplayerStore } from "store/useMultiplayerStore";
 import { useAuth } from "auth/AuthProvider";
 import Switch from "components/ui/Switch"; // shadcn/ui switch
 import { playSound } from "utils/sound";
-import MGlobalChat from "components/MGlobalChat";
+import GlobalChat from "components/GlobalChat";
 
 export default function MultiplayerLobby({ effectsOn }) {
   const { gameId } = useParams();
@@ -385,7 +385,7 @@ export default function MultiplayerLobby({ effectsOn }) {
     z-20
   "
         >
-          <MGlobalChat user={user} gameId={gameId} effectsOn={effectsOn} />
+          <GlobalChat user={user} gameId={gameId} effectsOn={effectsOn} />
         </div>
       </div>
     </div>
