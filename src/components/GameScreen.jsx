@@ -313,7 +313,6 @@ export default function GameScreen({
     <div className="relative min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100">
       {/* Constrain width on mobile */}
       <div className="w-full sm:max-w-full md:max-w-2xl lg:max-w-3xl mx-auto h-[calc(100vh-120px)] overflow-y-auto p-2 text-sm sm:p-4 sm:text-base bg-white/70 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg">
-
         {/* Top HUD (fixed) */}
         <div className="flex justify-between items-center px-2 md:px-3 py-1 md:py-2 bg-white/40 backdrop-blur-md rounded-xl shadow-md text-sm sm:text-base sticky top-0 z-20">
           <span className="flex items-center gap-2">
@@ -334,7 +333,7 @@ export default function GameScreen({
             </span>
           </span>
         </div>
-  
+
         {/* Scrollable Game mode area */}
         <div className="flex-1 overflow-y-auto p-1 md:p-2 spcae-y-1 md:space-y-2">
           <div className="bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg p-1 md:p-2 sm:p-4 text-sm sm:text-base">
@@ -380,9 +379,9 @@ export default function GameScreen({
             )}
           </div>
         </div>
+      </div>
+      {/* Power-Up Bar (fixed at bottom) */}
 
-        {/* Power-Up Bar (fixed at bottom) */}
-        
       {gameUser?.powerups_inventory && (
         <div className="sticky bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-300 p-2 sm:p-3 flex justify-around items-center z-50 shadow-lg text-[10px] sm:text-xs">
           <button
@@ -405,14 +404,14 @@ export default function GameScreen({
               x{gameUser.powerups_inventory.grace_period ?? 0}
             </span>
           </button>
-  
+
           <HolyShieldButton
             user={user}
             gameUser={gameUser}
             refetch={refetch}
             effectsOn={effectsOn}
           />
-  
+
           <button
             onClick={handleHeavenlyMatch}
             disabled={!gameUser.powerups_inventory.heavenly_match}
@@ -425,12 +424,6 @@ export default function GameScreen({
           </button>
         </div>
       )}
-     
-      </div>
-  
-      
     </div>
   );
-  
-  
 }
