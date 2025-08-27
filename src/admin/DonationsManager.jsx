@@ -28,7 +28,7 @@ export default function DonationsManager() {
     let query = supabase
       .from("donations")
       .select(
-        "id, amount, provider, status, created_at, game_users(player_name)",
+        "id, amount, currency, provider, status, created_at, game_users(player_name)",
         {
           count: "exact",
         }
@@ -120,8 +120,9 @@ export default function DonationsManager() {
             <tr className="bg-gray-100 border-b">
               <th className="p-2 border">Player Name</th>
               <th className="p-2 border">Amount</th>
-              <th className="p-2 border">Provider</th>
+              <th className="p-2 border">Currency</th>
               <th className="p-2 border">Status</th>
+              <th className="p-2 border">Provider</th>
               <th className="p-2 border">Created At</th>
             </tr>
           </thead>
@@ -132,8 +133,9 @@ export default function DonationsManager() {
                   {d.game_users?.player_name || "Unknown"}
                 </td>
                 <td className="p-2 border">{d.amount}</td>
-                <td className="p-2 border">{d.provider}</td>
+                <td className="p-2 border">{d.currency}</td>
                 <td className="p-2 border">{d.status}</td>
+                <td className="p-2 border">{d.provider}</td>
                 <td className="p-2 border">
                   {new Date(d.created_at).toLocaleString()}
                 </td>
