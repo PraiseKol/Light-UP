@@ -15,6 +15,8 @@ export default function MultiplayerLobby({ effectsOn }) {
 
   const [allowPowerups, setAllowPowerups] = useState(true);
   const isCreator = user?.id === game?.creator_id;
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
 
   const joinUrl = game
     ? `${window.location.origin}/multiplayer/join/${game.token}`
@@ -296,7 +298,7 @@ export default function MultiplayerLobby({ effectsOn }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl mx-auto h-full">
         {/* Lobby Card */}
         <div
-          className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-6 border border-white/20
+          className="bg-white/10  rounded-2xl shadow-lg p-6 border border-white/20
                      order-1 md:order-2 md:col-span-2 flex flex-col
                      sticky top-0 z-10"
         >
@@ -375,18 +377,29 @@ export default function MultiplayerLobby({ effectsOn }) {
           )}
         </div>
 
-        {/* MGlobal Chat */}
-        <div
-          className="
-    bg-white/10 backdrop-blur-lg rounded-2xl shadow-lg p-5 border border-white/20
-    order-2 md:order-1 md:col-span-1
-    h-[420px] md:h-auto overflow-y-auto
-    fixed bottom-0 left-0 right-0 md:static
-    z-20
-  "
-        >
-          <GlobalChat user={user} gameId={gameId} effectsOn={effectsOn} />
-        </div>
+        {/* Chat Toggle Button (mobile only) */}
+<button
+  onClick={() => setIsChatOpen(!isChatOpen)}
+  className="fixed bottom-4 right-4 z-30 bg-gray-600 text-white px-4 py-2 rounded-full shadow-lg md:block"
+>
+  {isChatOpen ? "Close Chat" : "Open Chat"}
+</button>
+
+{/* Chat Box (only when open) */}
+{isChatOpen && (
+  <div
+    className="
+      bg-white/10 rounded-2xl shadow-lg p-5 border border-white/20
+      order-2 md:order-1 md:col-span-1
+      h-[420px] md:h-auto overflow-y-auto
+      fixed bottom-0 left-0 right-0 md:static
+      z-20 text-black
+    "
+  >
+    <GlobalChat user={user} gameId={gameId} effectsOn={effectsOn} />
+  </div>
+)}
+
       </div>
     </div>
   );
