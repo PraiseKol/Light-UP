@@ -226,7 +226,7 @@ export default function ScriptureMatchMode({
                   >
                     <span>{reference}</span>
                     {matches[reference] && (
-                      <span className="ml-2 text-sm text-blue-700 font-medium">
+                      <span className="ml-2 text-xs md:text-sm text-blue-700 font-medium">
                         {matches[reference]}
                       </span>
                     )}

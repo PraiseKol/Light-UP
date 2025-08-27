@@ -6,17 +6,18 @@ export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Works for both Paystack (reference) and Stripe (session_id)
-  const reference =
-    searchParams.get("reference") || searchParams.get("session_id");
+  const reference = searchParams.get("reference");
 
   const [status, setStatus] = useState("Checking payment status...");
   const [newBalance, setNewBalance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [showText, setShowText] = useState(false);
+
+  // donation-specific state
   const [isDonation, setIsDonation] = useState(false);
   const [donationAmount, setDonationAmount] = useState(null);
+  const [currency, setCurrency] = useState(null);
   const [playerName, setPlayerName] = useState(null);
 
   useEffect(() => {
@@ -40,22 +41,30 @@ export default function PaymentSuccess() {
 
         if (result.success) {
           setIsDonation(!!result.donation);
+          setCurrency(result.currency || "NGN");
 
           if (result.donation) {
             setDonationAmount(result.amount);
             setPlayerName(result.player_name || "Player");
             setStatus(
-              `🎉 Thank you, ${result.player_name || "Player"}, for your donation of ₦${Number(
+              `🎉 Thank you, ${
+                result.player_name || "Player"
+              }, for your donation of ${result.currency} ${Number(
                 result.amount
               ).toLocaleString()}!`
             );
           } else {
             setNewBalance(result.newBalance || null);
-            setStatus("🎉 Payment confirmed!");
+            setStatus("🎉 Talent purchase successful!");
           }
 
           setSuccess(true);
           setShowText(true);
+
+          // redirect after 5s — bound to current isDonation value
+          setTimeout(() => {
+            navigate(result.donation ? "/map" : "/store");
+          }, 5000);
         } else {
           setStatus("❌ Payment not found or not successful.");
         }
@@ -64,13 +73,6 @@ export default function PaymentSuccess() {
         setStatus("❌ Error verifying payment.");
       } finally {
         setLoading(false);
-        setTimeout(() => {
-          if (!isDonation) {
-            navigate("/store"); // Talent purchase → go back to store
-          } else {
-            navigate("/map"); // Donation → redirect elsewhere
-          }
-        }, 5000);
       }
     };
 
@@ -112,6 +114,7 @@ export default function PaymentSuccess() {
           <div className="flex flex-col items-center">
             {success ? (
               <>
+                {/* ✅ checkmark animation */}
                 <svg
                   className="h-16 w-16 text-green-500 mb-3"
                   fill="none"
@@ -151,7 +154,9 @@ export default function PaymentSuccess() {
 
                     {isDonation && donationAmount !== null && (
                       <p className="mb-6 text-lg font-semibold text-purple-600">
-                        Your donation of ₦{Number(donationAmount).toLocaleString()} has been successfully received.
+                        Your donation of {currency}{" "}
+                        {Number(donationAmount).toLocaleString()} has been
+                        successfully received.
                       </p>
                     )}
                   </div>
@@ -166,7 +171,7 @@ export default function PaymentSuccess() {
             </p>
 
             <button
-              onClick={() => navigate(isDonation ? "/store" : "/store")}
+              onClick={() => navigate(isDonation ? "/map" : "/store")}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded"
             >
               {isDonation ? "Return to Map" : "Return to Store"}

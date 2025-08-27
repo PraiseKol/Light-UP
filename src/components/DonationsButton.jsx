@@ -11,7 +11,7 @@ export default function DonationsButton({
 }) {
   const [showModal, setShowModal] = useState(false);
   const [amount, setAmount] = useState(null);
-  const [currency, setCurrency] = useState("NGN"); // default to NGN
+  const [currency, setCurrency] = useState("NGN"); // ✅ default to NGN
 
   const presetAmounts = {
     NGN: [
@@ -53,7 +53,9 @@ export default function DonationsButton({
       }
 
       const data = await res.json();
-      if (data.url) {
+
+      // ✅ Always redirect to Paystack
+      if (data?.url) {
         window.location.href = data.url;
       } else {
         alert("Failed to start donation");
@@ -81,7 +83,7 @@ export default function DonationsButton({
           <div className="bg-white p-6 rounded-lg shadow-xl w-96">
             <h2 className="text-lg font-bold mb-4">Make a Donation</h2>
 
-            {/* Currency Selector */}
+            {/* ✅ Currency Selector (NGN / USD) */}
             <div className="flex gap-3 mb-4">
               <button
                 className={`flex-1 py-2 rounded-lg border ${

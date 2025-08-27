@@ -166,7 +166,7 @@ export default function WordFillMode({
 
   return (
     <div
-      className="min-h-[50vh] md:min-h-screen flex justify-center items-center bg-cover bg-center px-4 " 
+      className="min-h-screen flex justify-center items-center bg-cover bg-center px-4 " 
       style={{ backgroundImage: `url(${backgroundUrl})` }}
     >
       <div className="w-full max-w-xl animate-fadeInUp ">
