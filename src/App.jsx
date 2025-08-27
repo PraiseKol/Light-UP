@@ -27,6 +27,7 @@ import AdminDashboard from "pages/AdminDashboard";
 import PaymentSuccess from "pages/PaymentSuccess";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Analytics } from "@vercel/analytics/react"; // ✅ Import Vercel Analytics
 
 import { useState, useEffect } from "react";
 import { claimDailyStreakBonus } from "utils/talentUtils";
@@ -204,6 +205,9 @@ function AppContent() {
         {/* Default */}
         <Route path="*" element={<Navigate to="/map" replace />} />
       </Routes>
+
+      {/* ✅ Add Vercel Analytics at the root */}
+      <Analytics />
     </>
   );
 }
