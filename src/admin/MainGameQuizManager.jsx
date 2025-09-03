@@ -119,6 +119,7 @@ export default function MainGameQuizManager() {
         }
         if (value === "four-pics") {
           updated.answer = "Type correct answer here";
+          updated.hint_letters = "Input the last two letters here in the right order";
           updated.options = [];
           updated.letters =
             "12 letters, including the letters in the answer, no punctuation marks";
@@ -203,6 +204,7 @@ export default function MainGameQuizManager() {
       answer: form.answer,
       image_urls: imageUrls || null,
       letters: form.letters || null,
+      hint_letters: form.hint_letters,
     };
 
     let error;
@@ -232,8 +234,10 @@ export default function MainGameQuizManager() {
       question: quiz.question || "",
       options: quiz.options || [],
       answer: quiz.answer || "",
+      hint_letters:  quiz.hint_letters || "",
       image_urls: quiz.image_urls || "",
       letters: quiz.letters || "",
+      
     });
   };
 
@@ -410,6 +414,12 @@ export default function MainGameQuizManager() {
               <label>Answer</label>
               <input
                 value={form.answer}
+                onChange={(e) => updateForm("answer", e.target.value)}
+                className="border p-2 rounded"
+              />
+              <label>HINT</label>
+              <input
+                value={form.hint_letters}
                 onChange={(e) => updateForm("answer", e.target.value)}
                 className="border p-2 rounded"
               />

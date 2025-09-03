@@ -1,39 +1,19 @@
-import { useState, useEffect } from "react";
+// src/pages/LoginPage.jsx
+import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
-import { supabase } from "lib/supabaseClient";
+import { useNavigate } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 export default function LoginPage() {
-  const { login } = useAuth();
-  const [inviteCode, setInviteCode] = useState("");
-  const [status, setStatus] = useState(null);
-  const [remaining, setRemaining] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const { user, login } = useAuth();
+  const navigate = useNavigate();
 
-  const checkInviteCode = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.rpc("validate_invite_code", {
-      code_input: inviteCode.trim(),
-    });
-
-    if (error || !data?.valid) {
-      setStatus("invalid");
-    } else {
-      setStatus("valid");
-      setRemaining(data.remaining);
+  // 🔄 Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/map"); // go to main page after login
     }
-    setLoading(false);
-  };
-
-  const handleLogin = async () => {
-    if (status !== "valid") return;
-
-    await supabase.rpc("use_invite_code", {
-      code_input: inviteCode.trim(),
-    });
-
-    login();
-  };
+  }, [user, navigate]);
 
   // Carousel
   const images = [
@@ -54,7 +34,6 @@ export default function LoginPage() {
   const prevSlide = () =>
     setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
 
-  // Auto slide
   useEffect(() => {
     const timer = setTimeout(nextSlide, 4000);
     return () => clearTimeout(timer);
@@ -69,80 +48,29 @@ export default function LoginPage() {
       </div>
 
       {/* Avatar + Greeting */}
-      <div className="relative z-10 flex items-center gap-4 mb-6 animate-fadeInDown object-cover object-[10%]">
-        <div className="relative w-16 h-16 sm:w-25 sm:h-25 rounded-full shadow-lg border-4 border-white/10 bg-white/5 overflow-hidden object-cover object-[10%]">
+      <div className="relative z-10 flex items-center gap-4 mb-6 animate-fadeInDown">
+        <div className="relative w-16 h-16 sm:w-25 sm:h-25 rounded-full shadow-lg border-4 border-white/10 bg-white/5 overflow-hidden">
           <img
             src="/images/avatar.png"
             alt="avatar"
-            className="w-full h-full rounded-full object-cover absolute animate-orbit"
+            className="w-full h-full rounded-full absolute animate-orbit"
           />
         </div>
-
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 tracking-tight">
           👋 Welcome!
         </h2>
       </div>
 
       {/* Login Card */}
-      <div className="relative z-10 backdrop-blur-2xl bg-white/30 mb-8 border border-white/20 rounded-3xl shadow-2xl p-6 sm:p-8 max-w-[400px] sm:max-w-sm md:max-w-lg w-full text-center animate-fadeInUp scale-95 hover:scale-[1.02] transition-transform duration-500">
-        <h1
-          className="text-3xl sm:text-4xl font-extrabold flex items-center justify-center gap-3 mb-6 tracking-tight text-gray-900 drop-shadow-md opacity-0 animate-delayFadeIn"
-          style={{ animationDelay: "300ms" }}
-        >
-          💡{" "}
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-500">
-            LightUP
-          </span>{" "}
-          Game App 🎮
+      <div className="relative z-10 backdrop-blur-2xl bg-white/30 mb-8 border border-white/20 rounded-3xl shadow-2xl p-6 sm:p-8 max-w-[400px] sm:max-w-sm md:max-w-lg w-full text-center animate-fadeInUp">
+        <h1 className="text-3xl sm:text-4xl font-extrabold mb-6 text-gray-900 drop-shadow-md">
+          💡 <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-500">LightUP</span> Game App 🎮
         </h1>
-
-        {/* Invite Code Section */}
-        <div
-          className="mb-6 opacity-0 animate-delayFadeIn"
-          style={{ animationDelay: "500ms" }}
-        >
-          <label className="text-lg sm:text-2xl text-gray-800 mb-2 block font-semibold">
-            Invite Code
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
-              className="flex-1 border border-white/50 rounded-xl px-3 py-2 shadow-md focus:ring-2 focus:ring-green-400 focus:outline-none bg-white/60 backdrop-blur-sm text-sm sm:text-base placeholder-gray-500 transition-all duration-300 hover:scale-[1.01]"
-              placeholder="Enter Invite Code"
-            />
-            <button
-              disabled={!inviteCode || loading}
-              onClick={checkInviteCode}
-              className="px-4 py-2 sm:px-5 sm:py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl shadow-lg hover:opacity-90 disabled:opacity-50 text-sm sm:text-base transition-all duration-300"
-            >
-              {loading ? "..." : "Check"}
-            </button>
-          </div>
-
-          {status === "valid" && (
-            <p className="text-sm sm:text-base text-green-500 mt-2 animate-pulse">
-              ✅ Code valid — {remaining} use(s) left
-            </p>
-          )}
-          {status === "invalid" && (
-            <p className="text-sm sm:text-base text-red-500 mt-2 animate-shake">
-              ❌ Invalid or expired code
-            </p>
-          )}
-        </div>
 
         {/* Google Login */}
         <button
-          onClick={handleLogin}
-          disabled={status !== "valid"}
-          className={`mt-4 sm:mt-6 px-6 sm:px-8 py-3 rounded-full text-sm sm:text-lg font-semibold shadow-xl transition-all duration-300 opacity-0 animate-delayFadeInUp ${
-            status === "valid"
-              ? "bg-gradient-to-r from-yellow-400 via-yellow-300 to-gold text-black hover:shadow-2xl hover:scale-105"
-              : "bg-gray-400 text-gray-200 cursor-not-allowed"
-          }`}
-          style={{ animationDelay: "700ms" }}
+          onClick={login}
+          className="mt-4 sm:mt-6 px-6 sm:px-8 py-3 rounded-full text-sm sm:text-lg font-semibold shadow-xl transition-all duration-300 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 text-black hover:shadow-2xl hover:scale-105"
         >
           Sign in with Google
         </button>
@@ -167,13 +95,13 @@ export default function LoginPage() {
         {/* Arrows */}
         <button
           onClick={prevSlide}
-          className="absolute top-1/2 left-3 transform -translate-y-1/2 text-white text-[9px] md:text-xs bg-black/30 p-2 rounded-full hover:bg-black/50 transition"
+          className="absolute top-1/2 left-3 transform -translate-y-1/2 text-white text-xs bg-black/30 p-2 rounded-full hover:bg-black/50"
         >
           <FaChevronLeft />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute top-1/2 right-3 transform -translate-y-1/2 text-white text-[9px] md:text-xs bg-black/30 p-2 rounded-full hover:bg-black/50 transition"
+          className="absolute top-1/2 right-3 transform -translate-y-1/2 text-white text-xs bg-black/30 p-2 rounded-full hover:bg-black/50"
         >
           <FaChevronRight />
         </button>
@@ -183,110 +111,13 @@ export default function LoginPage() {
           {images.map((_, idx) => (
             <span
               key={idx}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                currentImage === idx
-                  ? "bg-white scale-125"
-                  : "bg-white/50 scale-100"
+              className={`w-3 h-3 rounded-full ${
+                currentImage === idx ? "bg-white scale-125" : "bg-white/50"
               }`}
             ></span>
           ))}
         </div>
       </div>
-
-      {/* Animations */}
-      <style jsx>{`
-        @keyframes fadeInUp {
-          0% {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes fadeInDown {
-          0% {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes delayFadeIn {
-          0% {
-            opacity: 0;
-          }
-          100% {
-            opacity: 1;
-          }
-        }
-        @keyframes delayFadeInUp {
-          0% {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes shake {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-          25% {
-            transform: translateX(-5px);
-          }
-          75% {
-            transform: translateX(5px);
-          }
-        }
-        @keyframes pulseSlow {
-          0%,
-          100% {
-            transform: scale(1);
-            opacity: 0.7;
-          }
-          50% {
-            transform: scale(1.05);
-            opacity: 0.9;
-          }
-        }
-        .animate-fadeInUp {
-          animation: fadeInUp 0.8s ease forwards;
-        }
-        .animate-fadeInDown {
-          animation: fadeInDown 0.8s ease forwards;
-        }
-        .animate-delayFadeIn {
-          animation: delayFadeIn 0.8s ease forwards;
-        }
-        .animate-delayFadeInUp {
-          animation: delayFadeInUp 0.8s ease forwards;
-        }
-        .animate-shake {
-          animation: shake 0.3s ease-in-out 0s 2;
-        }
-        .animate-pulseSlow {
-          animation: pulseSlow 6s ease-in-out infinite;
-        }
-
-        @keyframes orbit {
-          0%   { transform: translate(0, 0); }
-          25%  { transform: translate(6px, -4px); }
-          50%  { transform: translate(0, -8px); }
-          75%  { transform: translate(-6px, -4px); }
-          100% { transform: translate(0, 0); }
-        }
-        .animate-orbit {
-          animation: orbit 6s ease-in-out infinite;
-        }
-
-      `}</style>
     </div>
   );
 }
