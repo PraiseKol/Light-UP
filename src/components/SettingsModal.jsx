@@ -4,12 +4,12 @@ import { Button } from "components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { playSound } from "utils/sound";
 
-const soundMap = {
-  default: null,
-  shifts: "/sounds/shifts.m4a",
-  peace: "/sounds/peace.m4a",
-  juba: "/sounds/juba.mp3",
-};
+// const soundMap = {
+//   default: null,
+//   shifts: "/sounds/shifts.m4a",
+//   peace: "/sounds/peace.m4a",
+//   juba: "/sounds/juba.mp3",
+// };
 
 export default function SettingsModal({
   isOpen,
@@ -137,10 +137,10 @@ export default function SettingsModal({
             value={sound}
             onChange={(e) => setSound(e.target.value)} // call setSound from props immediately
           >
-            <option value="default">No sound</option>
-            <option value="shifts">Time for Shifts - Godswill Oyor</option>
+            <option value="default">Coming Soon</option>
+            {/* <option value="shifts">Time for Shifts - Godswill Oyor</option>
             <option value="peace">Sound of Peace - Joshua Mike-Bamiloye</option>
-            <option value="juba">Juba - Anendlessocean</option>
+            <option value="juba">Juba - Anendlessocean</option> */}
           </select>
 
           {/* Hidden audio player for preview */}
