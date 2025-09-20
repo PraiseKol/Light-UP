@@ -448,7 +448,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             className="w-full mb-0.5 text-left bg-blue-500 text-white text-[10px] font-medium rounded-lg px-3 py-1 shadow hover:bg-blue-600 disabled:opacity-50"
           >
             {challengeAllowed && !challengePlayed
-              ? "🥊 Weekly Challenge"
+              ? "🥊 Weekend Challenge"
               : challengePlayed
               ? "🥊 Played"
               : `🥊 Quiz: ${countdownText}`}
@@ -677,9 +677,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             className="bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600"
           >
             {challengeAllowed && !challengePlayed
-              ? "🥊 Weekly Challenge"
+              ? "🥊 Weekend Challenge"
               : challengePlayed
-              ? " 🥊 Weekly Challenge: Played"
+              ? " 🥊 Weekend Challenge: Played"
               : `🥊 Weekly Quiz: ${countdownText}`}
           </button>
           <button
