@@ -27,26 +27,26 @@ export default function SettingsModal({
   const navigate = useNavigate();
 
   // Play preview audio when sound prop changes (user selects a new sound)
-  useEffect(() => {
-    if (!audioRef.current) return;
+  // useEffect(() => {
+  //   if (!audioRef.current) return;
 
-    if (soundMap[sound]) {
-      audioRef.current.src = soundMap[sound];
-      audioRef.current.volume = 0.3;
-      audioRef.current.loop = true;
-      audioRef.current.play().catch(() => {
-        // ignore autoplay errors silently
-      });
-    } else {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current.src = "";
-    }
+  //   if (soundMap[sound]) {
+  //     audioRef.current.src = soundMap[sound];
+  //     audioRef.current.volume = 0.3;
+  //     audioRef.current.loop = true;
+  //     audioRef.current.play().catch(() => {
+  //       // ignore autoplay errors silently
+  //     });
+  //   } else {
+  //     audioRef.current.pause();
+  //     audioRef.current.currentTime = 0;
+  //     audioRef.current.src = "";
+  //   }
 
-    return () => {
-      if (audioRef.current) audioRef.current.pause();
-    };
-  }, [sound]);
+  //   return () => {
+  //     if (audioRef.current) audioRef.current.pause();
+  //   };
+  // }, [sound]);
 
   // When gameUser changes, sync local inputs for name and effectsOn only
   useEffect(() => {
