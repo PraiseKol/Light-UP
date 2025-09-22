@@ -203,7 +203,7 @@ export default function ScriptureMatchMode({
               <div className="flex justify-between items-center">
                 <div className="text-xs md:text-sm text-gray-600 font-medium">
                   Phase {level?.phaseNumber} • Level {level?.number} Scripture
-                  Match (Drag the right piece to the left)
+                  Match. Tip - Drag the right piece to the left
                 </div>
                 <div className="text-[10px] md:text-xs text-gray-500 font-semibold">
                   {timeLeft}s
