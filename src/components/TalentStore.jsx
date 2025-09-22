@@ -90,6 +90,9 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
         <p className="text-center text-xs md:text-sm text-gray-500 mb-6">
           Top up your talents and lives here.
         </p>
+        <p className="text-center text-[10px] md:text-xs text-gray-500 mb-6">
+          (USD payment option coming soon)
+        </p>
 
         <div className="flex justify-center mb-4">
           <label className="mr-2 font-semibold text-gray-700 text-[11px] md:text-lg">Currency:</label>
@@ -99,7 +102,7 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
             className="border px-2 py-1 rounded"
           >
             <option value="NGN">NGN</option>
-            <option value="USD">USD</option>
+            {/* <option value="USD">USD</option> */}
           </select>
         </div>
 
