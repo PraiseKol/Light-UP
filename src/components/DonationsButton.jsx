@@ -22,14 +22,14 @@ export default function DonationsButton({
       { label: "₦30,000", value: 30000 },
       { label: "₦75,000", value: 75000 },
     ],
-    USD: [
-      { label: "$1", value: 1 },
-      { label: "$2", value: 2 },
-      { label: "$5", value: 5 },
-      { label: "$10", value: 10 },
-      { label: "$20", value: 20 },
-      { label: "$50", value: 50 },
-    ],
+    // USD: [
+    //   { label: "$1", value: 1 },
+    //   { label: "$2", value: 2 },
+    //   { label: "$5", value: 5 },
+    //   { label: "$10", value: 10 },
+    //   { label: "$20", value: 20 },
+    //   { label: "$50", value: 50 },
+    // ],
   };
 
   const handleDonate = async () => {
@@ -82,7 +82,7 @@ export default function DonationsButton({
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-96">
             <h2 className="text-lg font-bold mb-4">Support with a Gift</h2>
-            <h3 className="text-lg font-bold mb-4">Your gifts help us develop new features, cover server costs, and keep this app functional</h3>
+            <h3 className="text-xs md:text-sm font-bold mb-4">Your gifts help us develop new features, cover server costs, and keep this app functional(USD option is coming soon)</h3>
 
             {/* ✅ Currency Selector (NGN / USD) */}
             <div className="flex gap-3 mb-4">
