@@ -75,13 +75,14 @@ export default function DonationsButton({
     fixed bottom-2 md:bottom-4 left-50 z-50 rounded-md shadow`}
         onClick={() => setShowModal(true)}
       >
-        ☕️ Donations
+        ☕️ Gift
       </Button>
 
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-96">
-            <h2 className="text-lg font-bold mb-4">Make a Donation</h2>
+            <h2 className="text-lg font-bold mb-4">Support with a Gift</h2>
+            <h3 className="text-lg font-bold mb-4">Your gifts help us develop new features, cover server costs, and keep this app functional</h3>
 
             {/* ✅ Currency Selector (NGN / USD) */}
             <div className="flex gap-3 mb-4">
