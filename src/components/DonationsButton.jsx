@@ -97,7 +97,7 @@ export default function DonationsButton({
               >
                 NGN (₦)
               </button>
-              <button
+              {/* <button
                 className={`flex-1 py-2 rounded-lg border ${
                   currency === "USD" ? "bg-green-500 text-white" : "bg-gray-100"
                 }`}
@@ -107,7 +107,7 @@ export default function DonationsButton({
                 }}
               >
                 USD ($)
-              </button>
+              </button> */}
             </div>
 
             {/* Preset Buttons */}
