@@ -1,3 +1,4 @@
+// src/screens/WeeklyChallengeScreen.jsx
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "lib/supabaseClient.js";
@@ -26,15 +27,15 @@ const STORAGE_KEY_CORRECT = "weeklyChallengeCorrect";
 const STORAGE_KEY_INCORRECT = "weeklyChallengeIncorrect";
 const STORAGE_KEY_FINISHED = "weeklyChallengeFinished";
 
-// ✅ Helper to compute the current week's Friday 12PM start
+// ✅ Compute Friday 12PM of the current week, return as YYYY-MM-DD (string)
 function getCurrentWeekStartDate() {
   const now = new Date();
-  const day = now.getDay(); // Sunday = 0 ... Saturday = 6
+  const day = now.getDay(); // Sunday=0 ... Saturday=6
   const daysSinceFriday = day >= 5 ? day - 5 : 7 - (5 - day);
   const friday = new Date(now);
   friday.setDate(now.getDate() - daysSinceFriday);
   friday.setHours(12, 0, 0, 0);
-  return friday.toISOString();
+  return friday.toISOString().slice(0, 10); // YYYY-MM-DD only
 }
 
 export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
@@ -62,7 +63,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   const submittedRef = useRef(false);
   const questionStartTimeRef = useRef(Date.now());
 
-  // ✅ On mount: check if this user already attempted this week's challenge
+  // ✅ On mount: check if user already attempted this week
   useEffect(() => {
     const checkPreviousAttempt = async () => {
       if (!user) return;
@@ -70,7 +71,9 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
       console.log("🔍 Checking for previous attempt this week...");
       const { data, error } = await supabase
         .from("weekly_challenges")
-        .select("id, score, correct_answers, incorrect_answers, questions_answered, week_start_date")
+        .select(
+          "id, score, correct_answers, incorrect_answers, questions_answered, week_start_date"
+        )
         .eq("user_id", user.id)
         .order("attempted_at", { ascending: false })
         .limit(1);
@@ -85,7 +88,10 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
         const currentWeekStart = getCurrentWeekStartDate();
 
         if (lastAttempt.week_start_date === currentWeekStart) {
-          console.log("⛔ User already attempted this week's challenge:", lastAttempt);
+          console.log(
+            "⛔ User already attempted this week's challenge:",
+            lastAttempt
+          );
           setPreviousAttempt(lastAttempt);
           setIsFinished(true);
         }
@@ -95,7 +101,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     checkPreviousAttempt();
   }, [user]);
 
-  // ✅ Fetch quiz questions
+  // ✅ Fetch weekly quiz questions
   useEffect(() => {
     const fetchQuestions = async () => {
       console.log("🔄 Fetching weekly quiz questions...");
@@ -152,7 +158,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     return () => clearInterval(timer);
   }, [questions, isFinished]);
 
-  // ✅ Persist score changes
+  // ✅ Persist stats
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_SCORE, score.toString());
   }, [score]);
@@ -163,42 +169,55 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     localStorage.setItem(STORAGE_KEY_INCORRECT, incorrectCount.toString());
   }, [incorrectCount]);
 
-  // ✅ Submit score when finished (only if new attempt)
+  // ✅ Submit score when finished
   useEffect(() => {
+    const submit = async () => {
+      try {
+        const payload = {
+          user_id: user.id,
+          score,
+          attempted_at: new Date().toISOString(),
+          questions_answered: questions?.length || 0,
+          correct_answers: correctCount,
+          incorrect_answers: incorrectCount,
+          week_start_date: getCurrentWeekStartDate(), // added for safety
+        };
+
+        console.log(
+          "📦 Payload to insert into weekly_challenges:",
+          payload
+        );
+
+        const { error } = await supabase
+          .from("weekly_challenges")
+          .insert(payload);
+
+        if (error) {
+          console.error("❌ Failed to save weekly challenge:", error);
+          submittedRef.current = false; // allow retry if failed
+        } else {
+          console.log("✅ Weekly challenge submitted successfully");
+          // 🧹 Clear storage
+          localStorage.removeItem(STORAGE_KEY_TIME);
+          localStorage.removeItem(STORAGE_KEY_SCORE);
+          localStorage.removeItem(STORAGE_KEY_CORRECT);
+          localStorage.removeItem(STORAGE_KEY_INCORRECT);
+          localStorage.removeItem(STORAGE_KEY_FINISHED);
+        }
+      } catch (err) {
+        console.error("❌ Unexpected error submitting challenge:", err);
+        submittedRef.current = false;
+      }
+    };
+
     if (isFinished && !submittedRef.current && user && !previousAttempt) {
       submittedRef.current = true;
       localStorage.setItem(STORAGE_KEY_FINISHED, "true");
-
-      const payload = {
-        user_id: user.id,
-        score,
-        attempted_at: new Date().toISOString(),
-        questions_answered: questions?.length || 0,
-        correct_answers: correctCount,
-        incorrect_answers: incorrectCount,
-      };
-
-      console.log("📦 Payload to insert into weekly_challenges:", payload);
-
-      supabase
-        .from("weekly_challenges")
-        .insert(payload)
-        .then(({ error }) => {
-          if (error) {
-            console.error("❌ Failed to save weekly challenge:", error);
-          } else {
-            console.log("✅ Weekly challenge submitted successfully");
-            // 🧹 Clear storage for a clean next run
-            localStorage.removeItem(STORAGE_KEY_TIME);
-            localStorage.removeItem(STORAGE_KEY_SCORE);
-            localStorage.removeItem(STORAGE_KEY_CORRECT);
-            localStorage.removeItem(STORAGE_KEY_INCORRECT);
-            localStorage.removeItem(STORAGE_KEY_FINISHED);
-          }
-        });
+      submit();
     }
   }, [isFinished, score, user, correctCount, incorrectCount, questions, previousAttempt]);
 
+  // === Helper functions ===
   const getPoints = (timeTaken) => {
     for (const tier of SCORING_TIERS) {
       if (timeTaken <= tier.maxSeconds) return tier.points;
@@ -206,7 +225,11 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     return 25;
   };
 
-  const handleAnswer = (isCorrect, timeTaken) => {
+  const handleAnswer = (isCorrect) => {
+    const timeTaken = Math.floor(
+      (Date.now() - questionStartTimeRef.current) / 1000
+    ); // compute here
+
     if (isCorrect) {
       const earned = getPoints(timeTaken);
       setScore((s) => s + earned);
