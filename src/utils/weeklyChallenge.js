@@ -1,13 +1,45 @@
 // utils/weeklyChallenge.js
+import { supabase } from "lib/supabaseClient";
 
-import { supabase } from 'lib/supabaseClient';
+/**
+ * Fetch the most recent week_start_date from DB.
+ * Falls back to local calculation if query fails.
+ */
+export const getCurrentWeekStartDate = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("weekly_challenges")
+      .select("week_start_date")
+      .order("week_start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-export const getCurrentWeekStartDate = () => {
+    if (error) {
+      console.warn("⚠️ weeklyChallenge: falling back to local week_start_date:", error);
+      return fallbackWeekStartDate();
+    }
+
+    if (data?.week_start_date) {
+      // Normalize to JS Date (Postgres returns ISO string in UTC)
+      return new Date(data.week_start_date);
+    }
+
+    return fallbackWeekStartDate();
+  } catch (err) {
+    console.error("❌ weeklyChallenge: getCurrentWeekStartDate failed:", err);
+    return fallbackWeekStartDate();
+  }
+};
+
+/**
+ * Fallback: calculate Friday 12PM in local time.
+ */
+const fallbackWeekStartDate = () => {
   const now = new Date();
   const day = now.getDay(); // Sunday = 0 ... Saturday = 6
 
-  // Calculate how many days have passed since last Friday
-  const daysSinceFriday = (day >= 5) ? day - 5 : 7 - (5 - day);
+  // Days since last Friday
+  const daysSinceFriday = day >= 5 ? day - 5 : 7 - (5 - day);
   const friday = new Date(now);
   friday.setDate(now.getDate() - daysSinceFriday);
   friday.setHours(12, 0, 0, 0); // Friday 12:00 PM
@@ -15,8 +47,11 @@ export const getCurrentWeekStartDate = () => {
   return friday;
 };
 
-export const getCurrentChallengeWindow = () => {
-  const challengeStart = getCurrentWeekStartDate(); // Friday 12 PM
+/**
+ * Compute challenge window (Fri 12PM → Sun 11:59PM).
+ */
+export const getCurrentChallengeWindow = async () => {
+  const challengeStart = await getCurrentWeekStartDate();
   const challengeEnd = new Date(challengeStart);
   challengeEnd.setDate(challengeEnd.getDate() + 2); // Add 2 days → Sunday
   challengeEnd.setHours(23, 59, 59, 999); // Sunday 11:59:59 PM
@@ -24,31 +59,42 @@ export const getCurrentChallengeWindow = () => {
   return { challengeStart, challengeEnd };
 };
 
+/**
+ * Check if user has played during current window.
+ */
 export const hasPlayedThisWeek = async (userId) => {
-  const { challengeStart, challengeEnd } = getCurrentChallengeWindow();
+  try {
+    const { challengeStart, challengeEnd } = await getCurrentChallengeWindow();
 
-  const { data, error } = await supabase
-    .from('weekly_challenges')
-    .select('id')
-    .eq('user_id', userId)
-    .gte('attempted_at', challengeStart.toISOString())
-    .lte('attempted_at', challengeEnd.toISOString())
-    .maybeSingle();
+    const { data, error } = await supabase
+      .from("weekly_challenges")
+      .select("id")
+      .eq("user_id", userId)
+      .gte("attempted_at", challengeStart.toISOString())
+      .lte("attempted_at", challengeEnd.toISOString())
+      .maybeSingle();
 
-  if (error) {
-    console.error('Failed to fetch challenge status:', error);
-    return false;
+    if (error) {
+      console.error("❌ weeklyChallenge: failed to fetch challenge status:", error);
+      return null; // distinguish error from "not played"
+    }
+
+    return !!data;
+  } catch (err) {
+    console.error("❌ weeklyChallenge: hasPlayedThisWeek crashed:", err);
+    return null;
   }
-
-  return !!data;
 };
 
-export const getWeeklyChallengeStatus = () => {
-  const { challengeStart, challengeEnd } = getCurrentChallengeWindow();
+/**
+ * Determine if challenge is open and when next one starts.
+ */
+export const getWeeklyChallengeStatus = async () => {
+  const { challengeStart, challengeEnd } = await getCurrentChallengeWindow();
   const now = new Date();
   const allowed = now >= challengeStart && now <= challengeEnd;
 
-  let countdownText = '';
+  let countdownText = "";
 
   if (!allowed) {
     const nextStart =
@@ -57,7 +103,6 @@ export const getWeeklyChallengeStatus = () => {
         : challengeStart;
 
     const diff = nextStart - now;
-
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
     const minutes = Math.floor((diff / (1000 * 60)) % 60);

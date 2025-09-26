@@ -6,7 +6,6 @@ import { useUser } from "@supabase/auth-helpers-react";
 import WordFillWeekly from "modes/WordFillWeekly";
 import ScriptureMatchWeekly from "modes/ScriptureMatchWeekly";
 import TriviaWeekly from "modes/TriviaWeekly";
-import { playSound } from "utils/sound";
 
 console.log("🟣 WeeklyChallengeScreen component mounted");
 
@@ -27,6 +26,17 @@ const STORAGE_KEY_CORRECT = "weeklyChallengeCorrect";
 const STORAGE_KEY_INCORRECT = "weeklyChallengeIncorrect";
 const STORAGE_KEY_FINISHED = "weeklyChallengeFinished";
 
+// ✅ Helper to compute the current week's Friday 12PM start
+function getCurrentWeekStartDate() {
+  const now = new Date();
+  const day = now.getDay(); // Sunday = 0 ... Saturday = 6
+  const daysSinceFriday = day >= 5 ? day - 5 : 7 - (5 - day);
+  const friday = new Date(now);
+  friday.setDate(now.getDate() - daysSinceFriday);
+  friday.setHours(12, 0, 0, 0);
+  return friday.toISOString();
+}
+
 export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   const [questions, setQuestions] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -45,13 +55,47 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     parseInt(localStorage.getItem(STORAGE_KEY_INCORRECT) || "0", 10)
   );
   const [error, setError] = useState(null);
+  const [previousAttempt, setPreviousAttempt] = useState(null);
 
   const navigate = useNavigate();
   const user = useUser();
   const submittedRef = useRef(false);
   const questionStartTimeRef = useRef(Date.now());
 
-  // ✅ Fetch questions on mount
+  // ✅ On mount: check if this user already attempted this week's challenge
+  useEffect(() => {
+    const checkPreviousAttempt = async () => {
+      if (!user) return;
+
+      console.log("🔍 Checking for previous attempt this week...");
+      const { data, error } = await supabase
+        .from("weekly_challenges")
+        .select("id, score, correct_answers, incorrect_answers, questions_answered, week_start_date")
+        .eq("user_id", user.id)
+        .order("attempted_at", { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error("❌ Error checking attempts:", error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const lastAttempt = data[0];
+        const currentWeekStart = getCurrentWeekStartDate();
+
+        if (lastAttempt.week_start_date === currentWeekStart) {
+          console.log("⛔ User already attempted this week's challenge:", lastAttempt);
+          setPreviousAttempt(lastAttempt);
+          setIsFinished(true);
+        }
+      }
+    };
+
+    checkPreviousAttempt();
+  }, [user]);
+
+  // ✅ Fetch quiz questions
   useEffect(() => {
     const fetchQuestions = async () => {
       console.log("🔄 Fetching weekly quiz questions...");
@@ -60,25 +104,28 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
         .select("*")
         .order("id", { ascending: true });
 
-      if (error || !data || data.length === 0) {
+      if (error) {
         console.error("❌ Failed to load weekly quiz:", error);
-        setError("Unable to load challenge. Returning to map...");
-        setTimeout(() => {
-          console.log("🔙 Navigating back to /map due to error");
-          navigate("/map");
-        }, 3000);
-      } else {
-        console.log("✅ Loaded questions:", data);
-        setQuestions(data);
+        setError("Unable to load challenge.");
+        return;
       }
+
+      if (!data || data.length === 0) {
+        console.warn("⚠️ No weekly quiz available.");
+        setError("No challenge available this week.");
+        return;
+      }
+
+      console.log("✅ Loaded questions:", data);
+      setQuestions(data);
     };
 
     fetchQuestions();
-  }, [navigate]);
+  }, []);
 
-  // ✅ Countdown timer with persistence
+  // ✅ Countdown timer
   useEffect(() => {
-    if (!questions) return;
+    if (!questions || isFinished) return;
 
     let startTime = localStorage.getItem(STORAGE_KEY_TIME);
     if (!startTime) {
@@ -102,39 +149,25 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
 
     updateTimer();
     const timer = setInterval(updateTimer, 1000);
+    return () => clearInterval(timer);
+  }, [questions, isFinished]);
 
-    return () => {
-      console.log("🧹 Timer cleanup");
-      clearInterval(timer);
-    };
-  }, [questions]);
-
-  // ✅ Persist score, correct, incorrect in localStorage whenever they change
+  // ✅ Persist score changes
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_SCORE, score.toString());
   }, [score]);
-
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_CORRECT, correctCount.toString());
   }, [correctCount]);
-
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_INCORRECT, incorrectCount.toString());
   }, [incorrectCount]);
 
-  // ✅ Submit score after challenge ends
+  // ✅ Submit score when finished (only if new attempt)
   useEffect(() => {
-    if (isFinished && !submittedRef.current && user) {
+    if (isFinished && !submittedRef.current && user && !previousAttempt) {
       submittedRef.current = true;
-
-      // Mark finished
       localStorage.setItem(STORAGE_KEY_FINISHED, "true");
-
-      // Clear other progress
-      localStorage.removeItem(STORAGE_KEY_TIME);
-      localStorage.removeItem(STORAGE_KEY_SCORE);
-      localStorage.removeItem(STORAGE_KEY_CORRECT);
-      localStorage.removeItem(STORAGE_KEY_INCORRECT);
 
       const payload = {
         user_id: user.id,
@@ -155,10 +188,16 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
             console.error("❌ Failed to save weekly challenge:", error);
           } else {
             console.log("✅ Weekly challenge submitted successfully");
+            // 🧹 Clear storage for a clean next run
+            localStorage.removeItem(STORAGE_KEY_TIME);
+            localStorage.removeItem(STORAGE_KEY_SCORE);
+            localStorage.removeItem(STORAGE_KEY_CORRECT);
+            localStorage.removeItem(STORAGE_KEY_INCORRECT);
+            localStorage.removeItem(STORAGE_KEY_FINISHED);
           }
         });
     }
-  }, [isFinished, score, user, correctCount, incorrectCount, questions]);
+  }, [isFinished, score, user, correctCount, incorrectCount, questions, previousAttempt]);
 
   const getPoints = (timeTaken) => {
     for (const tier of SCORING_TIERS) {
@@ -168,36 +207,40 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   };
 
   const handleAnswer = (isCorrect, timeTaken) => {
-    console.log(
-      `📝 Answer received. Correct: ${isCorrect}, Time: ${timeTaken}s`
-    );
-
     if (isCorrect) {
       const earned = getPoints(timeTaken);
-      console.log(`🏅 Earned points: ${earned}`);
       setScore((s) => s + earned);
       setCorrectCount((c) => c + 1);
     } else {
       setIncorrectCount((c) => c + 1);
     }
-
     goToNextQuestion();
   };
 
   const goToNextQuestion = () => {
     if (currentIndex + 1 < questions.length) {
-      console.log("➡️ Moving to next question");
       setCurrentIndex((prev) => prev + 1);
       questionStartTimeRef.current = Date.now();
     } else {
-      console.log("✅ All questions answered. Ending challenge");
       setIsFinished(true);
     }
   };
 
   // UI States
   if (error) {
-    return <div className="p-6 text-center text-red-600">{error}</div>;
+    return (
+      <div className="p-6 text-center text-gray-700">
+        {error}
+        <div>
+          <button
+            onClick={() => navigate("/map")}
+            className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-xl shadow"
+          >
+            Back to Map
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!questions) {
@@ -210,8 +253,47 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     );
   }
 
+  // ✅ If user already attempted, show their saved results
+  if (previousAttempt) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-yellow-50 to-white p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center space-y-6 animate-fadeIn">
+          <h2 className="text-3xl font-bold text-gray-700">Weekly Challenge</h2>
+          <p className="text-gray-600">You already attempted this week.</p>
+
+          <p className="text-xl font-semibold text-gray-800">
+            Score:{" "}
+            <span className="text-blue-600">{previousAttempt.score} pts</span>
+          </p>
+
+          <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+            <div className="bg-green-50 p-4 rounded-xl shadow-inner">
+              ✅ <strong>Correct:</strong>
+              <div className="text-lg font-bold">{previousAttempt.correct_answers}</div>
+            </div>
+            <div className="bg-red-50 p-4 rounded-xl shadow-inner">
+              ❌ <strong>Incorrect:</strong>
+              <div className="text-lg font-bold">{previousAttempt.incorrect_answers}</div>
+            </div>
+            <div className="col-span-2 bg-indigo-50 p-4 rounded-xl shadow-inner">
+              📋 <strong>Total:</strong>
+              <div className="text-lg font-bold">{previousAttempt.questions_answered}</div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigate("/map")}
+            className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-xl shadow transition-transform transform hover:scale-105"
+          >
+            Back to Map
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal finished state
   if (isFinished) {
-    console.log("🏁 Final score:", score);
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-green-50 to-white p-6">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center space-y-6 animate-fadeIn">
@@ -250,60 +332,31 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     );
   }
 
+  // Active challenge
   const renderMode = () => {
     const current = questions[currentIndex];
     const key = `${current.mode}-${current.id}`;
-
-    console.log(
-      `🎮 Rendering mode: ${current.mode} (Question ${currentIndex + 1})`
-    );
-
     switch (current.mode) {
       case "word-fill":
         return (
-          <WordFillWeekly
-            key={key}
-            quiz={current}
-            onAnswer={handleAnswer}
-            effectsOn={effectsOn}
-          />
+          <WordFillWeekly key={key} quiz={current} onAnswer={handleAnswer} effectsOn={effectsOn} />
         );
       case "scripture-match":
         return (
-          <ScriptureMatchWeekly
-            key={key}
-            quiz={current}
-            onAnswer={handleAnswer}
-            effectsOn={effectsOn}
-          />
+          <ScriptureMatchWeekly key={key} quiz={current} onAnswer={handleAnswer} effectsOn={effectsOn} />
         );
       case "trivia":
         return (
-          <TriviaWeekly
-            key={key}
-            quiz={current}
-            onAnswer={handleAnswer}
-            effectsOn={effectsOn}
-          />
+          <TriviaWeekly key={key} quiz={current} onAnswer={handleAnswer} effectsOn={effectsOn} />
         );
-
       default:
-        console.warn("⚠️ Unknown mode:", current.mode);
         return <div>Unknown mode</div>;
     }
   };
 
-  // Active challenge screen
   return (
     <div className="min-h-screen bg-gradient-to-b from-yellow-50 via-white to-blue-50 relative overflow-hidden">
-      {/* Floating bubbles background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-10 left-10 w-24 h-24 bg-blue-100 rounded-full blur-2xl opacity-50" />
-        <div className="absolute bottom-20 right-20 w-32 h-32 bg-pink-100 rounded-full blur-2xl opacity-50" />
-        <div className="absolute top-1/3 right-10 w-20 h-20 bg-yellow-100 rounded-full blur-2xl opacity-40" />
-      </div>
-
-      {/* Top HUD */}
+      {/* HUD */}
       <div className="sticky top-0 z-10 flex justify-between items-center px-6 py-4 bg-white/80 backdrop-blur-md shadow-md rounded-b-2xl">
         <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow">
           ⏳ <span className="font-bold text-gray-800">{timeLeft}s</span>
@@ -321,21 +374,19 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
           <div
             className="bg-gradient-to-r from-orange-400 to-pink-500 h-full transition-all duration-500 ease-out"
-            style={{
-              width: `${((currentIndex + 1) / questions.length) * 100}%`,
-            }}
+            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
           />
         </div>
       </div>
 
-      {/* Main Question Card */}
+      {/* Question */}
       <div className="p-6 flex justify-center">
         <div className="bg-white rounded-3xl shadow-xl p-6 w-full max-w-3xl space-y-6 border border-yellow-100 animate-[fadeIn_0.5s_ease]">
           {renderMode()}
         </div>
       </div>
 
-      {/* Score feedback badges */}
+      {/* Stats */}
       <div className="mt-6 flex justify-center gap-4">
         <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full shadow-sm">
           ✅ Correct: <span className="font-bold">{correctCount}</span>
