@@ -27,11 +27,15 @@ export default function ScriptureMatchMode({
   const [shuffledVerses, setShuffledVerses] = useState([]);
   const [matches, setMatches] = useState({});
   const [draggedVerse, setDraggedVerse] = useState(null);
+  const [selectedReference, setSelectedReference] = useState(null);
+  const [selectedVerse, setSelectedVerse] = useState(null);
   const [status, setStatus] = useState("idle");
   const [score, setScore] = useState(null);
+  const [hintedRefs, setHintedRefs] = useState(new Set()); // track divine hint references
 
   const hasAnswered = useRef(false);
   const lifeLostRef = useRef(false);
+  const prevHintUsed = useRef(false); // prevents double hint triggering
 
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
@@ -59,14 +63,27 @@ export default function ScriptureMatchMode({
     }
   }, [question]);
 
-  // Divine Hint
+  // Divine Hint → only triggers when hint flips on
   useEffect(() => {
-    if (pairs.length > 0 && activePowerups?.divine_hint) {
-      const randomPair = pairs[Math.floor(Math.random() * pairs.length)];
+    if (pairs.length === 0) return;
+
+    if (activePowerups?.divine_hint && !prevHintUsed.current) {
+      prevHintUsed.current = true; // prevent multiple triggers
+
+      const unmatchedPairs = pairs.filter(
+        (p) => !matches[p.reference] && !hintedRefs.has(p.reference)
+      );
+      if (unmatchedPairs.length === 0) return;
+
+      const randomPair =
+        unmatchedPairs[Math.floor(Math.random() * unmatchedPairs.length)];
+
       setMatches((prev) => ({
         ...prev,
         [randomPair.reference]: randomPair.verse,
       }));
+
+      setHintedRefs((prev) => new Set(prev).add(randomPair.reference));
 
       setShuffledVerses((prev) =>
         prev.map((v) =>
@@ -76,12 +93,16 @@ export default function ScriptureMatchMode({
 
       activePowerups?.setDivineHintUsed?.();
     }
-  }, [pairs, activePowerups]);
+
+    if (!activePowerups?.divine_hint) {
+      prevHintUsed.current = false; // reset when powerup flag turns off
+    }
+  }, [activePowerups, pairs, matches, hintedRefs]);
 
   const handleLifeLoss = useCallback(() => {
     if (lifeLostRef.current) return;
     lifeLostRef.current = true;
-    if (onIncorrect) onIncorrect();
+    onIncorrect?.();
   }, [onIncorrect]);
 
   const calculateScore = useCallback(() => {
@@ -103,7 +124,6 @@ export default function ScriptureMatchMode({
           .maybeSingle();
 
         const oldScore = existing?.score ?? 0;
-
         if (earnedScore > oldScore) {
           await supabase.from("progress").upsert(
             {
@@ -116,9 +136,8 @@ export default function ScriptureMatchMode({
             { onConflict: ["user_id", "level_id"] }
           );
         }
-
         setScore(earnedScore);
-        if (onScore) onScore(earnedScore);
+        onScore?.(earnedScore);
       } catch (err) {
         console.error("❌ Failed to save ScriptureMatch score:", err);
       }
@@ -134,6 +153,7 @@ export default function ScriptureMatchMode({
     const isCorrect = pairs.every(
       (pair) => matches[pair.reference] === pair.verse
     );
+
     if (isCorrect) {
       playSound("success", effectsOn);
       const earned = calculateScore();
@@ -144,30 +164,21 @@ export default function ScriptureMatchMode({
       handleLifeLoss();
       setStatus("wrong");
     }
-  }, [
-    pairs,
-    matches,
-    calculateScore,
-    saveScore,
-    handleLifeLoss,
-    effectsOn,
-    setIsRunning,
-  ]);
+  }, [pairs, matches, calculateScore, saveScore, handleLifeLoss, effectsOn, setIsRunning]);
 
   const resetLevel = useResetLevel({
     setModals: {
-      setShowRightModal: (open) => {
-        if (!open) setStatus("idle");
-      },
-      setShowWrongModal: (open) => {
-        if (!open) setStatus("idle");
-      },
-      setShowTimeUpModal: (open) => {
-        if (!open) setStatus("idle");
-      },
+      setShowRightModal: (open) => !open && setStatus("idle"),
+      setShowWrongModal: (open) => !open && setStatus("idle"),
+      setShowTimeUpModal: (open) => !open && setStatus("idle"),
     },
     setUserInput: () => {
-      setMatches({});
+      // preserve hint-locked matches, clear manual ones
+      setMatches((prev) =>
+        Object.fromEntries(
+          Object.entries(prev).filter(([ref]) => hintedRefs.has(ref))
+        )
+      );
     },
     setTimeLeft: reset,
     setIsRunning,
@@ -180,9 +191,43 @@ export default function ScriptureMatchMode({
     },
   });
 
+  // ✅ Drag & Drop
   const handleDrop = (ref) => {
-    if (draggedVerse)
+    if (draggedVerse) {
       setMatches((prev) => ({ ...prev, [ref]: draggedVerse.verse }));
+      setDraggedVerse(null);
+    }
+  };
+
+  // ✅ Click-to-Match
+  const handleReferenceClick = (reference) => {
+    if (matches[reference]) return; // already matched
+    setSelectedReference(reference);
+    if (selectedVerse) {
+      setMatches((prev) => ({ ...prev, [reference]: selectedVerse }));
+      setSelectedReference(null);
+      setSelectedVerse(null);
+    }
+  };
+
+  const handleVerseClick = (verse) => {
+    if (isMatched(verse)) return;
+    setSelectedVerse(verse);
+    if (selectedReference) {
+      setMatches((prev) => ({ ...prev, [selectedReference]: verse }));
+      setSelectedReference(null);
+      setSelectedVerse(null);
+    }
+  };
+
+  // ✅ Undo match (but not Divine Hint matches)
+  const handleUndo = (reference) => {
+    if (hintedRefs.has(reference)) return; // locked by hint
+    setMatches((prev) => {
+      const updated = { ...prev };
+      delete updated[reference];
+      return updated;
+    });
   };
 
   const isMatched = (verse) =>
@@ -197,13 +242,13 @@ export default function ScriptureMatchMode({
       />
       <div className="relative z-10 flex justify-center items-center px-4 py-10">
         <div className="w-full max-w-4xl animate-fade-in-up">
-        <div className="mb-20 md:mb-auto"></div>
+          <div className="mb-20 md:mb-auto"></div>
           <div className="p-6 rounded-xl shadow-lg bg-white/90 border space-y-4 md:space-y-6">
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <div className="text-xs md:text-sm text-gray-600 font-medium">
                   Phase {level?.phaseNumber} • Level {level?.number} Scripture
-                  Match. Tip - Drag the right piece to the left
+                  Match. Tip - Drag R - L or Simply Click to Match
                 </div>
                 <div className="text-[10px] md:text-xs text-gray-500 font-semibold">
                   {timeLeft}s
@@ -213,27 +258,43 @@ export default function ScriptureMatchMode({
             </div>
 
             <div className="grid grid-cols-2 gap-5 md:gap-6 mt-3 md:mt-4">
+              {/* References */}
               <div>
                 <h3 className="font-semibold mb-1 md:mb-2">📖 References</h3>
                 {pairs.map(({ reference }) => (
                   <div
                     key={reference}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                    }}
+                    onClick={() => handleReferenceClick(reference)}
+                    onDragOver={(e) => e.preventDefault()}
                     onDrop={() => handleDrop(reference)}
-                    className="border p-2 md:p-3 min-h[40px] md:min-h-[60px] mb-2 md:mb-3 bg-gray-50 flex items-center justify-between"
+                    className={`border p-2 md:p-3 min-h-[40px] md:min-h-[60px] mb-2 md:mb-3 flex items-center justify-between cursor-pointer ${
+                      selectedReference === reference
+                        ? "bg-blue-100"
+                        : "bg-gray-50"
+                    }`}
                   >
                     <span>{reference}</span>
                     {matches[reference] && (
-                      <span className="ml-2 text-xs md:text-sm text-blue-700 font-medium">
+                      <span className="ml-2 text-xs md:text-sm text-blue-700 font-medium flex items-center gap-2">
                         {matches[reference]}
+                        {!hintedRefs.has(reference) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUndo(reference);
+                            }}
+                            className="text-red-500 hover:text-red-700 text-[10px]"
+                          >
+                            ❌
+                          </button>
+                        )}
                       </span>
                     )}
                   </div>
                 ))}
               </div>
 
+              {/* Verses */}
               <div>
                 <h3 className="font-semibold mb-1 md:mb-2">📜 Verses</h3>
                 {shuffledVerses.map(({ verse }) => (
@@ -241,9 +302,12 @@ export default function ScriptureMatchMode({
                     key={verse}
                     draggable={!isMatched(verse)}
                     onDragStart={() => setDraggedVerse({ verse })}
-                    className={`cursor-move border p-2 md:p-3 rounded-lg mb-2 md:mb-3 transition ${
+                    onClick={() => handleVerseClick(verse)}
+                    className={`cursor-pointer border p-2 md:p-3 rounded-lg mb-2 md:mb-3 transition ${
                       isMatched(verse)
                         ? "bg-green-200 text-gray-700"
+                        : selectedVerse === verse
+                        ? "bg-yellow-300"
                         : "bg-yellow-100 hover:bg-yellow-200 text-black"
                     }`}
                   >
@@ -253,6 +317,7 @@ export default function ScriptureMatchMode({
               </div>
             </div>
 
+            {/* Submit */}
             <div className="flex justify-center mt-5 md:mt-6">
               <Button
                 disabled={
@@ -272,6 +337,7 @@ export default function ScriptureMatchMode({
         </div>
       </div>
 
+      {/* Modals */}
       <RightAnswerModal
         isOpen={status === "correct"}
         score={score}
