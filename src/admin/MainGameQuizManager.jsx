@@ -119,7 +119,8 @@ export default function MainGameQuizManager() {
         }
         if (value === "four-pics") {
           updated.answer = "Type correct answer here";
-          updated.hint_letters = "Input the last two letters here in the right order";
+          updated.hint_letters =
+            "Input the last two letters here in the right order";
           updated.options = [];
           updated.letters =
             "12 letters, including the letters in the answer, no punctuation marks";
@@ -234,10 +235,9 @@ export default function MainGameQuizManager() {
       question: quiz.question || "",
       options: quiz.options || [],
       answer: quiz.answer || "",
-      hint_letters:  quiz.hint_letters || "",
+      hint_letters: quiz.hint_letters || "",
       image_urls: quiz.image_urls || "",
       letters: quiz.letters || "",
-      
     });
   };
 
@@ -413,22 +413,49 @@ export default function MainGameQuizManager() {
             <>
               <label>Answer</label>
               <input
-                value={form.answer}
-                onChange={(e) => updateForm("answer", e.target.value)}
-                className="border p-2 rounded"
+                value={form.answer.toUpperCase()}
+                onChange={(e) =>
+                  updateForm("answer", e.target.value.toUpperCase())
+                }
+                onBlur={() => {
+                  const answer = form.answer.trim().toUpperCase();
+                  if (!answer) return;
+
+                  // ✅ Hint: last 2 letters (or full answer if shorter)
+                  const hint = answer.slice(-2);
+
+                  // ✅ Letters: shuffle answer + random extras (max 12)
+                  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                  const extraCount = Math.max(0, 12 - answer.length);
+                  const extras = Array.from(
+                    { length: extraCount },
+                    () => alphabet[Math.floor(Math.random() * alphabet.length)]
+                  );
+                  const letters = [...answer.split(""), ...extras]
+                    .sort(() => Math.random() - 0.5)
+                    .join("");
+
+                  // ✅ Update fields so they stay in sync
+                  updateForm("hint_letters", hint);
+                  updateForm("letters", letters);
+                }}
+                className="border p-2 rounded uppercase"
               />
+
               <label>HINT</label>
               <input
                 value={form.hint_letters}
-                onChange={(e) => updateForm("answer", e.target.value)}
-                className="border p-2 rounded"
+                disabled
+                className="border p-2 rounded bg-gray-100 cursor-not-allowed"
               />
+
               <label>Letters</label>
               <input
                 value={form.letters}
-                onChange={(e) => updateForm("letters", e.target.value)}
-                className="border p-2 rounded"
+                readOnly
+                className="border p-2 rounded bg-gray-100 cursor-not-allowed"
               />
+
               <label>Upload 4 Images</label>
               {[0, 1, 2, 3].map((i) => (
                 <input
