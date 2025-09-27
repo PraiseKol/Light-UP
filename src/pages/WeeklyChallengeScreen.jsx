@@ -21,6 +21,7 @@ const SCORING_TIERS = [
 ];
 
 const CHALLENGE_DURATION = 180; // seconds
+const STORAGE_KEY_INDEX = "weeklyChallengeIndex";
 const STORAGE_KEY_TIME = "weeklyChallengeStartTime";
 const STORAGE_KEY_SCORE = "weeklyChallengeScore";
 const STORAGE_KEY_CORRECT = "weeklyChallengeCorrect";
@@ -40,7 +41,10 @@ function getCurrentWeekStartDate() {
 
 export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   const [questions, setQuestions] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(() =>
+    parseInt(localStorage.getItem(STORAGE_KEY_INDEX) || "0", 10)
+  );
+
   const [score, setScore] = useState(() =>
     parseInt(localStorage.getItem(STORAGE_KEY_SCORE) || "0", 10)
   );
@@ -141,6 +145,9 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
       startTime = parseInt(startTime, 10);
     }
 
+    // 👇 Declare timer first
+    let timer;
+
     const updateTimer = () => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const remaining = CHALLENGE_DURATION - elapsed;
@@ -154,17 +161,24 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     };
 
     updateTimer();
-    const timer = setInterval(updateTimer, 1000);
+    timer = setInterval(updateTimer, 1000);
+
     return () => clearInterval(timer);
   }, [questions, isFinished]);
 
   // ✅ Persist stats
   useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_INDEX, currentIndex.toString());
+  }, [currentIndex]);
+
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEY_SCORE, score.toString());
   }, [score]);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_CORRECT, correctCount.toString());
   }, [correctCount]);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_INCORRECT, incorrectCount.toString());
   }, [incorrectCount]);
@@ -183,10 +197,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
           week_start_date: getCurrentWeekStartDate(), // added for safety
         };
 
-        console.log(
-          "📦 Payload to insert into weekly_challenges:",
-          payload
-        );
+        console.log("📦 Payload to insert into weekly_challenges:", payload);
 
         const { error } = await supabase
           .from("weekly_challenges")
@@ -198,6 +209,8 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
         } else {
           console.log("✅ Weekly challenge submitted successfully");
           // 🧹 Clear storage
+          localStorage.removeItem(STORAGE_KEY_INDEX);
+
           localStorage.removeItem(STORAGE_KEY_TIME);
           localStorage.removeItem(STORAGE_KEY_SCORE);
           localStorage.removeItem(STORAGE_KEY_CORRECT);
@@ -215,7 +228,15 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
       localStorage.setItem(STORAGE_KEY_FINISHED, "true");
       submit();
     }
-  }, [isFinished, score, user, correctCount, incorrectCount, questions, previousAttempt]);
+  }, [
+    isFinished,
+    score,
+    user,
+    correctCount,
+    incorrectCount,
+    questions,
+    previousAttempt,
+  ]);
 
   // === Helper functions ===
   const getPoints = (timeTaken) => {
@@ -292,15 +313,21 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
           <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
             <div className="bg-green-50 p-4 rounded-xl shadow-inner">
               ✅ <strong>Correct:</strong>
-              <div className="text-lg font-bold">{previousAttempt.correct_answers}</div>
+              <div className="text-lg font-bold">
+                {previousAttempt.correct_answers}
+              </div>
             </div>
             <div className="bg-red-50 p-4 rounded-xl shadow-inner">
               ❌ <strong>Incorrect:</strong>
-              <div className="text-lg font-bold">{previousAttempt.incorrect_answers}</div>
+              <div className="text-lg font-bold">
+                {previousAttempt.incorrect_answers}
+              </div>
             </div>
             <div className="col-span-2 bg-indigo-50 p-4 rounded-xl shadow-inner">
               📋 <strong>Total:</strong>
-              <div className="text-lg font-bold">{previousAttempt.questions_answered}</div>
+              <div className="text-lg font-bold">
+                {previousAttempt.questions_answered}
+              </div>
             </div>
           </div>
 
@@ -362,15 +389,30 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     switch (current.mode) {
       case "word-fill":
         return (
-          <WordFillWeekly key={key} quiz={current} onAnswer={handleAnswer} effectsOn={effectsOn} />
+          <WordFillWeekly
+            key={key}
+            quiz={current}
+            onAnswer={handleAnswer}
+            effectsOn={effectsOn}
+          />
         );
       case "scripture-match":
         return (
-          <ScriptureMatchWeekly key={key} quiz={current} onAnswer={handleAnswer} effectsOn={effectsOn} />
+          <ScriptureMatchWeekly
+            key={key}
+            quiz={current}
+            onAnswer={handleAnswer}
+            effectsOn={effectsOn}
+          />
         );
       case "trivia":
         return (
-          <TriviaWeekly key={key} quiz={current} onAnswer={handleAnswer} effectsOn={effectsOn} />
+          <TriviaWeekly
+            key={key}
+            quiz={current}
+            onAnswer={handleAnswer}
+            effectsOn={effectsOn}
+          />
         );
       default:
         return <div>Unknown mode</div>;
@@ -397,7 +439,9 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
           <div
             className="bg-gradient-to-r from-orange-400 to-pink-500 h-full transition-all duration-500 ease-out"
-            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+            style={{
+              width: `${((currentIndex + 1) / questions.length) * 100}%`,
+            }}
           />
         </div>
       </div>

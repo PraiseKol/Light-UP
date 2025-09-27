@@ -235,18 +235,27 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
   useEffect(() => {
     const updateChallengeStatus = async () => {
-      const { allowed, countdownText } = getWeeklyChallengeStatus();
-      setChallengeAllowed(allowed);
-      setCountdownText(countdownText);
-      if (user?.id) {
-        setChallengePlayed(await hasPlayedThisWeek(user.id));
+      try {
+        const { allowed, countdownText } = await getWeeklyChallengeStatus();
+        setChallengeAllowed(Boolean(allowed));
+        setCountdownText(countdownText ?? "");
+        if (user?.id) {
+          const played = await hasPlayedThisWeek(user.id);
+          setChallengePlayed(Boolean(played));
+        }
+      } catch (err) {
+        console.error("Failed to update weekly challenge status:", err);
+        setChallengeAllowed(false);
+        setCountdownText("");
+        if (user?.id) setChallengePlayed(false);
       }
     };
-
+  
     updateChallengeStatus();
     const interval = setInterval(updateChallengeStatus, 60000);
     return () => clearInterval(interval);
   }, [user?.id]);
+  
 
   const getCurrentLevelId = (phase) => {
     const firstIncomplete = phase.levels.find(
