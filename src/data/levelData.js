@@ -2,9 +2,14 @@
 const gameModes = ['word-fill', 'scripture-match', 'four-pics', 'trivia'];
 
 const defaultPhaseTitles = [
-  'Foundations', 'Beginnings', 'Growth', 'Challenge',
-  'Insight', 'Wisdom', 'Mastery', 'Ascension',
-  'Elevation', 'Glory',
+  'The Birth and Early Life of Jesus', 'Jesus Baptism and Temptation', 'Jesus Miracles and Healings', 'The Parables of Jesus',
+  'The Sermon on the Mount', 'Calling of the Disciples', 'Key Teachings of Jesus', 'The Last Supper and Betrayal',
+  'The Crucifixion and Death of Jesus', 'The Resurrection and Ascension', 'Pentecost and the Holy Spirit',
+  'The Early Church Community','Peters Ministry and Miracles','The Conversion of Saul (Paul)','Pauls First Missionary Journey',
+  'Pauls Second Missionary Journey','The Jerusalem Council','Pauls Third Missionary Journey','Pauls Arrest and Imprisonment',
+  'The Spread of the Gospel to Rome','','','','','','','','','','','','','','','','','','','','','','','','','','',
+  '','','','','','','','','',
+  '','','','','','','','','',
   ...Array(90).fill('Coming soon')
 ];
 

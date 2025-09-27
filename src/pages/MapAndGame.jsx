@@ -86,6 +86,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   });
 
   const phaseRefs = useRef([]);
+  const levelRefs = useRef({}); // 👈 add this
   const [showNextLevelModal, setShowNextLevelModal] = useState(false);
 
   useEffect(() => {
@@ -215,23 +216,26 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     }
   }, [gameUser]);
 
-  const handleBackFromGame = async () => {
-    safelyNavigatingRef.current = true;
-    try {
-      if (user?.id) {
-        await clearInGame(user.id);
-        await refetch?.(); // ensure gameUser.in_game is false in state
-      }
-    } catch (err) {
-      console.error("Failed clearing in_game on back:", err);
-    } finally {
-      setSelectedLevel(null); // collapse UI immediately
-      // ⏳ delay resetting the guard to avoid race
+  // Inside MapAndGame.jsx
+
+  const handleBackFromGame = () => {
+    setSelectedLevel(null);
+  
+    // 👇 Scroll to the player's current level button
+    const currentLevelId = gameUser.current_level_id;
+    const currentLevelEl = levelRefs.current[currentLevelId];
+  
+    if (currentLevelEl) {
       setTimeout(() => {
-        safelyNavigatingRef.current = false;
-      }, 500);
+        currentLevelEl.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        });
+      }, 100);
     }
   };
+  
 
   useEffect(() => {
     const updateChallengeStatus = async () => {
@@ -250,12 +254,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         if (user?.id) setChallengePlayed(false);
       }
     };
-  
+
     updateChallengeStatus();
     const interval = setInterval(updateChallengeStatus, 60000);
     return () => clearInterval(interval);
   }, [user?.id]);
-  
 
   const getCurrentLevelId = (phase) => {
     const firstIncomplete = phase.levels.find(
@@ -652,6 +655,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                       sound={sound} // pass current sound state
                       setSound={setSound} // pass setter so modal can update global sound immediately
                       effectsOn={effectsOn}
+                      levelRefs={levelRefs} // 👈 pass down
                     />
                   </div>
                 );

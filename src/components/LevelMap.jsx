@@ -13,20 +13,16 @@ export default function LevelMap({
   completedLevels,
   currentLevelId,
   isLocked,
+  levelRefs, // 👈 received from parent
 }) {
   const containerRef = useRef(null);
   const { gameUser } = useGameUser();
 
-  // refs for each level
-  const levelRefs = useRef({});
   const [paths, setPaths] = useState([]);
 
-  // scroll logic for mobile
+  // 🔥 always scroll to current level (mobile + desktop)
   useEffect(() => {
     if (!containerRef.current) return;
-
-    const isMobile = window.innerWidth < 768;
-    if (!isMobile) return;
 
     if (!currentLevelId && completedLevels.length === 0) {
       containerRef.current.scrollTo({
@@ -37,9 +33,10 @@ export default function LevelMap({
       levelRefs.current[currentLevelId].scrollIntoView({
         behavior: "smooth",
         block: "center",
+        inline: "center",
       });
     }
-  }, [currentLevelId, completedLevels]);
+  }, [currentLevelId, completedLevels, levelRefs]);
 
   const isPhase1 = phaseIndex === 0;
   const prevPhaseLastLevelId = !isPhase1
@@ -114,20 +111,20 @@ export default function LevelMap({
     <div
       ref={containerRef}
       className="
-    relative 
-    w-full 
-    h-[120vh] sm:h-[150vh]   // shorter scroll area on mobile
-    overflow-y-auto 
-    rounded-xl 
-    shadow-lg 
-    bg-transparent
-    max-w-sm sm:max-w-full   // keeps it narrow on mobile, full width on desktop
-    mx-auto                  // centers on mobile
-  "
+        relative 
+        w-full 
+        h-[120vh] sm:h-[150vh]
+        overflow-y-auto 
+        rounded-xl 
+        shadow-lg 
+        bg-transparent
+        max-w-sm sm:max-w-full
+        mx-auto
+      "
     >
       {/* Background Phase Title */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <h1 className="text-3xl sm:text-[5rem] font-extrabold text-black/20 text-center tracking-wider select-none">
+        <h1 className="text-lg md:text-4xl font-extrabold text-black/20 text-center tracking-wider select-none">
           {`Phase ${phase.phaseNumber} : ${phase.title}`}
         </h1>
       </div>
@@ -165,24 +162,29 @@ export default function LevelMap({
         return (
           <div
             key={level.id}
-            ref={(el) => (levelRefs.current[level.id] = el)}
-            className="absolute"
             style={{
               left: `${level.position.x}%`,
               top: `${level.position.y}%`,
               transform: "translate(-50%, -50%)",
               zIndex: isCurrent ? 20 : 10,
             }}
+            className="absolute"
           >
-            <LevelButton
-              level={level}
-              isUnlocked={isUnlocked}
-              onClick={() => {
-                if (isUnlocked && phaseUnlocked) {
-                  onSelectLevel(level, i);
-                }
+            <div
+              ref={(el) => {
+                if (el) levelRefs.current[level.id] = el; // 👈 reliably registers
               }}
-            />
+            >
+              <LevelButton
+                level={level}
+                isUnlocked={isUnlocked}
+                onClick={() => {
+                  if (isUnlocked && phaseUnlocked) {
+                    onSelectLevel(level, i);
+                  }
+                }}
+              />
+            </div>
 
             {isCurrent && (
               <div className="absolute -top-6 left-1/4 -translate-x-1/2 flex flex-col items-center">

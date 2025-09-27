@@ -299,15 +299,25 @@ export default function GameScreen({
     gameUser?.holy_shield_until &&
     new Date(gameUser.holy_shield_until).getTime() > Date.now();
 
-  const commonProps = {
-    level,
-    onBack,
-    onCorrect: handleLevelComplete, // 👈 swapped
-    onIncorrect: handleIncorrect,
-    onScore: handleScoreEarned,
-    disableIfNoLives: gameUser?.lives <= 0,
-    activePowerups: { ...activePowerups, setGraceUsed },
-  };
+    const handleBack = () => {
+      if (level?.phaseNumber && level?.number) {
+        console.log(
+          `🔙 Back pressed from Phase ${level.phaseNumber}, Level ${level.number}`
+        );
+      }
+      onBack?.(level?.phaseNumber, level?.number);
+    };
+    
+    const commonProps = {
+      level,
+      onBack: handleBack, // 👈 smarter version here
+      onCorrect: handleLevelComplete,
+      onIncorrect: handleIncorrect,
+      onScore: handleScoreEarned,
+      disableIfNoLives: gameUser?.lives <= 0,
+      activePowerups: { ...activePowerups, setGraceUsed },
+    };
+    
 
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100">
