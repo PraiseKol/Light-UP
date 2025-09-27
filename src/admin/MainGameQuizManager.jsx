@@ -31,7 +31,7 @@ export default function MainGameQuizManager() {
       answer: "Type correct answer here",
       image_urls: "",
       letters:
-        "12 letters, including the letters in the answer, no punctuation marks",
+        "Once you type your answer, this will be automatically generated",
     };
   }
 
@@ -120,10 +120,10 @@ export default function MainGameQuizManager() {
         if (value === "four-pics") {
           updated.answer = "Type correct answer here";
           updated.hint_letters =
-            "Input the last two letters here in the right order";
+            "System would automatically generate this for you, once you type your answer and move on";
           updated.options = [];
           updated.letters =
-            "12 letters, including the letters in the answer, no punctuation marks";
+            "Once you type your answer, this will be automatically generated";
           updated.image_urls = buildImageUrls(
             updated.phase_number,
             updated.level_number
