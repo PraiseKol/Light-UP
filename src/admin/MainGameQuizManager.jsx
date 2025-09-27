@@ -28,7 +28,7 @@ export default function MainGameQuizManager() {
       mode: "trivia",
       question: "",
       options: ["Option 1", "Option 2", "Option 3", "Option 4"],
-      answer: "Type correct answer here",
+      answer: "Type correct answer here, without commas or space",
       image_urls: "",
       letters:
         "Once you type your answer, this will be automatically generated",
@@ -118,7 +118,7 @@ export default function MainGameQuizManager() {
 ]`;
         }
         if (value === "four-pics") {
-          updated.answer = "Type correct answer here";
+          updated.answer = "Type correct answer here, without commas or space";
           updated.hint_letters =
             "System would automatically generate this for you, once you type your answer and move on";
           updated.options = [];
