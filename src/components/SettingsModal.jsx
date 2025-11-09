@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { playSound } from "utils/sound";

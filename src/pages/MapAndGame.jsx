@@ -8,7 +8,7 @@ import { fetchTotalScore } from "lib/fetchTotalScore";
 import { fetchRandomScripture } from "lib/fetchRandomScripture";
 import { fetchLeaderboard } from "lib/fetchLeaderboard";
 import { fetchMainLeaderboard } from "lib/api/leaderboard";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { useGameUser } from "hooks/useGameUser";
 import { LivesDisplay } from "components/LivesDisplay";
 import SpiritualParallaxBackground from "components/SpiritualParallaxBackground";

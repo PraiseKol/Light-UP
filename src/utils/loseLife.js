@@ -1,5 +1,5 @@
 // loseLife.js
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export async function loseLife(userId, currentLives) {
   if (currentLives <= 0) return;

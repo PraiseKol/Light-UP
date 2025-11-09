@@ -1,6 +1,6 @@
 // src/admin/DonationsManager.jsx
 import { useEffect, useState } from "react";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "components/ui/button";
 
 

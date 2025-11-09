@@ -7,7 +7,7 @@ import TimeUpModal from "components/ui/TimeUpModal";
 import { Button } from "components/ui/button";
 import { useTimer } from "hooks/useTimer";
 import { useResetLevel } from "hooks/useResetLevel";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
 import { playSound } from "utils/sound";
 

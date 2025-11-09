@@ -1,5 +1,5 @@
 // utils/inGame.js
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 /**
  * Mark the player as "in game" for a level.

@@ -7,7 +7,7 @@ import TimeUpModal from "components/ui/TimeUpModal";
 import ProgressBar from "components/ui/progress";
 import { useResetLevel } from "hooks/useResetLevel";
 import { useTimer } from "hooks/useTimer";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
 import { playSound } from "utils/sound";
 

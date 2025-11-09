@@ -1,7 +1,7 @@
 // src/admin/AdminDashboard.jsx
 import { useState, useEffect } from "react";
 import { Button } from "components/ui/button";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "auth/AuthProvider";
 
 import MainGameQuizManager from "admin/MainGameQuizManager";

@@ -5,7 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { AuthProvider, useAuth } from "auth/AuthProvider";

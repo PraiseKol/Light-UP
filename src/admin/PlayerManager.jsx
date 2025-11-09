@@ -1,6 +1,6 @@
 // src/admin/PlayerManager.jsx
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "components/ui/button";
 import { useAuth } from "auth/AuthProvider";
 

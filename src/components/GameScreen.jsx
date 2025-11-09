@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import { useGameUser } from "hooks/useGameUser";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 import { getQuestion } from "lib/getQuestion";
 import { fetchTotalScore } from "lib/fetchTotalScore";

@@ -5,7 +5,7 @@ import WrongAnswerModal from "components/ui/WrongAnswerModal";
 import TimeUpModal from "components/ui/TimeUpModal";
 import ProgressBar from "components/ui/progress";
 import { Button } from "components/ui/button";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
 import { useResetLevel } from "hooks/useResetLevel";
 import { playSound } from "utils/sound";

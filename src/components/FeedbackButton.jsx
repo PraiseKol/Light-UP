@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "components/ui/button";
 import { useAuth } from "auth/AuthProvider";
 import { playSound } from "utils/sound";

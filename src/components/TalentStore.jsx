@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { playSound } from "utils/sound";
 
 export default function TalentStore({ gameUser, onPurchase, effectsOn }) {

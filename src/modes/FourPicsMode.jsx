@@ -7,7 +7,7 @@ import TimeUpModal from "components/ui/TimeUpModal";
 import { Button } from "components/ui/button";
 import { useResetLevel } from "hooks/useResetLevel";
 import ProgressBar from "components/ui/progress";
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { playSound } from "utils/sound";
 
 export default function FourPicsMode({

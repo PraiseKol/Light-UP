@@ -1,5 +1,5 @@
 // utils/weeklyChallenge.js
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 /**
  * Fetch the most recent week_start_date from DB.

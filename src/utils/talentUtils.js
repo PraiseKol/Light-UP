@@ -1,5 +1,5 @@
 // utils/talentUtils.js
-import { supabase } from "lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 // Use the public env variable or fallback to localhost
 const PAYMENT_BACKEND_URL =

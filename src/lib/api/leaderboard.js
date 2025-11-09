@@ -1,5 +1,5 @@
 // lib/api/leaderboard.js
-import { supabase } from 'lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 export async function fetchMainLeaderboard() {
   const { data, error } = await supabase
