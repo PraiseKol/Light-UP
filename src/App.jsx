@@ -10,27 +10,27 @@ import { supabase } from "@/lib/supabaseClient";
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { AuthProvider, useAuth } from "@/auth/AuthProvider";
 
-import BackgroundMusic from "components/BackgroundMusic";
+import BackgroundMusic from "@/components/BackgroundMusic";
 
-import LoginPage from "pages/LoginPage";
-import MapAndGame from "pages/MapAndGame";
-import WeeklyChallengeScreen from "pages/WeeklyChallengeScreen";
-import CreateMultiplayerGame from "components/CreateMultiplayerGame";
-import MultiplayerLobby from "components/MultiplayerLobby";
-import JoinMultiplayerGame from "components/JoinMultiplayerGame";
-import MultiplayerGame from "components/MultiplayerGame";
+import LoginPage from "@/pages/LoginPage";
+import MapAndGame from "@/pages/MapAndGame";
+import WeeklyChallengeScreen from "@/pages/WeeklyChallengeScreen";
+import CreateMultiplayerGame from "@/components/CreateMultiplayerGame";
+import MultiplayerLobby from "@/components/MultiplayerLobby";
+import JoinMultiplayerGame from "@/components/JoinMultiplayerGame";
+import MultiplayerGame from "@/components/MultiplayerGame";
 
-import CreateAdmin from "CreateAdmin";
-import AdminRoute from "components/AdminRoute";
-import AdminLogin from "pages/AdminLogin";
-import AdminDashboard from "pages/AdminDashboard";
-import PaymentSuccess from "pages/PaymentSuccess";
+import CreateAdmin from "@/CreateAdmin";
+import AdminRoute from "@/components/AdminRoute";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminDashboard from "@/pages/AdminDashboard";
+import PaymentSuccess from "@/pages/PaymentSuccess";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react"; // ✅ Import Vercel Analytics
 
 import { useState, useEffect } from "react";
-import { claimDailyStreakBonus } from "utils/talentUtils";
+import { claimDailyStreakBonus } from "@/utils/talentUtils";
 
 // ✅ Create query client once (outside components)
 const queryClient = new QueryClient();
