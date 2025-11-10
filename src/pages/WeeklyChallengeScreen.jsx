@@ -1,12 +1,12 @@
 // src/screens/WeeklyChallengeScreen.jsx
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "lib/supabaseClient.js";
+import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
 
-import WordFillWeekly from "modes/WordFillWeekly";
-import ScriptureMatchWeekly from "modes/ScriptureMatchWeekly";
-import TriviaWeekly from "modes/TriviaWeekly";
+import WordFillWeekly from "@/modes/WordFillWeekly";
+import ScriptureMatchWeekly from "@/modes/ScriptureMatchWeekly";
+import TriviaWeekly from "@/modes/TriviaWeekly";
 
 console.log("🟣 WeeklyChallengeScreen component mounted");
 
