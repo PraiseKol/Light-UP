@@ -1,8 +1,8 @@
 // src/admin/AdminManager.jsx
 import { useState } from "react";
-import { Button } from "components/ui/button";
-import DonationsManager from "./DonationsManager";
-import TransactionsManager from "./TransactionsManager";
+import { Button } from "@/components/ui/button";
+import DonationsManager from "@/admin/DonationsManager";
+import TransactionsManager from "@/admin/TransactionsManager";
 
 export default function AdminManager() {
   const [mainTab, setMainTab] = useState("transactions");

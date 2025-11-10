@@ -1,7 +1,7 @@
 // src/admin/FeedbackManager.jsx
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { Button } from "components/ui/button";
+import { Button } from "@/components/ui/button";
 
 export default function FeedbackManager() {
   const [feedback, setFeedback] = useState([]);

@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { getQuestion } from "lib/getQuestion";
-import { useTimer } from "hooks/useTimer";
-import RightAnswerModal from "components/ui/RightAnswerModal";
-import WrongAnswerModal from "components/ui/WrongAnswerModal";
-import TimeUpModal from "components/ui/TimeUpModal";
-import { Button } from "components/ui/button";
-import { useResetLevel } from "hooks/useResetLevel";
-import ProgressBar from "components/ui/progress";
+import { getQuestion } from "@/lib/getQuestion";
+import { useTimer } from "@/hooks/useTimer";
+import RightAnswerModal from "@/components/ui/RightAnswerModal";
+import WrongAnswerModal from "@/components/ui/WrongAnswerModal";
+import TimeUpModal from "@/components/ui/TimeUpModal";
+import { Button } from "@/components/ui/button";
+import { useResetLevel } from "@/hooks/useResetLevel";
+import ProgressBar from "@/components/ui/progress";
 import { supabase } from "@/lib/supabaseClient";
-import { playSound } from "utils/sound";
+import { playSound } from "@/utils/sound";
 
 export default function FourPicsMode({
   level,

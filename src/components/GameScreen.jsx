@@ -2,21 +2,21 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
-import { useGameUser } from "hooks/useGameUser";
+import { useGameUser } from "@/hooks/useGameUser";
 import { supabase } from "@/lib/supabaseClient";
 
-import { getQuestion } from "lib/getQuestion";
-import { fetchTotalScore } from "lib/fetchTotalScore";
-import { loseLife } from "utils/loseLife";
+import { getQuestion } from "@/lib/getQuestion";
+import { fetchTotalScore } from "@/lib/fetchTotalScore";
+import { loseLife } from "@/utils/loseLife";
 
-import WordFillMode from "modes/WordFillMode";
-import TriviaMode from "modes/TriviaMode";
-import FourPicsMode from "modes/FourPicsMode";
-import ScriptureMatchMode from "modes/ScriptureMatchMode";
+import WordFillMode from "@/modes/WordFillMode";
+import TriviaMode from "@/modes/TriviaMode";
+import FourPicsMode from "@/modes/FourPicsMode";
+import ScriptureMatchMode from "@/modes/ScriptureMatchMode";
 
-import HolyShieldButton from "components/HolyShieldButton";
-import { playSound } from "utils/sound";
-import { awardBonus } from "utils/talentUtils";
+import HolyShieldButton from "@/components/HolyShieldButton";
+import { playSound } from "@/utils/sound";
+import { awardBonus } from "@/utils/talentUtils";
 
 export default function GameScreen({
   level,

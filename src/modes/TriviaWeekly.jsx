@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { playSound } from "utils/sound";
+import { playSound } from "@/utils/sound";
 
 export default function TriviaWeekly({ quiz, onAnswer, effectsOn = true }) {
   const [selected, setSelected] = useState(null);

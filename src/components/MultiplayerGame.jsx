@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
-import { useAuth } from "auth/AuthProvider";
-import { useMultiplayerStore } from "store/useMultiplayerStore";
+import { useAuth } from "@/auth/AuthProvider";
+import { useMultiplayerStore } from "@/store/useMultiplayerStore";
 import { motion, AnimatePresence } from "framer-motion";
 import html2canvas from "html2canvas";
-import { playSound } from "utils/sound";
+import { playSound } from "@/utils/sound";
 
 export default function MultiplayerGame({ effectsOn }) {
   const { gameId } = useParams();

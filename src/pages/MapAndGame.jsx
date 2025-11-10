@@ -1,41 +1,41 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { levelPhases } from "data/levelData";
-import { useAuth } from "auth/AuthProvider";
-import { fetchProgress } from "lib/fetchProgress";
-import { saveProgress } from "lib/saveProgress";
-import { fetchTotalScore } from "lib/fetchTotalScore";
-import { fetchRandomScripture } from "lib/fetchRandomScripture";
-import { fetchLeaderboard } from "lib/fetchLeaderboard";
-import { fetchMainLeaderboard } from "lib/api/leaderboard";
+import { levelPhases } from "@/data/levelData";
+import { useAuth } from "@/auth/AuthProvider";
+import { fetchProgress } from "@/lib/fetchProgress";
+import { saveProgress } from "@/lib/saveProgress";
+import { fetchTotalScore } from "@/lib/fetchTotalScore";
+import { fetchRandomScripture } from "@/lib/fetchRandomScripture";
+import { fetchLeaderboard } from "@/lib/fetchLeaderboard";
+import { fetchMainLeaderboard } from "@/lib/api/leaderboard";
 import { supabase } from "@/lib/supabaseClient";
-import { useGameUser } from "hooks/useGameUser";
-import { LivesDisplay } from "components/LivesDisplay";
-import SpiritualParallaxBackground from "components/SpiritualParallaxBackground";
-import LevelMap from "components/LevelMap";
-import GameScreen from "components/GameScreen";
-import AppToaster from "components/ui/toaster";
-import ScriptureModal from "components/ScriptureModal";
-import SettingsModal from "components/SettingsModal";
-import FeedbackButton from "components/FeedbackButton";
+import { useGameUser } from "@/hooks/useGameUser";
+import { LivesDisplay } from "@/components/LivesDisplay";
+import SpiritualParallaxBackground from "@/components/SpiritualParallaxBackground";
+import LevelMap from "@/components/LevelMap";
+import GameScreen from "@/components/GameScreen";
+import AppToaster from "@/components/ui/toaster";
+import ScriptureModal from "@/components/ScriptureModal";
+import SettingsModal from "@/components/SettingsModal";
+import FeedbackButton from "@/components/FeedbackButton";
 import { toast } from "sonner";
-import { markInGame, clearInGame } from "utils/inGame";
-import { loseLife } from "utils/loseLife";
-import { playSound } from "utils/sound";
-import DonationsButton from "components/DonationsButton";
+import { markInGame, clearInGame } from "@/utils/inGame";
+import { loseLife } from "@/utils/loseLife";
+import { playSound } from "@/utils/sound";
+import DonationsButton from "@/components/DonationsButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import PowerUpStore from "components/PowerUpStore";
-import Modal from "components/ui/modal";
-import GlobalChat from "components/GlobalChat";
+import PowerUpStore from "@/components/PowerUpStore";
+import Modal from "@/components/ui/modal";
+import GlobalChat from "@/components/GlobalChat";
 import {
   determineUnlockedPhases,
   wrapLevelsWithStatus,
   getPowerUpIcon,
-} from "utils/gameHelpers";
+} from "@/utils/gameHelpers";
 import {
   getWeeklyChallengeStatus,
   hasPlayedThisWeek,
-} from "utils/weeklyChallenge";
+} from "@/utils/weeklyChallenge";
 
 export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [selectedLevel, setSelectedLevel] = useState(null);

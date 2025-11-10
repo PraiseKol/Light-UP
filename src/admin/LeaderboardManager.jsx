@@ -1,9 +1,9 @@
 // src/admin/LeaderboardManager.jsx
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { Button } from "components/ui/button";
-import { useAuth } from "auth/AuthProvider";
-import PlayerManager from "admin/PlayerManager"; // ✅ Import PlayerManager
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/auth/AuthProvider";
+import PlayerManager from "@/admin/PlayerManager"; // ✅ Import PlayerManager
 
 export default function LeaderboardManager() {
   const { user } = useAuth();

@@ -1,8 +1,8 @@
 // src/admin/AnalyticsDashboard.jsx
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { useAuth } from "auth/AuthProvider";
-import { Card, CardContent } from "components/ui/card";
+import { useAuth } from "@/auth/AuthProvider";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   BarChart,
   PieChart,

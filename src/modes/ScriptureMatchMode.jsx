@@ -1,14 +1,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useTimer } from "hooks/useTimer";
-import RightAnswerModal from "components/ui/RightAnswerModal";
-import WrongAnswerModal from "components/ui/WrongAnswerModal";
-import TimeUpModal from "components/ui/TimeUpModal";
-import ProgressBar from "components/ui/progress";
-import { Button } from "components/ui/button";
+import { useTimer } from "@/hooks/useTimer";
+import RightAnswerModal from "@/components/ui/RightAnswerModal";
+import WrongAnswerModal from "@/components/ui/WrongAnswerModal";
+import TimeUpModal from "@/components/ui/TimeUpModal";
+import ProgressBar from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
-import { useResetLevel } from "hooks/useResetLevel";
-import { playSound } from "utils/sound";
+import { useResetLevel } from "@/hooks/useResetLevel";
+import { playSound } from "@/utils/sound";
 
 const scriptureMatchBackground =
   "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//ScriptureMatchBackground.png";

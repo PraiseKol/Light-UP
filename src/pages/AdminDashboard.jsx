@@ -1,16 +1,16 @@
 // src/admin/AdminDashboard.jsx
 import { useState, useEffect } from "react";
-import { Button } from "components/ui/button";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabaseClient";
-import { useAuth } from "auth/AuthProvider";
+import { useAuth } from "@/auth/AuthProvider";
 
-import MainGameQuizManager from "admin/MainGameQuizManager";
-import WeeklyQuizManager from "admin/WeeklyQuizManager";
-import MultiplayerQuizManager from "admin/MultiplayerQuizManager";
-import LeaderboardManager from "admin/LeaderboardManager";
-import AnalyticsDashboard from "admin/AnalyticsDashboard";
-import FeedbackManager from "admin/FeedbackManager";
-import FinanceManager from "admin/FinanceManager";
+import MainGameQuizManager from "@/admin/MainGameQuizManager";
+import WeeklyQuizManager from "@/admin/WeeklyQuizManager";
+import MultiplayerQuizManager from "@/admin/MultiplayerQuizManager";
+import LeaderboardManager from "@/admin/LeaderboardManager";
+import AnalyticsDashboard from "@/admin/AnalyticsDashboard";
+import FeedbackManager from "@/admin/FeedbackManager";
+import FinanceManager from "@/admin/FinanceManager";
 
 
 

@@ -1,7 +1,7 @@
 // src/components/HolyShieldButton.jsx
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { playSound } from "utils/sound";
+import { playSound } from "@/utils/sound";
 
 export default function HolyShieldButton({ user, gameUser, refetch, effectsOn }) {
   const [timeLeft, setTimeLeft] = useState(0);

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { adjustTalents, adjustPowerupInventory } from "utils/talentUtils";
-import TalentStore from "components/TalentStore";
-import BonusesTab from "components/BonusesTab";
-import { playSound } from "utils/sound";
+import { adjustTalents, adjustPowerupInventory } from "@/utils/talentUtils";
+import TalentStore from "@/components/TalentStore";
+import BonusesTab from "@/components/BonusesTab";
+import { playSound } from "@/utils/sound";
 
 export default function PowerUpStore({
   gameUser,

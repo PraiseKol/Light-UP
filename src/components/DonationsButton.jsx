@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "components/ui/button";
+import { Button } from "@/components/ui/button";
 
 const API_BASE = process.env.REACT_APP_API_URL;
 

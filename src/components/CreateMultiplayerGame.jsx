@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
-import { useAuth } from "auth/AuthProvider";
-import { useMultiplayerStore } from "store/useMultiplayerStore";
-import { playSound } from "utils/sound";
-import MGlobalChat from "components/MGlobalChat"; // ✅ import chat
+import { useAuth } from "@/auth/AuthProvider";
+import { useMultiplayerStore } from "@/store/useMultiplayerStore";
+import { playSound } from "@/utils/sound";
+import MGlobalChat from "@/components/MGlobalChat"; // ✅ import chat
 
 export default function CreateMultiplayerGame({ effectsOn }) {
   const { user } = useAuth();

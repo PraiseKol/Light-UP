@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "components/ui/card";
-import ProgressBar from "components/ui/progress";
-import RightAnswerModal from "components/ui/RightAnswerModal";
-import WrongAnswerModal from "components/ui/WrongAnswerModal";
-import TimeUpModal from "components/ui/TimeUpModal";
-import { Button } from "components/ui/button";
-import { useTimer } from "hooks/useTimer";
-import { useResetLevel } from "hooks/useResetLevel";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import ProgressBar from "@/components/ui/progress";
+import RightAnswerModal from "@/components/ui/RightAnswerModal";
+import WrongAnswerModal from "@/components/ui/WrongAnswerModal";
+import TimeUpModal from "@/components/ui/TimeUpModal";
+import { Button } from "@/components/ui/button";
+import { useTimer } from "@/hooks/useTimer";
+import { useResetLevel } from "@/hooks/useResetLevel";
 import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
-import { playSound } from "utils/sound";
+import { playSound } from "@/utils/sound";
 
 const triviaBackground =
   "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds/TriviaBackground.png";

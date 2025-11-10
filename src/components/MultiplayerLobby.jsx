@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
-import { useMultiplayerStore } from "store/useMultiplayerStore";
-import { useAuth } from "auth/AuthProvider";
-import Switch from "components/ui/Switch"; // shadcn/ui switch
-import { playSound } from "utils/sound";
-import GlobalChat from "components/GlobalChat";
+import { useMultiplayerStore } from "@/store/useMultiplayerStore";
+import { useAuth } from "@/auth/AuthProvider";
+import Switch from "@/components/ui/Switch"; // shadcn/ui switch
+import { playSound } from "@/utils/sound";
+import GlobalChat from "@/components/GlobalChat";
 
 export default function MultiplayerLobby({ effectsOn }) {
   const { gameId } = useParams();

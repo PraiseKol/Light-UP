@@ -2,9 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import LevelButton from "./LevelButton";
 import { Lock } from "lucide-react";
-import { levelPhases } from "data/levelData";
-import avatarIcon from "assets/avatar.png";
-import { useGameUser } from "hooks/useGameUser";
+import { levelPhases } from "@/data/levelData";
+import avatarIcon from "@/assets/avatar.png";
+import { useGameUser } from "@/hooks/useGameUser";
 
 export default function LevelMap({
   phase,
