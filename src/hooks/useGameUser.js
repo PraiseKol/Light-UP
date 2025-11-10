@@ -1,7 +1,7 @@
 // hooks/useGameUser.js 
 import { useEffect, useState, useCallback, useRef } from 'react'; 
 import { supabase } from '@/lib/supabaseClient'; 
-import { calculateUpdatedLives } from 'utils/lifeUtils'; 
+import { calculateUpdatedLives } from '@/utils/lifeUtils'; 
 export function useGameUser(userId) { 
   const [gameUser, setGameUser] = useState(null); 
   const [loading, setLoading] = useState(true); 

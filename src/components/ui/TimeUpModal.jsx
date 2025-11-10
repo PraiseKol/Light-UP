@@ -1,6 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
-import { playSound } from "utils/sound";
+import { playSound } from "@/utils/sound";
 
 export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn }) {
   return (
