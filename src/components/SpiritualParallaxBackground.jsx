@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import cloudImg from "assets/clouds.png";
-import pathImg from "assets/golden-path.png";
+import cloudImg from "@/assets/clouds.png";
+import pathImg from "@/assets/golden-path.png";
 
 export default function SpiritualParallaxBackground() {
   const { scrollY } = useScroll();
