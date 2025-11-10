@@ -115,17 +115,19 @@ export default function LevelMap({
         w-full 
         h-[120vh] sm:h-[150vh]
         overflow-y-auto 
-        rounded-xl 
-        shadow-lg 
-        bg-transparent
+        rounded-3xl 
+        shadow-2xl 
+        bg-gradient-to-b from-white/10 to-transparent
+        backdrop-blur-sm
+        border-2 border-white/20
         max-w-sm sm:max-w-full
         mx-auto
       "
     >
       {/* Background Phase Title */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <h1 className="text-lg md:text-4xl font-extrabold text-black/20 text-center tracking-wider select-none">
-          {`Phase ${phase.phaseNumber} : ${phase.title}`}
+        <h1 className="text-2xl md:text-5xl font-extrabold bg-gradient-to-r from-blue-600/20 to-purple-600/20 bg-clip-text text-transparent text-center tracking-wider select-none drop-shadow-lg">
+          {`Phase ${phase.phaseNumber}: ${phase.title}`}
         </h1>
       </div>
 
@@ -202,18 +204,23 @@ export default function LevelMap({
       {/* Lock overlay */}
       {(!phaseUnlocked || (phaseUnlocked && isLocked)) && (
         <div
-          className="absolute inset-0 bg-black/50 rounded-xl flex flex-col items-center justify-center z-20 text-white text-center px-4"
+          className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/80 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center z-20 text-white text-center px-4"
           title={
             !phaseUnlocked
               ? "Complete the previous phase first."
               : "You're out of lives! Please wait or get more from the store."
           }
         >
-          <Lock className="w-10 h-10 mb-2" />
-          <p className="text-sm font-medium">
+          <div className="bg-white/10 backdrop-blur-sm rounded-full p-6 mb-4">
+            <Lock className="w-12 h-12 animate-pulse" />
+          </div>
+          <p className="text-lg font-bold mb-2">
+            {!phaseUnlocked ? "🔒 Phase Locked" : "💔 Out of Lives"}
+          </p>
+          <p className="text-sm font-medium opacity-90">
             {!phaseUnlocked
               ? "Complete the Previous Phase to Light UP"
-              : "No lives left! Come back later."}
+              : "Come back later or visit the store!"}
           </p>
         </div>
       )}

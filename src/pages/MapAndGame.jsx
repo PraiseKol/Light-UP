@@ -361,126 +361,145 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
   if (!user || gameUserLoading || progressLoading || scoreLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-white via-blue-50 to-sky-100 text-gray-800">
-        <div className="text-4xl font-extrabold mb-4 animate-pulse text-blue-600 drop-shadow-md">
-          Light UP
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-blue-50 via-indigo-100 to-purple-100">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-12 max-w-md text-center border-2 border-white/50">
+          <div className="text-5xl font-extrabold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent drop-shadow-lg animate-pulse">
+            Light UP
+          </div>
+          <div className="flex items-center justify-center space-x-3 mb-6">
+            <div className="w-5 h-5 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full animate-bounce [animation-delay:-0.3s] shadow-lg" />
+            <div className="w-5 h-5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full animate-bounce [animation-delay:-0.15s] shadow-lg" />
+            <div className="w-5 h-5 bg-gradient-to-r from-orange-500 to-red-500 rounded-full animate-bounce shadow-lg" />
+          </div>
+          <div className="text-4xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent drop-shadow-md animate-pulse">
+            your Word!
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full animate-pulse" style={{width: '70%'}}></div>
+          </div>
+          <p className="mt-6 text-sm text-gray-600 tracking-wide font-medium">
+            ✨ Preparing your spiritual journey...
+          </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-yellow-300 rounded-full animate-bounce [animation-delay:-0.3s]" />
-          <div className="w-4 h-4 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-          <div className="w-4 h-4 bg-yellow-500 rounded-full animate-bounce" />
-        </div>
-        <div className="text-2xl font-bold mb-4 animate-pulse text-blue-600 drop-shadow-md">
-          your Word!
-        </div>
-        <p className="mt-6 text-sm text-gray-600 tracking-wide">
-          Preparing your journey...
-        </p>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100">
       <SpiritualParallaxBackground />
 
       <div className="flex flex-col lg:flex-row min-h-screen">
         {/* Mobile Sidebar Toggle Button */}
-        <div className="lg:hidden fixed top-2 left-2 z-50 px-4 py-2">
-          <br></br>
+        <div className="lg:hidden fixed top-4 left-4 z-50">
           <button
             onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
-            className="p-2 bg-gray-500 text-white rounded-md shadow-lg focus:outline-none px-3 py-2 text-sm"
+            className="p-3 bg-white/90 backdrop-blur-sm text-gray-800 rounded-2xl shadow-xl hover:shadow-2xl focus:outline-none transition-all duration-300 hover:scale-105 border border-white/50"
             aria-label="Toggle menu"
           >
-            {mobileActionsOpen ? "✕" : "☰"}
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {mobileActionsOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
           </button>
         </div>
 
         {/* Overlay (click outside to close) */}
         {mobileActionsOpen && (
           <div
-            className="fixed inset-0 bg-black  bg-opacity-40 z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-fade-in"
             onClick={() => setMobileActionsOpen(false)}
           />
         )}
         {/* Mobile Sidebar */}
         <div
-          className={`fixed top-0 left-0 h-full w-64 bg-white/60 backdrop-blur-md p-5 border-r border-gray-300 z-50 transform transition-transform duration-300 ease-in-out ${
+          className={`fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-white/95 to-blue-50/95 backdrop-blur-xl p-6 border-r border-white/30 shadow-2xl z-50 transform transition-all duration-500 ease-out ${
             mobileActionsOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          {/* Close button (optional) */}
-          <button
-            onClick={() => {
-              playSound("switch", effectsOn); // 🔊 play switch sound
-              setMobileActionsOpen(false);
-            }}
-            className="mb-2 px-2 py-1 bg-red-600 text-white text-[10px] rounded-md"
-          >
-            ✕
-          </button>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+            <h2 className="text-lg font-bold text-gray-800">Menu</h2>
+            <button
+              onClick={() => {
+                playSound("switch", effectsOn);
+                setMobileActionsOpen(false);
+              }}
+              className="p-2 hover:bg-red-100 text-red-600 rounded-xl transition-all duration-200"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-          <button
-            onClick={() => {
-              playSound("optionSelect", effectsOn);
-              setShowSettings(true);
-            }}
-            className="w-full mb-0.5 text-left text-[10px] text-blue-700 font-medium border border-blue-500 rounded-lg px-3 py-1 shadow hover:bg-blue-50"
-          >
-            ⚙️ Settings
-          </button>
+          {/* Action Buttons */}
+          <div className="space-y-3 mb-6">
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                setShowSettings(true);
+              }}
+              className="w-full text-left text-sm text-blue-700 font-semibold border-2 border-blue-400 rounded-2xl px-4 py-3 shadow-md hover:shadow-xl hover:bg-blue-50 transition-all duration-200 hover:scale-105 bg-white/70"
+            >
+              <span className="text-lg mr-2">⚙️</span> Settings
+            </button>
 
-          <button
-            onClick={() => {
-              playSound("optionSelect", effectsOn);
-              setShowStore(true);
-            }}
-            className="w-full mb-0.5 text-left bg-yellow-800 text-white text-[10px] font-medium rounded-lg px-3 py-1 shadow hover:bg-yellow-900"
-          >
-            🛒 🎁 Store
-          </button>
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                setShowStore(true);
+              }}
+              className="w-full text-left bg-gradient-to-r from-yellow-600 to-yellow-700 text-white text-sm font-semibold rounded-2xl px-4 py-3 shadow-md hover:shadow-xl hover:from-yellow-700 hover:to-yellow-800 transition-all duration-200 hover:scale-105"
+            >
+              <span className="text-lg mr-2">🛒</span> Store & Gifts
+            </button>
 
-          <button
-            onClick={() => {
-              playSound("optionSelect", effectsOn);
-              navigate("/multiplayer/create");
-            }}
-            className="w-full mb-0.5 text-left bg-green-500 text-white text-[10px] font-medium rounded-lg px-3 py-1 shadow hover:bg-green-600"
-          >
-            🎮 Multiplayer
-          </button>
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                navigate("/multiplayer/create");
+              }}
+              className="w-full text-left bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold rounded-2xl px-4 py-3 shadow-md hover:shadow-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 hover:scale-105"
+            >
+              <span className="text-lg mr-2">🎮</span> Multiplayer
+            </button>
 
-          <button
-            onClick={() => {
-              playSound("optionSelect", effectsOn);
-              handleWeeklyChallengeClick();
-            }}
-            disabled={!challengeAllowed}
-            className="w-full mb-0.5 text-left bg-blue-500 text-white text-[10px] font-medium rounded-lg px-3 py-1 shadow hover:bg-blue-600 disabled:opacity-50"
-          >
-            {challengeAllowed && !challengePlayed
-              ? "🥊 Weekly Quiz: Play Now"
-              : challengePlayed
-              ? "🥊 Already Played"
-              : `🥊 Weekly Quiz: ${countdownText}`}
-          </button>
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                handleWeeklyChallengeClick();
+              }}
+              disabled={!challengeAllowed}
+              className="w-full text-left bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-2xl px-4 py-3 shadow-md hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              <span className="text-lg mr-2">🥊</span>{" "}
+              {challengeAllowed && !challengePlayed
+                ? "Play Weekly Quiz"
+                : challengePlayed
+                ? "Already Played"
+                : `Opens ${countdownText}`}
+            </button>
+          </div>
 
-          <div className="overflow-y-auto max-h-[50vh] mt-4">
+          {/* Leaderboards */}
+          <div className="overflow-y-auto max-h-[50vh] space-y-3">
             {totalLeaderboard.length > 0 && (
-              <div className="bg-white border border-blue-400 rounded-md shadow p-2 mb-1">
-                <h2 className="text-[6px] font-bold text-blue-700 mb-1">
-                  🏆 Overall Top Players
+              <div className="bg-gradient-to-br from-white/80 to-blue-50/80 backdrop-blur-sm border-2 border-blue-300 rounded-2xl shadow-lg p-3">
+                <h2 className="text-xs font-bold text-blue-700 mb-2 flex items-center">
+                  <span className="text-lg mr-1">🏆</span> Overall Top Players
                 </h2>
-                <ol className="space-y-0.5 text-[5px]">
+                <ol className="space-y-1 text-[10px]">
                   {totalLeaderboard.map((entry, index) => (
-                    <li key={index} className="flex items-center">
-                      <span className="whitespace-nowrap">
-                        {index + 1}. {entry.player_name || "Unnamed"}
+                    <li key={index} className="flex items-center bg-white/60 rounded-lg px-2 py-1">
+                      <span className="font-bold text-blue-600 w-5">{index + 1}.</span>
+                      <span className="flex-1 truncate font-medium">
+                        {entry.player_name || "Unnamed"}
                       </span>
-                      {/* dotted connector */}
-                      <span className="flex-1 border-b border-dotted border-gray-300 mx-1"></span>
-                      <span className="whitespace-nowrap">
+                      <span className="font-bold text-blue-700 ml-2">
                         {entry.total_score} pts
                       </span>
                     </li>
@@ -490,19 +509,18 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             )}
 
             {weeklyLeaderboard.length > 0 && (
-              <div className="bg-white border border-yellow-400 rounded-md shadow p-2">
-                <h2 className="text-[6px] font-bold text-yellow-600 mb-1">
-                  🏆 Weekly Quiz Top 10
+              <div className="bg-gradient-to-br from-white/80 to-yellow-50/80 backdrop-blur-sm border-2 border-yellow-400 rounded-2xl shadow-lg p-3">
+                <h2 className="text-xs font-bold text-yellow-700 mb-2 flex items-center">
+                  <span className="text-lg mr-1">⭐</span> Weekly Quiz Top 10
                 </h2>
-                <ol className="space-y-0.5 text-[5px]">
+                <ol className="space-y-1 text-[10px]">
                   {weeklyLeaderboard.map((entry, index) => (
-                    <li key={index} className="flex items-center">
-                      <span className="whitespace-nowrap">
-                        {index + 1}. {entry.player_name || "Unnamed"}
+                    <li key={index} className="flex items-center bg-white/60 rounded-lg px-2 py-1">
+                      <span className="font-bold text-yellow-600 w-5">{index + 1}.</span>
+                      <span className="flex-1 truncate font-medium">
+                        {entry.player_name || "Unnamed"}
                       </span>
-                      {/* dotted connector */}
-                      <span className="flex-1 border-b border-dotted border-gray-300 mx-1"></span>
-                      <span className="whitespace-nowrap">
+                      <span className="font-bold text-yellow-700 ml-2">
                         {entry.score} pts
                       </span>
                     </li>
@@ -534,34 +552,34 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         </div>
 
         {/* LEFT SIDEBAR (desktop) */}
-        <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/40 backdrop-blur-md border-r border-gray-300">
+        <div className="hidden lg:flex flex-col w-72 p-5 gap-4 bg-gradient-to-b from-white/90 to-blue-50/90 backdrop-blur-xl border-r border-white/30 shadow-xl">
           {/* Top Buttons */}
           <button
             onClick={() => {
-              playSound("optionSelect", effectsOn); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn);
               setShowSettings(true);
             }}
-            className="bg-white text-blue-700 font-semibold border border-blue-500 rounded-full px-4 py-2 shadow hover:bg-blue-50"
+            className="bg-white text-blue-700 font-semibold border-2 border-blue-400 rounded-2xl px-5 py-3 shadow-lg hover:shadow-xl hover:bg-blue-50 transition-all duration-200 hover:scale-105"
           >
-            ⚙️ Settings
+            <span className="text-lg mr-2">⚙️</span> Settings
           </button>
           <button
             onClick={() => {
-              playSound("optionSelect", effectsOn); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn);
               setShowStore(true);
             }}
-            className="bg-yellow-800 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-yellow-900"
+            className="bg-gradient-to-r from-yellow-600 to-yellow-700 text-white font-semibold rounded-2xl px-5 py-3 shadow-lg hover:shadow-xl hover:from-yellow-700 hover:to-yellow-800 transition-all duration-200 hover:scale-105"
           >
-            🎁 Store
+            <span className="text-lg mr-2">🎁</span> Store
           </button>
           <button
             onClick={() => {
-              playSound("optionSelect", effectsOn); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn);
               navigate("/multiplayer/create");
             }}
-            className="bg-green-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-green-600"
+            className="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-2xl px-5 py-3 shadow-lg hover:shadow-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 hover:scale-105"
           >
-            🎮 Multiplayer
+            <span className="text-lg mr-2">🎮</span> Multiplayer
           </button>
 
           {/* Spacer to push chat to the bottom */}
@@ -574,19 +592,19 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         <div className="flex-1 overflow-y-auto max-h-screen p-4">
           {/* Sticky Header */}
           <div
-            className="sticky top-20 md:top-5 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-200 
-              py-0.5 px-1 sm:py-1 sm:px-2 md:py-2 md:px-3 shadow-sm 
+            className="sticky top-20 md:top-5 z-40 bg-gradient-to-r from-white/95 to-blue-50/95 backdrop-blur-xl border-2 border-white/50 
+              py-3 px-4 sm:py-4 sm:px-6 md:py-5 md:px-8 shadow-xl rounded-3xl
               flex flex-col md:flex-row md:justify-between md:items-center 
-              text-[11px] sm:text-[11px] md:text-[15px] font-medium text-gray-700 
-              gap-1 sm:gap-2 md:gap-4 text-center md:text-left"
+              text-xs sm:text-sm md:text-base font-medium text-gray-700 
+              gap-3 sm:gap-4 md:gap-6 text-center md:text-left mb-6"
           >
             {/* Player Name */}
-            <div className="flex justify-center items-center truncate font-semibold text-blue-700 gap-4 ">
-              {gameUser.player_name || "Unnamed"}
+            <div className="flex justify-center items-center gap-4 font-bold text-blue-700">
+              <span className="text-lg">{gameUser.player_name || "Unnamed"}</span>
 
               {/* Total Score */}
-              <div className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full shadow-sm">
-                Total: ⭐ {userScore}
+              <div className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl shadow-lg font-bold">
+                ⭐ {userScore}
               </div>
             </div>
 
@@ -598,20 +616,20 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               />
 
               {/* Talents */}
-              <div className="inline-block px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full shadow-sm">
+              <div className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl shadow-lg font-bold">
                 💎 {gameUser.talents ?? 0}
               </div>
             </div>
 
             {/* Powerups */}
-            <div className="text-[10px] md:text-[13px] flex justify-center gap-2 md:gap-3 flex-wrap">
+            <div className="text-sm flex justify-center gap-3 flex-wrap">
               {Object.entries(gameUser.powerups_inventory || {}).map(
                 ([key, count]) => (
                   <div
                     key={key}
-                    className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full shadow-sm"
+                    className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-gray-100 to-gray-200 rounded-2xl shadow-md font-semibold hover:scale-105 transition-transform"
                   >
-                    {getPowerUpIcon(key)} {count}
+                    {getPowerUpIcon(key)} <span className="text-gray-700">{count}</span>
                   </div>
                 )
               )}
@@ -680,42 +698,47 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         </div>
 
         {/* RIGHT SIDEBAR (desktop) */}
-        <div className="hidden lg:flex flex-col w-60 p-4 gap-4 bg-white/20 backdrop-blur-md border-l border-gray-300">
+        <div className="hidden lg:flex flex-col w-80 p-5 gap-4 bg-gradient-to-b from-white/90 to-indigo-50/90 backdrop-blur-xl border-l border-white/30 shadow-xl">
           <button
             onClick={() => {
-              playSound("optionSelect", effectsOn); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn);
               handleWeeklyChallengeClick();
             }}
             disabled={!challengeAllowed}
-            className="bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600"
+            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-2xl px-5 py-3 shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
+            <span className="text-lg mr-2">🥊</span>
             {challengeAllowed && !challengePlayed
-              ? "🥊 Weekly Quiz: Play Now"
+              ? "Play Weekly Quiz"
               : challengePlayed
-              ? " 🥊 Weekly Quiz: Already Played"
-              : `🥊 Weekly Quiz: ${countdownText}`}
+              ? "Already Played"
+              : `Opens ${countdownText}`}
           </button>
           <button
             onClick={() => {
-              playSound("optionSelect", effectsOn); // 🔊 play switch sound
+              playSound("optionSelect", effectsOn);
               setShowTotalLeaderboard(!showTotalLeaderboard);
             }}
-            className="bg-gray-700 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-gray-600"
+            className="bg-gradient-to-r from-gray-700 to-gray-800 text-white font-semibold rounded-2xl px-5 py-3 shadow-lg hover:shadow-xl hover:from-gray-800 hover:to-gray-900 transition-all duration-200 hover:scale-105"
           >
-            {showTotalLeaderboard ? "🌟 Hide Leaderboard" : " 🌟 Leaderboard"}
+            <span className="text-lg mr-2">🌟</span>
+            {showTotalLeaderboard ? "Hide Leaderboard" : "Show Leaderboard"}
           </button>
           {showTotalLeaderboard && totalLeaderboard.length > 0 && (
-            <div className="bg-white border border-blue-400 rounded-md shadow p-1 mb-1">
-              <h2 className="text-[11px] font-bold text-blue-700 mb-0.5">
-                🏆 Overall Top Players
+            <div className="bg-gradient-to-br from-white/80 to-blue-50/80 backdrop-blur-sm border-2 border-blue-300 rounded-2xl shadow-lg p-4">
+              <h2 className="text-sm font-bold text-blue-700 mb-3 flex items-center">
+                <span className="text-xl mr-2">🏆</span> Overall Top Players
               </h2>
-              <ol className="space-y-0.5 text-[10px]">
+              <ol className="space-y-2 text-xs">
                 {totalLeaderboard.map((entry, index) => (
-                  <li key={index} className="flex justify-between">
-                    <span>
-                      {index + 1}. {entry.player_name || "Unnamed"}
+                  <li key={index} className="flex items-center bg-white/60 rounded-xl px-3 py-2 hover:bg-white/80 transition-colors">
+                    <span className="font-bold text-blue-600 w-6">{index + 1}.</span>
+                    <span className="flex-1 truncate font-medium">
+                      {entry.player_name || "Unnamed"}
                     </span>
-                    <span>{entry.total_score} pts</span>
+                    <span className="font-bold text-blue-700 ml-2">
+                      {entry.total_score} pts
+                    </span>
                   </li>
                 ))}
               </ol>
@@ -723,17 +746,20 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           )}
 
           {weeklyLeaderboard.length > 0 && (
-            <div className="bg-white border border-yellow-400 rounded-md shadow p-1">
-              <h2 className="text-[11px] font-bold text-yellow-600 mb-0.5">
-                🏆 Weekly Quiz Top 10
+            <div className="bg-gradient-to-br from-white/80 to-yellow-50/80 backdrop-blur-sm border-2 border-yellow-400 rounded-2xl shadow-lg p-4">
+              <h2 className="text-sm font-bold text-yellow-700 mb-3 flex items-center">
+                <span className="text-xl mr-2">⭐</span> Weekly Quiz Top 10
               </h2>
-              <ol className="space-y-0.5 text-[10px]">
+              <ol className="space-y-2 text-xs">
                 {weeklyLeaderboard.map((entry, index) => (
-                  <li key={index} className="flex justify-between">
-                    <span>
-                      {index + 1}. {entry.player_name || "Unnamed"}
+                  <li key={index} className="flex items-center bg-white/60 rounded-xl px-3 py-2 hover:bg-white/80 transition-colors">
+                    <span className="font-bold text-yellow-600 w-6">{index + 1}.</span>
+                    <span className="flex-1 truncate font-medium">
+                      {entry.player_name || "Unnamed"}
                     </span>
-                    <span>{entry.score} pts</span>
+                    <span className="font-bold text-yellow-700 ml-2">
+                      {entry.score} pts
+                    </span>
                   </li>
                 ))}
               </ol>
