@@ -48,13 +48,13 @@ const fallbackWeekStartDate = () => {
 };
 
 /**
- * Compute challenge window (Fri 12PM → Sun 11:59PM).
+ * Compute challenge window (Fri 12PM → Mon 12:00AM).
  */
 export const getCurrentChallengeWindow = async () => {
   const challengeStart = await getCurrentWeekStartDate();
   const challengeEnd = new Date(challengeStart);
-  challengeEnd.setDate(challengeEnd.getDate() + 2); // Add 2 days → Sunday
-  challengeEnd.setHours(23, 59, 59, 999); // Sunday 11:59:59 PM
+  challengeEnd.setDate(challengeEnd.getDate() + 3); // Add 3 days → Monday
+  challengeEnd.setHours(0, 0, 0, 0); // Monday 12:00:00 AM (midnight)
 
   return { challengeStart, challengeEnd };
 };

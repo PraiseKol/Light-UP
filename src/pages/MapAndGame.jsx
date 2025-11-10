@@ -460,10 +460,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             className="w-full mb-0.5 text-left bg-blue-500 text-white text-[10px] font-medium rounded-lg px-3 py-1 shadow hover:bg-blue-600 disabled:opacity-50"
           >
             {challengeAllowed && !challengePlayed
-              ? "🥊 Weekend Challenge: Play Now"
+              ? "🥊 Weekly Quiz: Play Now"
               : challengePlayed
               ? "🥊 Already Played"
-              : `🥊 Quiz: ${countdownText}`}
+              : `🥊 Weekly Quiz: ${countdownText}`}
           </button>
 
           <div className="overflow-y-auto max-h-[50vh] mt-4">
@@ -492,7 +492,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             {weeklyLeaderboard.length > 0 && (
               <div className="bg-white border border-yellow-400 rounded-md shadow p-2">
                 <h2 className="text-[6px] font-bold text-yellow-600 mb-1">
-                  🏆 Weekend Challenge Top 10
+                  🏆 Weekly Quiz Top 10
                 </h2>
                 <ol className="space-y-0.5 text-[5px]">
                   {weeklyLeaderboard.map((entry, index) => (
@@ -690,9 +690,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             className="bg-blue-500 text-white font-semibold rounded-full px-4 py-2 shadow hover:bg-blue-600"
           >
             {challengeAllowed && !challengePlayed
-              ? "🥊 Weekend Challenge: Play Now"
+              ? "🥊 Weekly Quiz: Play Now"
               : challengePlayed
-              ? " 🥊 Weekend Challenge: Already Played"
+              ? " 🥊 Weekly Quiz: Already Played"
               : `🥊 Weekly Quiz: ${countdownText}`}
           </button>
           <button
@@ -725,7 +725,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           {weeklyLeaderboard.length > 0 && (
             <div className="bg-white border border-yellow-400 rounded-md shadow p-1">
               <h2 className="text-[11px] font-bold text-yellow-600 mb-0.5">
-                🏆 Weekend Challenge Top 10
+                🏆 Weekly Quiz Top 10
               </h2>
               <ol className="space-y-0.5 text-[10px]">
                 {weeklyLeaderboard.map((entry, index) => (
