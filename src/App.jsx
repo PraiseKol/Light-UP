@@ -8,7 +8,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
-import { AuthProvider, useAuth } from "auth/AuthProvider";
+import { AuthProvider, useAuth } from "@/auth/AuthProvider";
 
 import BackgroundMusic from "components/BackgroundMusic";
 
