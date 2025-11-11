@@ -558,7 +558,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             }}
             className="bg-white/90 text-candyBlue font-bold border-2 border-candyBlue/40 rounded-2xl px-6 py-4 shadow-[0_8px_20px_rgba(79,156,249,0.3)] hover:shadow-[0_12px_30px_rgba(79,156,249,0.5)] hover:bg-candyBlue/5 transition-all duration-300 hover:scale-105 hover:-translate-y-1"
           >
-            <span className="text-xl mr-2">⚙️</span> Settings
+            <span className="text-xl mr-2">⚙️</span> Settingsssss
           </button>
           <button
             onClick={() => {
