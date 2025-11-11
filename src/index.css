@@ -18,3 +18,24 @@
     animation: glowRing 2s infinite;
   }
 
+  @keyframes pulseGlow {
+    0%, 100% {
+      box-shadow: 0 0 15px rgba(79, 156, 249, 0.4), 0 0 30px rgba(79, 156, 249, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 25px rgba(79, 156, 249, 0.6), 0 0 50px rgba(79, 156, 249, 0.3);
+    }
+  }
+
+  .pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  .candy-gradient {
+    background: linear-gradient(135deg, #4F9CF9 0%, #9D4EDD 50%, #FF6B9D 100%);
+  }
+
+  .golden-gradient {
+    background: linear-gradient(135deg, #FFD93D 0%, #FFAA00 100%);
+  }
+

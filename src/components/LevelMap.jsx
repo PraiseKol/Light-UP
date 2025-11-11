@@ -116,17 +116,18 @@ export default function LevelMap({
         h-[120vh] sm:h-[150vh]
         overflow-y-auto 
         rounded-3xl 
-        shadow-2xl 
-        bg-gradient-to-b from-white/10 to-transparent
-        backdrop-blur-sm
-        border-2 border-white/20
+        shadow-[0_10px_50px_rgba(79,156,249,0.3)]
+        bg-gradient-to-b from-white/20 via-blue-50/10 to-purple-50/10
+        backdrop-blur-md
+        border-2 border-white/30
         max-w-sm sm:max-w-full
         mx-auto
+        scroll-smooth
       "
     >
       {/* Background Phase Title */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <h1 className="text-2xl md:text-5xl font-extrabold bg-gradient-to-r from-blue-600/20 to-purple-600/20 bg-clip-text text-transparent text-center tracking-wider select-none drop-shadow-lg">
+        <h1 className="text-3xl md:text-6xl font-black bg-gradient-to-r from-candyBlue/30 via-candyPurple/30 to-candyPink/30 bg-clip-text text-transparent text-center tracking-wider select-none drop-shadow-2xl animate-fadeInUp">
           {`Phase ${phase.phaseNumber}: ${phase.title}`}
         </h1>
       </div>
@@ -189,12 +190,15 @@ export default function LevelMap({
             </div>
 
             {isCurrent && (
-              <div className="absolute -top-6 left-1/4 -translate-x-1/2 flex flex-col items-center">
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center animate-float">
                 <img
                   src={avatarIcon}
                   alt="Avatar"
-                  className="w-8 h-8 sm:w-12 sm:h-12 rounded-full shadow-md animate-bounce"
+                  className="w-10 h-10 sm:w-14 sm:h-14 rounded-full shadow-[0_4px_15px_rgba(79,156,249,0.6)] border-4 border-white animate-pulse"
                 />
+                <div className="mt-1 px-2 py-0.5 bg-candyYellow text-white text-[10px] font-black rounded-full shadow-md">
+                  YOU
+                </div>
               </div>
             )}
           </div>
@@ -204,20 +208,20 @@ export default function LevelMap({
       {/* Lock overlay */}
       {(!phaseUnlocked || (phaseUnlocked && isLocked)) && (
         <div
-          className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/80 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center z-20 text-white text-center px-4"
+          className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/90 backdrop-blur-xl rounded-3xl flex flex-col items-center justify-center z-20 text-white text-center px-4 animate-fadeIn"
           title={
             !phaseUnlocked
               ? "Complete the previous phase first."
               : "You're out of lives! Please wait or get more from the store."
           }
         >
-          <div className="bg-white/10 backdrop-blur-sm rounded-full p-6 mb-4">
-            <Lock className="w-12 h-12 animate-pulse" />
+          <div className="bg-white/20 backdrop-blur-md rounded-full p-8 mb-6 shadow-[0_0_40px_rgba(255,255,255,0.3)] animate-float">
+            <Lock className="w-16 h-16 animate-pulse text-candyYellow" />
           </div>
-          <p className="text-lg font-bold mb-2">
+          <p className="text-2xl font-black mb-3 bg-gradient-to-r from-candyYellow to-candyOrange bg-clip-text text-transparent">
             {!phaseUnlocked ? "🔒 Phase Locked" : "💔 Out of Lives"}
           </p>
-          <p className="text-sm font-medium opacity-90">
+          <p className="text-base font-semibold opacity-90 max-w-xs">
             {!phaseUnlocked
               ? "Complete the Previous Phase to Light UP"
               : "Come back later or visit the store!"}

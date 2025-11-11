@@ -6,13 +6,23 @@ module.exports = {
       colors: {
         gold: '#FFD700',
         charcoal: '#2D2D2D',
+        candyBlue: '#4F9CF9',
+        candyPurple: '#9D4EDD',
+        candyYellow: '#FFD93D',
+        candyGreen: '#3DD68C',
+        candyPink: '#FF6B9D',
+        candyOrange: '#FF9A56',
       },
       animation: {
         gradientBlur: 'gradientBlur 8s ease-in-out infinite',
         floatParticles: 'floatParticles 30s linear infinite',
         fadeInUp: 'fadeInUp 0.8s ease-out',
         popIn: 'popIn 0.4s ease-out',
-        fadeScale: 'fadeScale 0.7s ease-out', // ✅ New animation
+        fadeScale: 'fadeScale 0.7s ease-out',
+        wiggle: 'wiggle 0.5s ease-in-out',
+        glow: 'glow 2s ease-in-out infinite',
+        float: 'float 3s ease-in-out infinite',
+        sparkle: 'sparkle 1.5s ease-in-out infinite',
       },
       keyframes: {
         flicker: {
@@ -35,9 +45,25 @@ module.exports = {
           '0%': { transform: 'scale(0.8)', opacity: 0 },
           '100%': { transform: 'scale(1)', opacity: 1 },
         },
-        fadeScale: { // ✅ New keyframes
+        fadeScale: {
           '0%': { opacity: 0, transform: 'scale(0.9)' },
           '100%': { opacity: 1, transform: 'scale(1)' },
+        },
+        wiggle: {
+          '0%, 100%': { transform: 'rotate(-3deg)' },
+          '50%': { transform: 'rotate(3deg)' },
+        },
+        glow: {
+          '0%, 100%': { boxShadow: '0 0 20px rgba(255, 217, 61, 0.5)' },
+          '50%': { boxShadow: '0 0 40px rgba(255, 217, 61, 0.9)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        sparkle: {
+          '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+          '50%': { opacity: 0.5, transform: 'scale(1.2)' },
         },
       },
     },
