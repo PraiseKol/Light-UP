@@ -212,6 +212,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     }
   }, [gameUser]);
 
+  // 🛡️ Safety: auto-close stuck scripture modal after 10 seconds
+  useEffect(() => {
+    if (showScriptureModal) {
+      const timer = setTimeout(() => setShowScriptureModal(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showScriptureModal]);
+
   const handleBackFromGame = () => {
     setSelectedLevel(null);
     const currentLevelId = gameUser.current_level_id;
@@ -305,7 +313,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     } else {
       setScriptureText(
         (await fetchRandomScripture()) ||
-          ""The Lord will fight for you; you need only to be still." — Exodus 14:14"
+          `"The Lord will fight for you; you need only to be still." — Exodus 14:14`
       );
       setShowScriptureModal(true);
     }
@@ -327,16 +335,23 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   };
 
   const handleNextPhaseScroll = () => {
-    const currentPhaseNum = selectedLevel?.phaseNumber;
+    // Always close modal first
+    setShowScriptureModal(false);
+
+    // Use the highest unlocked phase instead of selectedLevel
+    const currentPhaseNum =
+      selectedLevel?.phaseNumber ?? Math.max(...unlockedPhases, 0);
     const nextIndex = levelPhases.findIndex(
       (p) => p.phaseNumber === currentPhaseNum + 1
     );
-    setShowScriptureModal(false);
+
     if (nextIndex !== -1 && phaseRefs.current[nextIndex]) {
-      phaseRefs.current[nextIndex].scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      setTimeout(() => {
+        phaseRefs.current[nextIndex].scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 300);
     }
   };
 
@@ -362,7 +377,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             your Word!
           </div>
           <div className="h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-            <div className="h-full candy-gradient rounded-full animate-pulse shadow-lg" style={{ width: "70%" }}></div>
+            <div
+              className="h-full candy-gradient rounded-full animate-pulse shadow-lg"
+              style={{ width: "70%" }}
+            ></div>
           </div>
           <p className="mt-8 text-base text-gray-600 tracking-wide font-bold animate-pulse">
             ✨ Preparing your spiritual journey...
@@ -399,7 +417,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             </div>
 
             {/* Lives */}
-            <LivesDisplay lives={gameUser.lives} lastLostAt={gameUser.last_life_lost_at} />
+            <LivesDisplay
+              lives={gameUser.lives}
+              lastLostAt={gameUser.last_life_lost_at}
+            />
 
             {/* Talents */}
             <div className="bg-white/20 backdrop-blur px-3 sm:px-4 py-2 rounded-full border-2 border-white/30 font-black text-white text-sm">
@@ -409,14 +430,16 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
           {/* Right: Powerups */}
           <div className="hidden lg:flex gap-2">
-            {Object.entries(gameUser.powerups_inventory || {}).map(([key, count]) => (
-              <div
-                key={key}
-                className="bg-white/20 px-3 py-2 rounded-full border-2 border-white/30 font-bold text-white text-sm"
-              >
-                {getPowerUpIcon(key)} {count}
-              </div>
-            ))}
+            {Object.entries(gameUser.powerups_inventory || {}).map(
+              ([key, count]) => (
+                <div
+                  key={key}
+                  className="bg-white/20 px-3 py-2 rounded-full border-2 border-white/30 font-bold text-white text-sm"
+                >
+                  {getPowerUpIcon(key)} {count}
+                </div>
+              )
+            )}
           </div>
         </div>
       </header>
@@ -452,7 +475,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                     isLocked={gameUser.lives === 0}
                     onSelectLevel={(level) => {
                       if (gameUser.lives > 0) startLevel(level);
-                      else toast.error("You're out of lives! Please wait to get more.");
+                      else
+                        toast.error(
+                          "You're out of lives! Please wait to get more."
+                        );
                     }}
                     sound={sound}
                     setSound={setSound}
@@ -524,7 +550,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               disabled={!challengeAllowed}
               className="btn-3d candy-gradient text-white font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              🥊 {challengeAllowed && !challengePlayed ? "Weekly Quiz" : challengePlayed ? "Played" : `Opens ${countdownText}`}
+              🥊{" "}
+              {challengeAllowed && !challengePlayed
+                ? "Weekly Quiz"
+                : challengePlayed
+                ? "Played"
+                : `Opens ${countdownText}`}
             </button>
           </div>
 
@@ -550,7 +581,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               💬 Chat
             </button>
 
-            <FeedbackButton effectsOn={effectsOn} sound={sound} setSound={setSound} />
+            <FeedbackButton
+              effectsOn={effectsOn}
+              sound={sound}
+              setSound={setSound}
+            />
 
             <DonationsButton
               userId={user?.id}
@@ -574,7 +609,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
           >
             <span className="text-2xl">⚙️</span>
-            <span className="text-[10px] font-bold text-gray-700">Settings</span>
+            <span className="text-[10px] font-bold text-gray-700">
+              Settings
+            </span>
           </button>
 
           {/* Store */}
@@ -703,7 +740,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </button>
 
           <div className="flex gap-3">
-            <FeedbackButton effectsOn={effectsOn} sound={sound} setSound={setSound} />
+            <FeedbackButton
+              effectsOn={effectsOn}
+              sound={sound}
+              setSound={setSound}
+            />
             <DonationsButton
               userId={user?.id}
               effectsOn={effectsOn}
@@ -718,8 +759,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         <Modal isOpen={true} onClose={() => {}} title="🎉 Level Complete!">
           <div className="text-center py-6">
             <div className="text-6xl mb-4 animate-bounce">🎊</div>
-            <p className="text-2xl font-black text-candyBlue mb-2">Next Level Unlocked!</p>
-            <p className="text-lg text-gray-600 mb-4">Level {pendingNextLevel.number}</p>
+            <p className="text-2xl font-black text-candyBlue mb-2">
+              Next Level Unlocked!
+            </p>
+            <p className="text-lg text-gray-600 mb-4">
+              Level {pendingNextLevel.number}
+            </p>
             <p className="text-sm text-gray-500">Starting automatically...</p>
           </div>
         </Modal>

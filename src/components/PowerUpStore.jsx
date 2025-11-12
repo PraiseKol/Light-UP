@@ -13,6 +13,15 @@ export default function PowerUpStore({
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("powerups");
 
+  // 🧠 guard: if gameUser not yet loaded
+  if (!gameUser) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        Loading Power-Up Store...
+      </div>
+    );
+  }
+
   const powerUps = [
     {
       key: "divine_hint",
@@ -50,7 +59,10 @@ export default function PowerUpStore({
     const cost = powerup.costs[bundle];
     const quantity = bundle === "one" ? 1 : 3;
 
-    if (gameUser.talents < cost) {
+    // ✅ safely access talents
+    const currentTalents = gameUser?.talents ?? 0;
+
+    if (currentTalents < cost) {
       alert("Not enough talents to purchase this power-up.");
       return;
     }
@@ -62,9 +74,11 @@ export default function PowerUpStore({
       await adjustPowerupInventory(gameUser.user_id, powerup.key, quantity);
 
       alert(`You bought ${quantity}x ${powerup.name}!`);
+
+      // update local balance safely
       gameUser.talents = newBalance;
 
-      if (onPurchase) onPurchase();
+      onPurchase?.();
     } catch (err) {
       console.error("Purchase failed:", err);
       alert("Purchase failed. Please try again.");
@@ -112,6 +126,7 @@ export default function PowerUpStore({
           <p className="text-center text-[8px] sm:text-sm text-gray-500 mb-1 sm:mb-6">
             Exchange your talents for divine advantages (bonuses).
           </p>
+
           <div className="text-right text-[9px] md:text-sm mb-2 md:mb-3 ">
             <span className="font-semibold text-gray-700">Your Talents:</span>{" "}
             <span className="text-blue-600 font-bold">
@@ -136,14 +151,16 @@ export default function PowerUpStore({
                 </div>
                 <div className="flex flex-col sm:flex-row gap-1 md:gap-2">
                   <button
-                    disabled={loading || gameUser.talents < pu.costs.one}
+                    disabled={loading || (gameUser?.talents ?? 0) < pu.costs.one}
                     onClick={() => handlePurchase(pu, "one")}
                     className="px-1 md:px-2 py-0.5 md:py-1 text-[8px] md:text-sm bg-blue-600 hover:bg-blue-500 text-white disabled:bg-gray-300 rounded"
                   >
                     1x for 💎 {pu.costs.one}
                   </button>
                   <button
-                    disabled={loading || gameUser.talents < pu.costs.three}
+                    disabled={
+                      loading || (gameUser?.talents ?? 0) < pu.costs.three
+                    }
                     onClick={() => handlePurchase(pu, "three")}
                     className="px-1 md:px-2 py-0.5 md:py-1 text-[8px] md:text-sm bg-green-600 hover:bg-green-500 text-white disabled:bg-gray-300 rounded"
                   >
