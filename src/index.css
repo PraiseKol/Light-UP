@@ -39,3 +39,22 @@
     background: linear-gradient(135deg, #FFD93D 0%, #FFAA00 100%);
   }
 
+  /* 3D Button Effect */
+  .btn-3d {
+    transform-style: preserve-3d;
+    transition: all 0.2s ease;
+  }
+
+  .btn-3d:hover {
+    transform: translateY(-2px);
+  }
+
+  .btn-3d:active {
+    transform: translateY(1px);
+  }
+
+  /* Enhanced glow for completed levels */
+  .super-glow {
+    animation: superGlow 2s ease-in-out infinite;
+  }
+

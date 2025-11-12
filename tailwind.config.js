@@ -23,6 +23,8 @@ module.exports = {
         glow: 'glow 2s ease-in-out infinite',
         float: 'float 3s ease-in-out infinite',
         sparkle: 'sparkle 1.5s ease-in-out infinite',
+        cloudDrift: 'cloudDrift 60s linear infinite',
+        superGlow: 'superGlow 2s ease-in-out infinite',
       },
       keyframes: {
         flicker: {
@@ -64,6 +66,18 @@ module.exports = {
         sparkle: {
           '0%, 100%': { opacity: 1, transform: 'scale(1)' },
           '50%': { opacity: 0.5, transform: 'scale(1.2)' },
+        },
+        cloudDrift: {
+          '0%': { backgroundPosition: '0% 0%' },
+          '100%': { backgroundPosition: '100% 0%' },
+        },
+        superGlow: {
+          '0%, 100%': {
+            boxShadow: '0 0 20px rgba(255, 217, 61, 0.6), 0 0 40px rgba(255, 217, 61, 0.4), 0 0 60px rgba(255, 217, 61, 0.2)'
+          },
+          '50%': {
+            boxShadow: '0 0 30px rgba(255, 217, 61, 0.8), 0 0 60px rgba(255, 217, 61, 0.6), 0 0 90px rgba(255, 217, 61, 0.4)'
+          }
         },
       },
     },

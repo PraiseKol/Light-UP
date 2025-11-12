@@ -124,94 +124,74 @@ export default function MGlobalChat({ user }) {
   const normalMessages = messages.filter((m) => m.role !== "super_admin");
 
   return (
-    <div
-      className="
-    flex flex-col 
-    w-full 
-    bg-white/10 backdrop-blur-md border border-gray-800 rounded-t-xl shadow-lg overflow-hidden
-    fixed bottom-0 left-0 right-0 z-50    /* Mobile pinned + lifted above bottom */
-    h-[var(--chat-vh,40%)]                 /* Mobile dynamic height */
-    md:static md:bottom-auto md:left-auto md:right-auto md:rounded-xl
-    md:h-[90vh]                          /* ⬆️ Taller desktop height */
-  "
-    >
-      {/* 🔹 Mobile drag handle / toggle */}
-      <div
-        className="md:hidden w-full flex items-center justify-center cursor-pointer bg-gray-200/30 hover:bg-gray-200/50"
-        onClick={() => setOpen(!open)}
-      >
-        <div className="w-10 h-1.5 bg-gray-400 rounded-full mt-1 mb-1" />
-      </div>
-
-      {/* Only show chat contents if open */}
-      {open && (
-        <>
-          {/* 🔹 Super Admin Announcement */}
-          {latestSuperAdmin.length > 0 && (
-            <div className="bg-yellow-100 border-b border-yellow-400 p-2 text-[10px] md:text-xs">
-              {latestSuperAdmin.map((msg) => (
-                <div key={msg.id} className="rounded-lg px-2 py-1 shadow-sm">
-                  <span className="font-bold text-red-700">{msg.username}</span>
-                  <div className="text-gray-800 break-words whitespace-pre-wrap">
-                    {msg.message}
-                  </div>
+    <div className="flex flex-col w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-gray-200">
+      {/* Chat contents */}
+      <>
+        {/* Super Admin Announcement */}
+        {latestSuperAdmin.length > 0 && (
+          <div className="bg-gradient-to-r from-yellow-100 to-yellow-200 border-b-2 border-yellow-400 p-3 text-xs md:text-sm">
+            {latestSuperAdmin.map((msg) => (
+              <div key={msg.id} className="rounded-lg px-3 py-2 bg-white/50 shadow-md">
+                <span className="font-black text-red-700 text-sm">📢 {msg.username}</span>
+                <div className="text-gray-900 break-words whitespace-pre-wrap mt-1 font-medium">
+                  {msg.message}
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
+          </div>
+        )}
 
-          {/* 🔹 Chat Body */}
-          <div
-            ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto p-3 text-[10px] md:text-[11px] space-y-2"
+        {/* Chat Body */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto p-4 text-xs md:text-sm space-y-3 bg-gradient-to-b from-gray-50 to-white"
+        >
+          {normalMessages.map((msg, i) => {
+            const prevMsg = normalMessages[i - 1];
+            const showUser = !prevMsg || prevMsg.user_id !== msg.user_id;
+
+            return (
+              <div
+                key={msg.id}
+                className="bg-white border-2 border-gray-200 rounded-xl px-3 py-2 shadow-md hover:shadow-lg transition-shadow animate-[fadeIn_0.3s_ease]"
+              >
+                {showUser && (
+                  <span className="font-black text-candyBlue block text-xs md:text-sm mb-1">
+                    {msg.username} {msg.is_admin && "👑"}
+                  </span>
+                )}
+                <div className="text-gray-800 break-words whitespace-pre-wrap text-xs md:text-sm">
+                  {msg.message}
+                </div>
+                <div className="text-[10px] text-gray-400 mt-1">
+                  {new Date(msg.created_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Sticky Input */}
+        <div className="sticky bottom-0 left-0 right-0 flex gap-2 border-t-2 border-gray-200 bg-white p-3">
+          <input
+            className="flex-1 p-3 text-sm outline-none border-2 border-gray-300 rounded-xl focus:border-candyBlue focus:ring-2 focus:ring-candyBlue/30 transition"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="Type your message..."
+          />
+          <button
+            onClick={sendMessage}
+            className="px-5 py-3 text-lg candy-gradient text-white rounded-xl hover:scale-105 active:scale-95 transition-transform shadow-lg font-bold"
           >
-            {normalMessages.map((msg, i) => {
-              const prevMsg = normalMessages[i - 1];
-              const showUser = !prevMsg || prevMsg.user_id !== msg.user_id;
-
-              return (
-                <div
-                  key={msg.id}
-                  className="bg-gray-200 border border-gray-100 rounded-lg px-2 py-1 shadow-sm animate-[fadeIn_0.3s_ease]"
-                >
-                  {showUser && (
-                    <span className="font-bold text-blue-700 block text-[10px] md:text-[11px]">
-                      {msg.username} {msg.is_admin && " - ADMIN"}
-                    </span>
-                  )}
-                  <div className="text-gray-800 break-words whitespace-pre-wrap text-[10px] md:text-[11px]">
-                    {msg.message}
-                  </div>
-                  <div className="text-[8px] text-gray-500 mt-0.5">
-                    {new Date(msg.created_at).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* 🔹 Sticky Input */}
-          <div className="sticky bottom-0 left-0 right-0 flex border-t border-gray-300 bg-gray-50 p-2">
-            <input
-              className="flex-1 p-2 text-[9px] md:text-[10px] outline-none border border-gray-300 rounded-lg focus:border-blue-400 focus:ring-1 focus:ring-blue-300 transition"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Type your message..."
-            />
-            <button
-              onClick={sendMessage}
-              className="ml-2 px-3 py-2 text-[12px] md:text-[10px] bg-blue-600 text-white rounded-lg hover:bg-blue-800 transition"
-            >
-              📩
-            </button>
-          </div>
-        </>
-      )}
+            📩
+          </button>
+        </div>
+      </>
     </div>
   );
 }

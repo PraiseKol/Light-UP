@@ -82,8 +82,8 @@ export default function LevelMap({
         if (!prevCenter || !currCenter) return;
 
         const prevCompleted = completedLevels.includes(prev.id);
-        const glowColor = prevCompleted ? "#e0be12" : "#2c2c2c";
-        const strokeW = prevCompleted ? 16 : 12;
+        const glowColor = prevCompleted ? "url(#goldGradient)" : "#888888";
+        const strokeW = prevCompleted ? 20 : 14;
 
         // midpoint curve control points
         const cx1 = (prevCenter.x + currCenter.x) / 2;
@@ -110,30 +110,44 @@ export default function LevelMap({
   return (
     <div
       ref={containerRef}
-      className="
-        relative 
-        w-full 
-        h-[120vh] sm:h-[150vh]
-        overflow-y-auto 
-        rounded-3xl 
-        shadow-[0_10px_50px_rgba(79,156,249,0.3)]
-        bg-gradient-to-b from-white/20 via-blue-50/10 to-purple-50/10
-        backdrop-blur-md
-        border-2 border-white/30
-        max-w-sm sm:max-w-full
-        mx-auto
-        scroll-smooth
-      "
+      className="relative w-full min-h-[800px] pb-12
+        rounded-3xl shadow-[0_10px_50px_rgba(79,156,249,0.4)]
+        bg-gradient-to-b from-sky-100/40 via-purple-50/30 to-pink-50/40
+        backdrop-blur-sm 
+        border-4 border-white/50 
+        max-w-3xl mx-auto mb-8"
+      style={{
+        backgroundImage: `url('/clouds.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
     >
-      {/* Background Phase Title */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <h1 className="text-3xl md:text-6xl font-black bg-gradient-to-r from-candyBlue/30 via-candyPurple/30 to-candyPink/30 bg-clip-text text-transparent text-center tracking-wider select-none drop-shadow-2xl animate-fadeInUp">
-          {`Phase ${phase.phaseNumber}: ${phase.title}`}
-        </h1>
+      {/* Phase Title */}
+      <div className="text-center py-8 sticky top-0 z-10 bg-gradient-to-b from-white/40 via-blue-50/30 to-transparent backdrop-blur-md">
+        <h2 className="text-4xl md:text-7xl font-black bg-gradient-to-r from-candyBlue via-candyPurple to-candyPink bg-clip-text text-transparent drop-shadow-[0_4px_10px_rgba(79,156,249,0.4)]">
+          Phase {phase.phaseNumber}
+        </h2>
       </div>
 
-      {/* SVG curved paths */}
+      {/* SVG paths with enhanced glow */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none">
+        <defs>
+          <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#FFD93D" />
+            <stop offset="50%" stopColor="#FFA500" />
+            <stop offset="100%" stopColor="#FFD93D" />
+          </linearGradient>
+          
+          <filter id="pathGlow">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        
         {paths.map((p) => (
           <path
             key={p.id}
@@ -142,10 +156,9 @@ export default function LevelMap({
             stroke={p.color}
             strokeWidth={p.width}
             strokeLinecap="round"
+            strokeLinejoin="round"
             style={{
-              filter: p.glow
-                ? "drop-shadow(0 0 8px rgba(255,215,0,0.8))"
-                : "none",
+              filter: p.glow ? "url(#pathGlow) drop-shadow(0 0 12px rgba(255,215,0,0.9))" : "none",
             }}
             vectorEffect="non-scaling-stroke"
           />
@@ -190,13 +203,13 @@ export default function LevelMap({
             </div>
 
             {isCurrent && (
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center animate-float">
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center animate-float">
                 <img
                   src={avatarIcon}
                   alt="Avatar"
-                  className="w-10 h-10 sm:w-14 sm:h-14 rounded-full shadow-[0_4px_15px_rgba(79,156,249,0.6)] border-4 border-white animate-pulse"
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-[0_6px_20px_rgba(79,156,249,0.8)] border-4 border-white ring-4 ring-candyBlue/40 animate-pulse"
                 />
-                <div className="mt-1 px-2 py-0.5 bg-candyYellow text-white text-[10px] font-black rounded-full shadow-md">
+                <div className="mt-2 px-3 py-1 bg-gradient-to-r from-candyYellow to-yellow-500 text-white text-xs font-black rounded-full shadow-lg">
                   YOU
                 </div>
               </div>
@@ -207,24 +220,14 @@ export default function LevelMap({
 
       {/* Lock overlay */}
       {(!phaseUnlocked || (phaseUnlocked && isLocked)) && (
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/90 backdrop-blur-xl rounded-3xl flex flex-col items-center justify-center z-20 text-white text-center px-4 animate-fadeIn"
-          title={
-            !phaseUnlocked
-              ? "Complete the previous phase first."
-              : "You're out of lives! Please wait or get more from the store."
-          }
-        >
+        <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center z-30">
           <div className="bg-white/20 backdrop-blur-md rounded-full p-8 mb-6 shadow-[0_0_40px_rgba(255,255,255,0.3)] animate-float">
-            <Lock className="w-16 h-16 animate-pulse text-candyYellow" />
+            <Lock className="w-16 h-16 text-white drop-shadow-lg animate-pulse" />
           </div>
-          <p className="text-2xl font-black mb-3 bg-gradient-to-r from-candyYellow to-candyOrange bg-clip-text text-transparent">
-            {!phaseUnlocked ? "🔒 Phase Locked" : "💔 Out of Lives"}
-          </p>
-          <p className="text-base font-semibold opacity-90 max-w-xs">
-            {!phaseUnlocked
-              ? "Complete the Previous Phase to Light UP"
-              : "Come back later or visit the store!"}
+          <p className="text-white text-xl font-black drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
+            {!phaseUnlocked 
+              ? `Complete Phase ${phase.phaseNumber - 1} to Unlock`
+              : "Out of Lives - Visit the Store!"}
           </p>
         </div>
       )}
