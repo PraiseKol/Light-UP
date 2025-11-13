@@ -207,7 +207,7 @@ export default function LevelMap({
                 <img
                   src={avatarIcon}
                   alt="Avatar"
-                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-[0_6px_20px_rgba(79,156,249,0.8)] border-4 border-white ring-4 ring-candyBlue/40 animate-pulse"
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-[0_6px_20px_rgba(79,156,249,0.8)] border-3 sm:border-4 border-white ring-4 ring-candyBlue/40 animate-pulse"
                 />
                 <div className="mt-2 px-3 py-1 bg-gradient-to-r from-candyYellow to-yellow-500 text-white text-xs font-black rounded-full shadow-lg">
                   YOU

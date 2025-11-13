@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { playSound } from "@/utils/sound";
 
-const API_BASE = import.meta.env.VITE_API_URL; 
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function DonationsButton({
   userId,
@@ -70,12 +71,15 @@ export default function DonationsButton({
     <>
       <Button
         className={`${fullWidth ? "w-full" : ""} 
-    text-[8px] md:text-xs px-2.5 py-1 md:px-2 md:py-1
-    bg-green-600 hover:bg-green-400 text-white 
-    fixed bottom-2 md:bottom-4 left-50 z-50 rounded-md shadow`}
-        onClick={() => setShowModal(true)}
+          btn-3d bg-gradient-to-r from-green-600 to-green-500 
+          text-white font-bold px-5 py-2.5 rounded-xl shadow-md 
+          hover:scale-105 transition-all`}
+        onClick={() => {
+          playSound("optionSelect", effectsOn);
+          setShowModal(true);
+        }}
       >
-        ☕️ Gift
+        🎁 Gift
       </Button>
 
       {showModal && (

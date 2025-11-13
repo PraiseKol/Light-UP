@@ -5,7 +5,7 @@ import { MdLightbulb } from "react-icons/md";
 
 export default function LevelButton({ level, isUnlocked, onClick }) {
   const baseClass = `
-    w-20 h-20 sm:w-24 sm:h-24 
+    w-16 h-16 sm:w-20 sm:h-20 
     rounded-full font-bold 
     transition-all duration-300 
     flex items-center justify-center 
@@ -14,32 +14,33 @@ export default function LevelButton({ level, isUnlocked, onClick }) {
 
   const completedStyle = `
     golden-gradient text-white 
-    shadow-[0_6px_0_#d4a500,0_12px_20px_rgba(255,217,61,0.6)] 
-    ring-4 ring-candyYellow/40 
+    shadow-[0_8px_0_#d4a500,0_4px_0_#FFD93D_inset,0_15px_25px_rgba(255,217,61,0.7)] 
+    ring-4 ring-candyYellow/50 
     super-glow
-    hover:shadow-[0_4px_0_#d4a500,0_8px_20px_rgba(255,217,61,0.7)]
-    active:shadow-[0_2px_0_#d4a500,0_4px_10px_rgba(255,217,61,0.8)]
-    active:translate-y-1
+    hover:shadow-[0_6px_0_#d4a500,0_3px_0_#FFD93D_inset,0_12px_22px_rgba(255,217,61,0.8)]
+    hover:translate-y-[2px]
+    active:shadow-[0_2px_0_#d4a500,0_1px_0_#FFD93D_inset,0_6px_12px_rgba(255,217,61,0.9)]
+    active:translate-y-[6px]
   `;
 
   const unlockedStyle = `
     bg-white text-candyBlue 
-    shadow-[0_6px_0_#4F9CF9,0_12px_20px_rgba(79,156,249,0.5)] 
-    ring-4 ring-candyBlue/30 
+    shadow-[0_8px_0_#3B7DD6,0_4px_0_#E0F2FE_inset,0_15px_25px_rgba(79,156,249,0.6)] 
+    ring-4 ring-candyBlue/40 
     pulse-glow
-    hover:shadow-[0_8px_0_#4F9CF9,0_16px_30px_rgba(79,156,249,0.7)]
+    hover:shadow-[0_10px_0_#3B7DD6,0_5px_0_#E0F2FE_inset,0_18px_30px_rgba(79,156,249,0.8)]
     hover:translate-y-[-2px]
-    active:shadow-[0_2px_0_#4F9CF9,0_6px_15px_rgba(79,156,249,0.8)]
-    active:translate-y-1
+    active:shadow-[0_3px_0_#3B7DD6,0_2px_0_#E0F2FE_inset,0_8px_15px_rgba(79,156,249,0.9)]
+    active:translate-y-[5px]
   `;
 
   const lockedStyle = `
-    bg-gray-300/60 
-    shadow-[0_4px_0_#999,0_8px_15px_rgba(0,0,0,0.2)]
-    ring-4 ring-gray-400/40 
-    text-gray-400 
+    bg-gray-300/80 
+    shadow-[0_5px_0_#999,0_2px_0_#e5e5e5_inset,0_10px_20px_rgba(0,0,0,0.3)]
+    ring-4 ring-gray-400/50 
+    text-gray-500 
     cursor-not-allowed 
-    opacity-50
+    opacity-60
   `;
 
   return (
@@ -63,22 +64,22 @@ export default function LevelButton({ level, isUnlocked, onClick }) {
         <>
           <div className="absolute inset-2 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
           <MdLightbulb
-            size={40}
-            className="sm:size-48 text-white drop-shadow-[0_0_12px_rgba(255,255,255,1)] animate-sparkle relative z-10"
+            size={32}
+            className="sm:size-40 text-white drop-shadow-[0_0_12px_rgba(255,255,255,1)] animate-sparkle relative z-10"
           />
           <div className="absolute inset-0 rounded-full bg-candyYellow/20 animate-ping" />
         </>
       ) : isUnlocked ? (
         <>
           <div className="absolute inset-2 rounded-full bg-gradient-to-b from-white/50 to-transparent" />
-          <span className="text-3xl sm:text-4xl font-black drop-shadow-lg relative z-10">
+          <span className="text-2xl sm:text-3xl font-black drop-shadow-lg relative z-10">
             {level.number}
           </span>
         </>
       ) : (
         <Lightbulb
-          size={32}
-          className="sm:size-36 animate-pulse text-gray-400"
+          size={28}
+          className="sm:size-32 animate-pulse text-gray-400"
         />
       )}
     </motion.button>

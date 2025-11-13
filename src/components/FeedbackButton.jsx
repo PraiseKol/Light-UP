@@ -53,12 +53,15 @@ export default function FeedbackButton({ small, fullWidth, effectsOn = true }) {
       {/* Feedback Button */}
       <Button
         className={`${fullWidth ? "w-full" : ""} 
-          text-[8px] md:text-xs px-2.5 py-1 md:px-2 md:py-1
-    bg-gray-800 hover:bg-gray-600 text-white 
-    fixed bottom-2 md:bottom-4 z-50 right-4 rounded-md shadow`}
-        onClick={() => setIsOpen(true)}
+          btn-3d bg-gradient-to-r from-gray-700 to-gray-800 
+          text-white font-bold px-5 py-2.5 rounded-xl shadow-md 
+          hover:scale-105 transition-all`}
+        onClick={() => {
+          playSound("click", effectsOn);
+          setIsOpen(true);
+        }}
       >
-        💬 Feedback
+        📝 Feedback
       </Button>
 
       

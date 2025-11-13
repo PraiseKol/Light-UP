@@ -395,24 +395,24 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       <SpiritualParallaxBackground />
 
       {/* Fixed Top Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 candy-gradient py-3 px-4 shadow-[0_4px_20px_rgba(79,156,249,0.5)] border-b-4 border-white/30">
+      <header className="fixed top-0 left-0 right-0 z-50 candy-gradient py-2 lg:py-3 px-3 lg:px-4 shadow-[0_4px_20px_rgba(79,156,249,0.5)] border-b-4 border-white/30">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           {/* Left: Player Name & Avatar */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 lg:gap-3">
             <img
               src={avatar}
-              className="w-10 h-10 rounded-full border-3 border-white shadow-lg"
+              className="w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 lg:border-3 border-white shadow-lg"
               alt="Avatar"
             />
-            <span className="text-white font-black text-base sm:text-lg drop-shadow-lg">
+            <span className="text-white font-black text-sm lg:text-lg drop-shadow-lg">
               {gameUser.player_name || "Unnamed"}
             </span>
           </div>
 
           {/* Center: Stats */}
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* Score */}
-            <div className="bg-white/20 backdrop-blur px-3 sm:px-4 py-2 rounded-full border-2 border-white/30 font-black text-white text-sm">
+            <div className="bg-white/20 backdrop-blur px-2 lg:px-4 py-1.5 lg:py-2 rounded-full border-2 border-white/30 font-black text-white text-xs lg:text-sm">
               ⭐ {userScore}
             </div>
 
@@ -423,7 +423,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             />
 
             {/* Talents */}
-            <div className="bg-white/20 backdrop-blur px-3 sm:px-4 py-2 rounded-full border-2 border-white/30 font-black text-white text-sm">
+            <div className="bg-white/20 backdrop-blur px-2 lg:px-4 py-1.5 lg:py-2 rounded-full border-2 border-white/30 font-black text-white text-xs lg:text-sm">
               💎 {gameUser.talents ?? 0}
             </div>
           </div>
@@ -676,19 +676,26 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       <SettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
+        gameUser={gameUser}
         onSave={handleSavePlayerName}
         sound={sound}
         setSound={setSound}
         effectsOn={effectsOn}
       />
 
-      <PowerUpStore
+      <Modal
         isOpen={showStore}
         onClose={() => setShowStore(false)}
-        userId={user?.id}
-        effectsOn={effectsOn}
-        refetchGameUser={refetch}
-      />
+        title="🎁 Power-Up Store"
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+      >
+        <PowerUpStore
+          gameUser={gameUser}
+          user={user}
+          onPurchase={refetch}
+          effectsOn={effectsOn}
+        />
+      </Modal>
 
       <LeaderboardModal
         isOpen={showLeaderboardModal}
@@ -744,12 +751,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               effectsOn={effectsOn}
               sound={sound}
               setSound={setSound}
+              fullWidth
             />
             <DonationsButton
               userId={user?.id}
               effectsOn={effectsOn}
               playSound={playSound}
               sound={sound}
+              fullWidth
             />
           </div>
         </div>
