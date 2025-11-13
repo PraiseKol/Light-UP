@@ -5,7 +5,7 @@ import { MdLightbulb } from "react-icons/md";
 
 export default function LevelButton({ level, isUnlocked, onClick }) {
   const baseClass = `
-    w-16 h-16 sm:w-20 sm:h-20 
+    w-16 h-16 sm:w-20 sm:h-20 lg:w-16 lg:h-16 xl:w-14 xl:h-14
     rounded-full font-bold 
     transition-all duration-300 
     flex items-center justify-center 
@@ -13,15 +13,17 @@ export default function LevelButton({ level, isUnlocked, onClick }) {
   `;
 
   const completedStyle = `
-    golden-gradient text-white 
-    shadow-[0_8px_0_#d4a500,0_4px_0_#FFD93D_inset,0_15px_25px_rgba(255,217,61,0.7)] 
-    ring-4 ring-candyYellow/50 
-    super-glow
-    hover:shadow-[0_6px_0_#d4a500,0_3px_0_#FFD93D_inset,0_12px_22px_rgba(255,217,61,0.8)]
-    hover:translate-y-[2px]
-    active:shadow-[0_2px_0_#d4a500,0_1px_0_#FFD93D_inset,0_6px_12px_rgba(255,217,61,0.9)]
-    active:translate-y-[6px]
-  `;
+  golden-gradient text-white 
+  shadow-[0_8px_0_#d4a500,0_4px_0_#FFD93D_inset,0_15px_25px_rgba(255,217,61,0.7)] 
+  ring-4 ring-black
+  drop-shadow-[0_0_6px_black]
+  super-glow
+  hover:shadow-[0_6px_0_#d4a500,0_3px_0_#FFD93D_inset,0_12px_22px_rgba(255,217,61,0.8)]
+  hover:translate-y-[2px]
+  active:shadow-[0_2px_0_#d4a500,0_1px_0_#FFD93D_inset,0_6px_12px_rgba(255,217,61,0.9)]
+  active:translate-y-[6px]
+`;
+
 
   const unlockedStyle = `
     bg-white text-candyBlue 
@@ -47,7 +49,9 @@ export default function LevelButton({ level, isUnlocked, onClick }) {
     <motion.button
       initial={{ scale: 0, rotate: -180 }}
       animate={{ scale: 1, rotate: 0 }}
-      whileHover={isUnlocked && !level.completed ? { scale: 1.15, rotate: 5 } : {}}
+      whileHover={
+        isUnlocked && !level.completed ? { scale: 1.15, rotate: 5 } : {}
+      }
       whileTap={isUnlocked && !level.completed ? { scale: 0.95 } : {}}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className={`${baseClass} ${
@@ -63,24 +67,19 @@ export default function LevelButton({ level, isUnlocked, onClick }) {
       {level.completed ? (
         <>
           <div className="absolute inset-2 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
-          <MdLightbulb
-            size={32}
-            className="sm:size-40 text-white drop-shadow-[0_0_12px_rgba(255,255,255,1)] animate-sparkle relative z-10"
-          />
+          <MdLightbulb className="size-8 sm:size-10 lg:size-7 xl:size-6 text-white drop-shadow-[0_0_12px_rgba(255,255,255,1)] animate-sparkle relative z-10" />
+
           <div className="absolute inset-0 rounded-full bg-candyYellow/20 animate-ping" />
         </>
       ) : isUnlocked ? (
         <>
           <div className="absolute inset-2 rounded-full bg-gradient-to-b from-white/50 to-transparent" />
-          <span className="text-2xl sm:text-3xl font-black drop-shadow-lg relative z-10">
+          <span className="text-2xl sm:text-3xl lg:text-xl xl:text-lg font-black drop-shadow-lg relative z-10">
             {level.number}
           </span>
         </>
       ) : (
-        <Lightbulb
-          size={28}
-          className="sm:size-32 animate-pulse text-gray-400"
-        />
+        <Lightbulb className="size-10 sm:size-14 lg:size-10 xl:size-8 animate-pulse text-gray-400" />
       )}
     </motion.button>
   );
