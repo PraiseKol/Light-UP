@@ -5,20 +5,23 @@ import { playSound } from "@/utils/sound";
 export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
   const [loadingButton, setLoadingButton] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [currency, setCurrency] = useState("NGN"); // default currency
+  const [currency, setCurrency] = useState("NGN");
 
-  // Talent price options (price in NGN and USD)
+  // Price options
   const talentOptions = [
     { talents: 100, priceNGN: 750, priceUSD: 0.5 },
     { talents: 500, priceNGN: 3000, priceUSD: 2.0 },
   ];
 
+  // 🔥 Use VITE_ variable correctly
+  const PAYMENT_BASE_URL = import.meta.env.VITE_PAYMENT_API;
+
   const handleBuyTalentsWithMoney = async (talents, price, currency) => {
     playSound("click", effectsOn);
     setLoadingButton(talents);
+
     try {
-      const baseUrl = process.env.REACT_APP_PAYMENT_API;
-      const res = await fetch(`${baseUrl}/api/create-payment-session`, {
+      const res = await fetch(`${PAYMENT_BASE_URL}/api/create-payment-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -29,12 +32,19 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
         }),
       });
 
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Payment session failed to start.");
+      if (!res.ok) {
+        console.error("Server returned:", res.status, res.statusText);
+        alert("Payment failed. Server error.");
+        return;
       }
+
+      const data = await res.json().catch(() => null);
+      if (!data?.url) {
+        alert("Payment session failed to start.");
+        return;
+      }
+
+      window.location.href = data.url;
     } catch (err) {
       console.error("Payment start error:", err);
       alert("Failed to start payment.");
@@ -48,13 +58,14 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
       alert("Not enough talents to buy lives.");
       return;
     }
+
     if (!window.confirm(`Spend ${cost} talents for ${lives} lives?`)) return;
 
     playSound("click", effectsOn);
     setLoading(true);
+
     try {
-      const baseUrl = process.env.REACT_APP_PAYMENT_API;
-      const res = await fetch(`${baseUrl}/api/adjust-talents`, {
+      const res = await fetch(`${PAYMENT_BASE_URL}/api/adjust-talents`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -73,7 +84,7 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
         .eq("user_id", gameUser.user_id);
 
       alert(`You bought ${lives} lives successfully!`);
-      if (onPurchase) onPurchase();
+      onPurchase?.();
     } catch (err) {
       console.error("Life purchase failed:", err);
     } finally {
