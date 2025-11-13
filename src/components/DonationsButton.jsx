@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { playSound } from "@/utils/sound";
+import Modal from "@/components/ui/modal";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -12,7 +13,7 @@ export default function DonationsButton({
 }) {
   const [showModal, setShowModal] = useState(false);
   const [amount, setAmount] = useState(null);
-  const [currency, setCurrency] = useState("NGN"); // ✅ default to NGN
+  const [currency, setCurrency] = useState("NGN");
 
   const presetAmounts = {
     NGN: [
@@ -23,14 +24,6 @@ export default function DonationsButton({
       { label: "₦30,000", value: 30000 },
       { label: "₦75,000", value: 75000 },
     ],
-    // USD: [
-    //   { label: "$1", value: 1 },
-    //   { label: "$2", value: 2 },
-    //   { label: "$5", value: 5 },
-    //   { label: "$10", value: 10 },
-    //   { label: "$20", value: 20 },
-    //   { label: "$50", value: 50 },
-    // ],
   };
 
   const handleDonate = async () => {
@@ -39,7 +32,6 @@ export default function DonationsButton({
     }
 
     const payload = { userId, amount, currency };
-    console.log("Sending donation payload:", payload);
 
     try {
       const res = await fetch(`${API_BASE}/api/create-donation-session`, {
@@ -55,7 +47,6 @@ export default function DonationsButton({
 
       const data = await res.json();
 
-      // ✅ Always redirect to Paystack
       if (data?.url) {
         window.location.href = data.url;
       } else {
@@ -82,81 +73,75 @@ export default function DonationsButton({
         🎁 Gift
       </Button>
 
-      {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-96">
-            <h2 className="text-lg font-bold mb-4">Support with a Gift</h2>
-            <h3 className="text-xs md:text-sm font-bold mb-4">Your gifts help us develop new features, cover server costs, and keep this app functional(USD option is coming soon)</h3>
+      {/* Portal Modal (Centered properly) */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="Support with a Gift"
+        className="max-w-md max-h-[85vh] overflow-y-auto"
+      >
+        <h3 className="text-xs md:text-sm font-bold mb-4">
+          Your gifts help us develop new features, cover server costs, and keep
+          this app functional (USD option coming soon)
+        </h3>
 
-            {/* ✅ Currency Selector (NGN / USD) */}
-            <div className="flex gap-3 mb-4">
-              <button
-                className={`flex-1 py-2 rounded-lg border ${
-                  currency === "NGN" ? "bg-green-500 text-white" : "bg-gray-100"
-                }`}
-                onClick={() => {
-                  setCurrency("NGN");
-                  setAmount(null);
-                }}
-              >
-                NGN (₦)
-              </button>
-              {/* <button
-                className={`flex-1 py-2 rounded-lg border ${
-                  currency === "USD" ? "bg-green-500 text-white" : "bg-gray-100"
-                }`}
-                onClick={() => {
-                  setCurrency("USD");
-                  setAmount(null);
-                }}
-              >
-                USD ($)
-              </button> */}
-            </div>
-
-            {/* Preset Buttons */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {presetAmounts[currency].map((p) => (
-                <button
-                  key={p.value}
-                  onClick={() => setAmount(p.value)}
-                  className={`p-2 rounded-lg border ${
-                    amount === p.value
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-100"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Custom Input */}
-            <input
-              type="number"
-              placeholder={`Enter custom amount in ${currency}`}
-              className="border w-full px-3 py-2 rounded mb-4"
-              value={amount || ""}
-              onChange={(e) => setAmount(Number(e.target.value))}
-            />
-
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-4 py-2 bg-gray-300 rounded"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-green-600 text-white rounded"
-                onClick={handleDonate}
-              >
-                Donate
-              </button>
-            </div>
-          </div>
+        {/* Currency Toggle */}
+        <div className="flex gap-3 mb-4">
+          <button
+            className={`flex-1 py-2 rounded-lg border ${
+              currency === "NGN" ? "bg-green-500 text-white" : "bg-gray-100"
+            }`}
+            onClick={() => {
+              setCurrency("NGN");
+              setAmount(null);
+            }}
+          >
+            NGN (₦)
+          </button>
         </div>
-      )}
+
+        {/* Preset Amounts */}
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          {presetAmounts[currency].map((p) => (
+            <button
+              key={p.value}
+              onClick={() => setAmount(p.value)}
+              className={`p-2 rounded-lg border ${
+                amount === p.value
+                  ? "bg-green-600 text-white"
+                  : "bg-gray-100"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Custom Input */}
+        <input
+          type="number"
+          placeholder={`Enter custom amount in ${currency}`}
+          className="border w-full px-3 py-2 rounded mb-4"
+          value={amount || ""}
+          onChange={(e) => setAmount(Number(e.target.value))}
+        />
+
+        <div className="flex justify-end gap-2 mt-3">
+          <button
+            className="px-4 py-2 bg-gray-300 rounded"
+            onClick={() => setShowModal(false)}
+          >
+            Cancel
+          </button>
+
+          <button
+            className="px-4 py-2 bg-green-600 text-white rounded"
+            onClick={handleDonate}
+          >
+            Donate
+          </button>
+        </div>
+      </Modal>
     </>
   );
 }

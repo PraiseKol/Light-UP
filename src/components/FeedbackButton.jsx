@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/auth/AuthProvider";
 import { playSound } from "@/utils/sound";
+import Modal from "@/components/ui/modal";
 
 export default function FeedbackButton({ small, fullWidth, effectsOn = true }) {
   const { user } = useAuth();
@@ -64,69 +65,55 @@ export default function FeedbackButton({ small, fullWidth, effectsOn = true }) {
         📝 Feedback
       </Button>
 
-      
-
-      
-
-      {/* Modal */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-          onClick={() => {
-            setIsOpen(false);
-            setStatusMessage("");
+      {/* Portal Modal (Centered always) */}
+      <Modal
+        isOpen={isOpen}
+        onClose={() => {
+          setIsOpen(false);
+          setStatusMessage("");
+        }}
+        title="Send Feedback"
+        className="max-w-md max-h-[80vh] overflow-y-auto"
+      >
+        <textarea
+          value={message}
+          onChange={(e) => {
+            setMessage(e.target.value);
+            playSound("click", effectsOn);
           }}
-        >
-          <div
-            className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative max-h-[80vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()} // Prevent click from closing modal
+          className="w-full border rounded p-2 mb-3"
+          rows={4}
+          placeholder="Type your feedback here..."
+        />
+
+        {statusMessage && (
+          <p className="text-sm mb-3 text-gray-600">{statusMessage}</p>
+        )}
+
+        <div className="flex justify-end gap-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={() => {
+              playSound("back", effectsOn);
+              setIsOpen(false);
+              setStatusMessage("");
+            }}
+            disabled={loading}
           >
-            <h2 className="text-lg font-bold mb-4">Send Feedback</h2>
+            Cancel
+          </Button>
 
-            <textarea
-              value={message}
-              onChange={(e) => {
-                setMessage(e.target.value);
-                // Optional: play sound on typing
-                playSound("click", effectsOn);
-              }}
-              className="w-full border rounded p-2 mb-3"
-              rows={4}
-              placeholder="Type your feedback here..."
-            />
-
-            {statusMessage && (
-              <p className="text-sm mb-3 text-gray-600">{statusMessage}</p>
-            )}
-
-            <div className="flex justify-end gap-2">
-              {/* Cancel Button */}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  playSound("back", effectsOn);
-                  setIsOpen(false);
-                  setStatusMessage("");
-                }}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-
-              {/* Send Button */}
-              <Button
-                onClick={() => {
-                  playSound("select", effectsOn); // 🔊 play sound on click
-                  submitFeedback(); // call your submit function
-                }}
-                disabled={loading}
-              >
-                {loading ? "Sending..." : "Send"}
-              </Button>
-            </div>
-          </div>
+          <Button
+            onClick={() => {
+              playSound("select", effectsOn);
+              submitFeedback();
+            }}
+            disabled={loading}
+          >
+            {loading ? "Sending..." : "Send"}
+          </Button>
         </div>
-      )}
+      </Modal>
     </>
   );
 }
