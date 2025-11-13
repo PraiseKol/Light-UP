@@ -26,12 +26,14 @@ import DonationsButton from "@/components/DonationsButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PowerUpStore from "@/components/PowerUpStore";
 import Modal from "@/components/ui/modal";
+import { Tooltip } from "@/components/ui/tooltip";
 import GlobalChat from "@/components/GlobalChat";
 import LeaderboardModal from "@/components/LeaderboardModal";
 import {
   determineUnlockedPhases,
   wrapLevelsWithStatus,
   getPowerUpIcon,
+  getPowerUpTooltip,
 } from "@/utils/gameHelpers";
 import {
   getWeeklyChallengeStatus,
@@ -412,32 +414,39 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           {/* Center: Stats */}
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* Score */}
-            <div className="bg-white/20 backdrop-blur px-2 lg:px-4 py-1.5 lg:py-2 rounded-full border-2 border-white/30 font-black text-white text-xs lg:text-sm">
-              ⭐ {userScore}
-            </div>
+            <Tooltip content="Your total score from completed levels">
+              <div className="bg-white/20 backdrop-blur px-2 lg:px-4 py-1.5 lg:py-2 rounded-full border-2 border-white/30 font-black text-white text-xs lg:text-sm cursor-help">
+                ⭐ {userScore}
+              </div>
+            </Tooltip>
 
             {/* Lives */}
-            <LivesDisplay
-              lives={gameUser.lives}
-              lastLostAt={gameUser.last_life_lost_at}
-            />
+            <Tooltip content="Lives regenerate every 30 minutes. Max 5 lives.">
+              <div>
+                <LivesDisplay
+                  lives={gameUser.lives}
+                  lastLostAt={gameUser.last_life_lost_at}
+                />
+              </div>
+            </Tooltip>
 
             {/* Talents */}
-            <div className="bg-white/20 backdrop-blur px-2 lg:px-4 py-1.5 lg:py-2 rounded-full border-2 border-white/30 font-black text-white text-xs lg:text-sm">
-              💎 {gameUser.talents ?? 0}
-            </div>
+            <Tooltip content="Talents are premium currency. Use them to buy power-ups!">
+              <div className="bg-white/20 backdrop-blur px-2 lg:px-4 py-1.5 lg:py-2 rounded-full border-2 border-white/30 font-black text-white text-xs lg:text-sm cursor-help">
+                💎 {gameUser.talents ?? 0}
+              </div>
+            </Tooltip>
           </div>
 
           {/* Right: Powerups */}
           <div className="hidden lg:flex gap-2">
             {Object.entries(gameUser.powerups_inventory || {}).map(
               ([key, count]) => (
-                <div
-                  key={key}
-                  className="bg-white/20 px-3 py-2 rounded-full border-2 border-white/30 font-bold text-white text-sm"
-                >
-                  {getPowerUpIcon(key)} {count}
-                </div>
+                <Tooltip key={key} content={getPowerUpTooltip(key)}>
+                  <div className="bg-white/20 px-3 py-2 rounded-full border-2 border-white/30 font-bold text-white text-sm cursor-help">
+                    {getPowerUpIcon(key)} {count}
+                  </div>
+                </Tooltip>
               )
             )}
           </div>
@@ -512,87 +521,107 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         <div className="max-w-7xl mx-auto px-4 py-3">
           {/* Row 1: Primary Actions */}
           <div className="flex items-center justify-center gap-3 mb-2">
-            <button
-              onClick={() => {
-                playSound("optionSelect", effectsOn);
-                setShowSettings(true);
-              }}
-              className="btn-3d bg-white text-candyBlue font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all"
-            >
-              ⚙️ Settings
-            </button>
+            <Tooltip content="Customize your player name and game settings">
+              <button
+                onClick={() => {
+                  playSound("optionSelect", effectsOn);
+                  setShowSettings(true);
+                }}
+                className="btn-3d bg-white text-candyBlue font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all"
+              >
+                ⚙️ Settings
+              </button>
+            </Tooltip>
 
-            <button
-              onClick={() => {
-                playSound("optionSelect", effectsOn);
-                setShowStore(true);
-              }}
-              className="btn-3d golden-gradient text-white font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all"
-            >
-              🎁 Store
-            </button>
+            <Tooltip content="Buy power-ups and bonuses with talents">
+              <button
+                onClick={() => {
+                  playSound("optionSelect", effectsOn);
+                  setShowStore(true);
+                }}
+                className="btn-3d golden-gradient text-white font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all"
+              >
+                🎁 Store
+              </button>
+            </Tooltip>
 
-            <button
-              onClick={() => {
-                playSound("optionSelect", effectsOn);
-                navigate("/multiplayer/create");
-              }}
-              className="btn-3d bg-gradient-to-r from-candyGreen to-green-500 text-white font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all"
-            >
-              🎮 Multiplayer
-            </button>
+            <Tooltip content="Create or join multiplayer games with friends">
+              <button
+                onClick={() => {
+                  playSound("optionSelect", effectsOn);
+                  navigate("/multiplayer/create");
+                }}
+                className="btn-3d bg-gradient-to-r from-candyGreen to-green-500 text-white font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all"
+              >
+                🎮 Multiplayer
+              </button>
+            </Tooltip>
 
-            <button
-              onClick={() => {
-                playSound("optionSelect", effectsOn);
-                handleWeeklyChallengeClick();
-              }}
-              disabled={!challengeAllowed}
-              className="btn-3d candy-gradient text-white font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            >
-              🥊{" "}
-              {challengeAllowed && !challengePlayed
-                ? "Weekly Quiz"
-                : challengePlayed
-                ? "Played"
-                : `Opens ${countdownText}`}
-            </button>
+            <Tooltip content={challengeAllowed ? "Play the weekly challenge to earn bonus rewards!" : `Weekly challenge opens ${countdownText}`}>
+              <button
+                onClick={() => {
+                  playSound("optionSelect", effectsOn);
+                  handleWeeklyChallengeClick();
+                }}
+                disabled={!challengeAllowed}
+                className="btn-3d candy-gradient text-white font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                🥊{" "}
+                {challengeAllowed && !challengePlayed
+                  ? "Weekly Quiz"
+                  : challengePlayed
+                  ? "Played"
+                  : `Opens ${countdownText}`}
+              </button>
+            </Tooltip>
           </div>
 
           {/* Row 2: Secondary Actions */}
           <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={() => {
-                playSound("optionSelect", effectsOn);
-                setShowLeaderboardModal(true);
-              }}
-              className="btn-3d bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold px-5 py-2.5 rounded-xl shadow-md hover:scale-105 transition-all"
-            >
-              🏆 Leaderboards
-            </button>
+            <Tooltip content="View top players and your ranking">
+              <button
+                onClick={() => {
+                  playSound("optionSelect", effectsOn);
+                  setShowLeaderboardModal(true);
+                }}
+                className="btn-3d bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold px-5 py-2.5 rounded-xl shadow-md hover:scale-105 transition-all"
+              >
+                🏆 Leaderboards
+              </button>
+            </Tooltip>
 
-            <button
-              onClick={() => {
-                playSound("optionSelect", effectsOn);
-                setShowChatModal(true);
-              }}
-              className="btn-3d bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold px-5 py-2.5 rounded-xl shadow-md hover:scale-105 transition-all"
-            >
-              💬 Chat
-            </button>
+            <Tooltip content="Chat with other players globally">
+              <button
+                onClick={() => {
+                  playSound("optionSelect", effectsOn);
+                  setShowChatModal(true);
+                }}
+                className="btn-3d bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold px-5 py-2.5 rounded-xl shadow-md hover:scale-105 transition-all"
+              >
+                💬 Chat
+              </button>
+            </Tooltip>
 
-            <FeedbackButton
-              effectsOn={effectsOn}
-              sound={sound}
-              setSound={setSound}
-            />
+            <Tooltip content="Send feedback or report bugs">
+              <div>
+                <FeedbackButton
+                  effectsOn={effectsOn}
+                  sound={sound}
+                  setSound={setSound}
+                />
+              </div>
+            </Tooltip>
 
-            <DonationsButton
-              userId={user?.id}
-              effectsOn={effectsOn}
-              playSound={playSound}
-              sound={sound}
-            />
+            <Tooltip content="Support the developers with a donation">
+              <div>
+                <DonationsButton
+                  userId={user?.id}
+                  effectsOn={effectsOn}
+                  playSound={playSound}
+                  sound={sound}
+                />
+              </div>
+            </Tooltip>
           </div>
         </div>
       </footer>
@@ -601,67 +630,77 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       <footer className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-white/95 to-blue-50/95 backdrop-blur-xl border-t-4 border-white/50 shadow-[0_-4px_20px_rgba(79,156,249,0.3)]">
         <div className="flex items-center justify-around px-2 py-3">
           {/* Settings */}
-          <button
-            onClick={() => {
-              playSound("optionSelect", effectsOn);
-              setShowSettings(true);
-            }}
-            className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
-          >
-            <span className="text-2xl">⚙️</span>
-            <span className="text-[10px] font-bold text-gray-700">
-              Settings
-            </span>
-          </button>
+          <Tooltip content="Customize settings">
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                setShowSettings(true);
+              }}
+              className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
+            >
+              <span className="text-2xl">⚙️</span>
+              <span className="text-[10px] font-bold text-gray-700">
+                Settings
+              </span>
+            </button>
+          </Tooltip>
 
           {/* Store */}
-          <button
-            onClick={() => {
-              playSound("optionSelect", effectsOn);
-              setShowStore(true);
-            }}
-            className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
-          >
-            <span className="text-2xl">🎁</span>
-            <span className="text-[10px] font-bold text-gray-700">Store</span>
-          </button>
+          <Tooltip content="Buy power-ups">
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                setShowStore(true);
+              }}
+              className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
+            >
+              <span className="text-2xl">🎁</span>
+              <span className="text-[10px] font-bold text-gray-700">Store</span>
+            </button>
+          </Tooltip>
 
           {/* Multiplayer */}
-          <button
-            onClick={() => {
-              playSound("optionSelect", effectsOn);
-              navigate("/multiplayer/create");
-            }}
-            className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
-          >
-            <span className="text-2xl">🎮</span>
-            <span className="text-[10px] font-bold text-gray-700">Multi</span>
-          </button>
+          <Tooltip content="Play with friends">
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                navigate("/multiplayer/create");
+              }}
+              className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
+            >
+              <span className="text-2xl">🎮</span>
+              <span className="text-[10px] font-bold text-gray-700">Multi</span>
+            </button>
+          </Tooltip>
 
           {/* Weekly Quiz */}
-          <button
-            onClick={() => {
-              playSound("optionSelect", effectsOn);
-              handleWeeklyChallengeClick();
-            }}
-            disabled={!challengeAllowed}
-            className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all disabled:opacity-50"
-          >
-            <span className="text-2xl">🥊</span>
-            <span className="text-[10px] font-bold text-gray-700">Quiz</span>
-          </button>
+          <Tooltip content={challengeAllowed ? "Play weekly quiz" : `Opens ${countdownText}`}>
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                handleWeeklyChallengeClick();
+              }}
+              disabled={!challengeAllowed}
+              className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all disabled:opacity-50"
+            >
+              <span className="text-2xl">🥊</span>
+              <span className="text-[10px] font-bold text-gray-700">Quiz</span>
+            </button>
+          </Tooltip>
 
           {/* More */}
-          <button
-            onClick={() => {
-              playSound("optionSelect", effectsOn);
-              setShowMoreModal(true);
-            }}
-            className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
-          >
-            <span className="text-2xl">⋯</span>
-            <span className="text-[10px] font-bold text-gray-700">More</span>
-          </button>
+          <Tooltip content="More options">
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                setShowMoreModal(true);
+              }}
+              className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
+            >
+              <span className="text-2xl">⋯</span>
+              <span className="text-[10px] font-bold text-gray-700">More</span>
+            </button>
+          </Tooltip>
         </div>
       </footer>
 

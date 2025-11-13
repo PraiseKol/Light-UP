@@ -18,13 +18,23 @@ export const determineUnlockedPhases = (completedIds, levelPhases) => {
       phaseNumber: levelPhases[phaseIndex].phaseNumber,
     }));
   
-  export const getPowerUpIcon = (key) => {
-    switch (key) {
-      case "divine_hint": return "🧩";
-      case "grace_period": return "⏳";
-      case "holy_shield": return "🛡️";
-      case "heavenly_match": return "👑";
-      default: return "🎁";
-    }
-  };
+export const getPowerUpIcon = (key) => {
+  switch (key) {
+    case "divine_hint": return "🧩";
+    case "grace_period": return "⏳";
+    case "holy_shield": return "🛡️";
+    case "heavenly_match": return "👑";
+    default: return "🎁";
+  }
+};
+
+export const getPowerUpTooltip = (key) => {
+  switch (key) {
+    case "divine_hint": return "Divine Hint: Reveals the correct answer";
+    case "grace_period": return "Grace Period: Extends your time by 30 seconds";
+    case "holy_shield": return "Holy Shield: Protects you from losing a life for 5 minutes";
+    case "heavenly_match": return "Heavenly Match: Automatically matches one pair";
+    default: return "Power-up";
+  }
+};
   

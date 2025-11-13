@@ -40,44 +40,45 @@ export default function LoginPage() {
   }, [currentImage]);
 
   return (
-    <div className="h-screen w-screen flex flex-col items-center justify-center bg-gradient-to-br from-green-300 via-yellow-100 to-blue-100 overflow-hidden relative font-sans">
-      {/* Background subtle particles/glow */}
+    <div className="h-screen w-screen flex flex-col items-center justify-center candy-gradient overflow-hidden relative font-sans">
+      {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="w-[400px] h-[400px] bg-green-400/20 rounded-full absolute top-[-50px] left-[-100px] animate-pulseSlow"></div>
-        <div className="w-[300px] h-[300px] bg-yellow-300/20 rounded-full absolute bottom-[-50px] right-[-80px] animate-pulseSlow"></div>
+        <div className="w-[500px] h-[500px] bg-white/10 rounded-full absolute top-[-100px] left-[-150px] animate-cloudDrift"></div>
+        <div className="w-[400px] h-[400px] bg-white/10 rounded-full absolute bottom-[-100px] right-[-100px] animate-cloudDrift" style={{ animationDelay: '2s' }}></div>
+        <div className="w-[300px] h-[300px] bg-white/5 rounded-full absolute top-1/2 right-1/4 animate-cloudDrift" style={{ animationDelay: '4s' }}></div>
       </div>
 
       {/* Avatar + Greeting */}
-      <div className="relative z-10 flex items-center gap-4 mb-6 animate-fadeInDown">
-        <div className="relative w-16 h-16 sm:w-25 sm:h-25 rounded-full shadow-lg border-4 border-white/10 bg-white/5 overflow-hidden">
+      <div className="relative z-10 flex items-center gap-4 mb-8 animate-fadeInDown">
+        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full shadow-xl border-4 border-white/30 bg-white/10 overflow-hidden backdrop-blur-sm">
           <img
             src="/images/avatar.png"
             alt="avatar"
-            className="w-full h-full rounded-full absolute animate-orbit"
+            className="w-full h-full rounded-full object-cover"
           />
         </div>
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 tracking-tight">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
           👋 Welcome!
         </h2>
       </div>
 
       {/* Login Card */}
-      <div className="relative z-10 backdrop-blur-2xl bg-white/30 mb-8 border border-white/20 rounded-3xl shadow-2xl p-6 sm:p-8 max-w-[400px] sm:max-w-sm md:max-w-lg w-full text-center animate-fadeInUp">
-        <h1 className="text-3xl sm:text-4xl font-extrabold mb-6 text-gray-900 drop-shadow-md">
-          💡 <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-500">LightUP</span> Game App 🎮
+      <div className="relative z-10 backdrop-blur-xl bg-white/20 mb-8 border-4 border-white/30 rounded-3xl shadow-[0_10px_50px_rgba(0,0,0,0.3)] p-8 sm:p-10 max-w-[450px] w-full mx-4 text-center animate-fadeInUp">
+        <h1 className="text-4xl sm:text-5xl font-black mb-8 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.4)]">
+          💡 <span className="drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">LightUP</span> 🎮
         </h1>
 
         {/* Google Login */}
         <button
           onClick={login}
-          className="mt-4 sm:mt-6 px-6 sm:px-8 py-3 rounded-full text-sm sm:text-lg font-semibold shadow-xl transition-all duration-300 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 text-black hover:shadow-2xl hover:scale-105"
+          className="mt-6 px-10 py-4 rounded-2xl text-lg font-black shadow-[0_8px_0_#d4a500,0_4px_0_#FFD93D_inset,0_15px_25px_rgba(255,217,61,0.7)] transition-all duration-200 golden-gradient text-white hover:shadow-[0_6px_0_#d4a500,0_3px_0_#FFD93D_inset,0_12px_22px_rgba(255,217,61,0.8)] hover:translate-y-[2px] active:shadow-[0_2px_0_#d4a500,0_1px_0_#FFD93D_inset] active:translate-y-[6px] btn-3d"
         >
           Sign in with Google
         </button>
       </div>
 
       {/* Hero Carousel */}
-      <div className="w-full max-w-3xl h-64 sm:h-72 md:h-80 mb-8 relative rounded-3xl shadow-2xl overflow-hidden border-2 border-white/30 animate-fadeInDown">
+      <div className="w-full max-w-3xl h-64 sm:h-72 md:h-80 mb-8 relative rounded-3xl shadow-[0_10px_50px_rgba(0,0,0,0.3)] overflow-hidden border-4 border-white/30 animate-fadeInDown backdrop-blur-sm">
         <div
           className="flex transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${currentImage * 100}%)` }}
@@ -95,26 +96,27 @@ export default function LoginPage() {
         {/* Arrows */}
         <button
           onClick={prevSlide}
-          className="absolute top-1/2 left-3 transform -translate-y-1/2 text-white text-xs bg-black/30 p-2 rounded-full hover:bg-black/50"
+          className="absolute top-1/2 left-3 transform -translate-y-1/2 text-white text-xl bg-black/40 p-3 rounded-full hover:bg-black/60 backdrop-blur-sm transition-all hover:scale-110"
         >
           <FaChevronLeft />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute top-1/2 right-3 transform -translate-y-1/2 text-white text-xs bg-black/30 p-2 rounded-full hover:bg-black/50"
+          className="absolute top-1/2 right-3 transform -translate-y-1/2 text-white text-xl bg-black/40 p-3 rounded-full hover:bg-black/60 backdrop-blur-sm transition-all hover:scale-110"
         >
           <FaChevronRight />
         </button>
 
         {/* Carousel Dots */}
-        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2">
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full">
           {images.map((_, idx) => (
-            <span
+            <button
               key={idx}
-              className={`w-3 h-3 rounded-full ${
-                currentImage === idx ? "bg-white scale-125" : "bg-white/50"
+              onClick={() => setCurrentImage(idx)}
+              className={`w-3 h-3 rounded-full transition-all ${
+                currentImage === idx ? "bg-white scale-125 shadow-lg" : "bg-white/50 hover:bg-white/75"
               }`}
-            ></span>
+            ></button>
           ))}
         </div>
       </div>
