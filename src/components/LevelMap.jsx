@@ -110,7 +110,7 @@ export default function LevelMap({
   return (
     <div
       ref={containerRef}
-      className="relative w-full min-h-[800px] pb-12
+      className="relative w-full min-h-[1500px] pb-12
         rounded-3xl shadow-[0_10px_50px_rgba(79,156,249,0.4)]
         bg-gradient-to-b from-sky-100/40 via-purple-50/30 to-pink-50/40
         backdrop-blur-sm 
