@@ -115,7 +115,7 @@ export default function LevelMap({
         bg-gradient-to-b from-sky-100/40 via-purple-50/30 to-pink-50/40
         backdrop-blur-sm 
         border-4 border-white/50 
-        max-w-3xl mx-auto mb-8"
+        max-w-3xl lg:max-w-6xl xl:max-w-8xl mx-auto mb-8"
       style={{
         backgroundImage: `url('/clouds.png')`,
         backgroundSize: 'cover',

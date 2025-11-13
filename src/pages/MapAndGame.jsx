@@ -431,7 +431,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             </Tooltip>
 
             {/* Talents */}
-            <Tooltip content="Talents are premium currency. Use them to buy power-ups!">
+            <Tooltip content="Talents are premium currency. Use them to buy power-ups or a full life!">
               <div className="bg-white/20 backdrop-blur px-2 lg:px-4 py-1.5 lg:py-2 rounded-full border-2 border-white/30 font-black text-white text-xs lg:text-sm cursor-help">
                 💎 {gameUser.talents ?? 0}
               </div>
@@ -533,7 +533,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               </button>
             </Tooltip>
 
-            <Tooltip content="Buy power-ups and bonuses with talents">
+            <Tooltip content="Buy power-ups with talents. buy talents, check out bonuses earned ">
               <button
                 onClick={() => {
                   playSound("optionSelect", effectsOn);
@@ -578,7 +578,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
           {/* Row 2: Secondary Actions */}
           <div className="flex items-center justify-center gap-3">
-            <Tooltip content="View top players and your ranking">
+            <Tooltip content="View top players and weekend top players">
               <button
                 onClick={() => {
                   playSound("optionSelect", effectsOn);
@@ -612,7 +612,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               </div>
             </Tooltip>
 
-            <Tooltip content="Support the developers with a donation">
+            <Tooltip content="Support the team with a donation">
               <div>
                 <DonationsButton
                   userId={user?.id}
@@ -646,7 +646,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </Tooltip>
 
           {/* Store */}
-          <Tooltip content="Buy power-ups">
+          <Tooltip content="Buy power-ups and talents, check out bonuses">
             <button
               onClick={() => {
                 playSound("optionSelect", effectsOn);

@@ -30,10 +30,10 @@ export const getPowerUpIcon = (key) => {
 
 export const getPowerUpTooltip = (key) => {
   switch (key) {
-    case "divine_hint": return "Divine Hint: Reveals the correct answer";
-    case "grace_period": return "Grace Period: Extends your time by 30 seconds";
+    case "divine_hint": return "Divine Hint: Gives hint to correct answer";
+    case "grace_period": return "Grace Period: Extends your time by 15 seconds";
     case "holy_shield": return "Holy Shield: Protects you from losing a life for 5 minutes";
-    case "heavenly_match": return "Heavenly Match: Automatically matches one pair";
+    case "heavenly_match": return "Heavenly Match: Automatically answers correctly with full points";
     default: return "Power-up";
   }
 };
