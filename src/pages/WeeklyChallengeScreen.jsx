@@ -32,23 +32,31 @@ const STORAGE_KEY_FINISHED = "weeklyChallengeFinished";
 function getCurrentWeekStartDate() {
   const now = new Date();
   const day = now.getDay(); // Sunday=0 ... Saturday=6
+  const currentHour = now.getHours();
   
-  // Calculate days since last Friday
   let daysSinceFriday;
-  if (day === 0) { // Sunday
+  
+  if (day === 0) {
+    // Sunday → last Friday was 2 days ago
     daysSinceFriday = 2;
-  } else if (day === 1) { // Monday (before noon = previous week)
-    const currentHour = now.getHours();
-    daysSinceFriday = currentHour < 12 ? 3 : -4; // If before noon, use last Friday
-  } else if (day >= 5) { // Friday or Saturday
-    daysSinceFriday = day - 5;
-  } else { // Tuesday-Thursday
+  } else if (day === 1) {
+    // Monday → if before noon, use last Friday (3 days ago), else next Friday (4 days ahead)
+    daysSinceFriday = currentHour < 12 ? 3 : -4;
+  } else if (day === 5) {
+    // Friday → if before noon, use last Friday (7 days ago), else current Friday (today)
+    daysSinceFriday = currentHour < 12 ? 7 : 0;
+  } else if (day === 6) {
+    // Saturday → last Friday was yesterday
+    daysSinceFriday = 1;
+  } else {
+    // Tuesday (2), Wednesday (3), Thursday (4)
     daysSinceFriday = day + 2;
   }
   
   const friday = new Date(now);
   friday.setDate(now.getDate() - daysSinceFriday);
   friday.setHours(12, 0, 0, 0);
+  
   return friday.toISOString().slice(0, 10); // YYYY-MM-DD only
 }
 
