@@ -55,12 +55,12 @@ export const hasPlayedThisWeek = async (userId) => {
   try {
     const { challengeStart, challengeEnd } = getCurrentChallengeWindow();
     
-    // console.log("🔍 hasPlayedThisWeek check:", {
-    //   userId,
-    //   challengeStart: challengeStart.toISOString(),
-    //   challengeEnd: challengeEnd.toISOString(),
-    //   now: new Date().toISOString()
-    // });
+    console.log("🔍 hasPlayedThisWeek check:", {
+      userId,
+      challengeStart: challengeStart.toISOString(),
+      challengeEnd: challengeEnd.toISOString(),
+      now: new Date().toISOString()
+    });
     
     const { data, error } = await supabase
       .from("weekly_challenges")
@@ -75,7 +75,7 @@ export const hasPlayedThisWeek = async (userId) => {
       return null;
     }
     
-    // console.log("✅ hasPlayedThisWeek result:", { found: !!data, data });
+    console.log("✅ hasPlayedThisWeek result:", { found: !!data, data });
     return !!data;
   } catch (err) {
     console.error("❌ weeklyChallenge: hasPlayedThisWeek crashed:", err);

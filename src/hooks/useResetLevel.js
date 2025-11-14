@@ -18,11 +18,11 @@ export function useResetLevel({
       setModals.setShowTimeUpModal?.(false);
     }
 
-    // console.log("[useResetLevel] Resetting level");
+    console.log("[useResetLevel] Resetting level");
 
     // Prevent double life loss
     if (!skipIncorrect && forceIncorrectLifeLoss && onIncorrect && !lifeLostRef?.current) {
-      // console.log("[useResetLevel] Forcing incorrect life loss on retry");
+      console.log("[useResetLevel] Forcing incorrect life loss on retry");
       onIncorrect();
       lifeLostRef.current = true;
     }

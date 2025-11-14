@@ -143,7 +143,7 @@ export default function MultiplayerLobby({ effectsOn }) {
     }
 
     // Optional: success log
-    // console.log("✅ Power-ups toggled:", data[0].allow_powerups);
+    console.log("✅ Power-ups toggled:", data[0].allow_powerups);
   };
 
   const handleJoinSlot = async (slot) => {

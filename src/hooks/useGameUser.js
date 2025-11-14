@@ -23,7 +23,7 @@ export function useGameUser(userId) {
       let userData = data; 
       
       if (error && status === 406) { 
-        // console.log("🆕 Creating new game_user record..."); 
+        console.log("🆕 Creating new game_user record..."); 
 
         const { data: newUser, error: insertError } = await supabase 
         .from('game_users') 

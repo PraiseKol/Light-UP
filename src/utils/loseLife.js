@@ -22,7 +22,7 @@ export async function loseLife(userId, currentLives) {
     new Date(user.holy_shield_until) > new Date();
 
   if (shieldActive) {
-    // console.log("🛡️ Shield active → no life lost");
+    console.log("🛡️ Shield active → no life lost");
     return { ...user, shieldActive: true }; // return current state without losing a life
   }
 

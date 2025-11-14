@@ -53,7 +53,7 @@ export async function adjustTalents(
       return null;
     }
 
-    // console.log("✅ Talents adjusted successfully. New balance:", data?.newBalance);
+    console.log("✅ Talents adjusted successfully. New balance:", data?.newBalance);
     return data?.newBalance ?? null;
   } catch (err) {
     console.error("❌ Error adjusting talents:", err);
@@ -136,14 +136,14 @@ export async function claimDailyStreakBonus(userId) {
     const bonusAmount = Number(data.bonusAmount ?? 0);
     const newBalance = Number(data.newBalance ?? 0);
 
-    // console.log(
-    //   "📅 Daily streak bonus:",
-    //   bonusApplied,
-    //   "→",
-    //   bonusAmount,
-    //   "talents",
-    //   "| New balance:", newBalance
-    // );
+    console.log(
+      "📅 Daily streak bonus:",
+      bonusApplied,
+      "→",
+      bonusAmount,
+      "talents",
+      "| New balance:", newBalance
+    );
 
     return { ...data, bonusApplied, bonusAmount, newBalance };
   } catch (err) {

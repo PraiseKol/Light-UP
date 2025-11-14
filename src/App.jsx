@@ -83,11 +83,11 @@ function AppContent() {
       try {
         const data = await claimDailyStreakBonus(user.id);
         if (data?.bonusApplied) {
-          // console.log(
-          //   `Daily streak bonus applied! +${data.bonusAmount} talents for ${data.bonusApplied}`
-          // );
+          console.log(
+            `Daily streak bonus applied! +${data.bonusAmount} talents for ${data.bonusApplied}`
+          );
         } else if (data?.message) {
-          // console.log(`Daily streak info: ${data.message}`);
+          console.log(`Daily streak info: ${data.message}`);
         }
       } catch (err) {
         console.error("❌ Failed to claim daily streak bonus:", err);

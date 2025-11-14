@@ -8,7 +8,7 @@ import WordFillWeekly from "@/modes/WordFillWeekly";
 import ScriptureMatchWeekly from "@/modes/ScriptureMatchWeekly";
 import TriviaWeekly from "@/modes/TriviaWeekly";
 
-// console.log("🟣 WeeklyChallengeScreen component mounted");
+console.log("🟣 WeeklyChallengeScreen component mounted");
 
 const SCORING_TIERS = [
   { maxSeconds: 5, points: 100 },
@@ -94,7 +94,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     const currentWeek = getCurrentWeekStartDate();
     
     if (storedWeek !== currentWeek) {
-      // console.log("🧹 New week detected, clearing old localStorage");
+      console.log("🧹 New week detected, clearing old localStorage");
       localStorage.removeItem(STORAGE_KEY_INDEX);
       localStorage.removeItem(STORAGE_KEY_TIME);
       localStorage.removeItem(STORAGE_KEY_SCORE);
@@ -110,7 +110,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     const checkPreviousAttempt = async () => {
       if (!user) return;
 
-      // console.log("🔍 Checking for previous attempt this week...");
+      console.log("🔍 Checking for previous attempt this week...");
       const { data, error } = await supabase
         .from("weekly_challenges")
         .select(
@@ -130,10 +130,10 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
         const currentWeekStart = getCurrentWeekStartDate();
 
         if (lastAttempt.week_start_date === currentWeekStart) {
-          // console.log(
-          //   "⛔ User already attempted this week's challenge:",
-          //   lastAttempt
-          // );
+          console.log(
+            "⛔ User already attempted this week's challenge:",
+            lastAttempt
+          );
           setPreviousAttempt(lastAttempt);
           setIsFinished(true);
         }
@@ -146,7 +146,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   // ✅ Fetch weekly quiz questions
   useEffect(() => {
     const fetchQuestions = async () => {
-      // console.log("🔄 Fetching weekly quiz questions...");
+      console.log("🔄 Fetching weekly quiz questions...");
       const { data, error } = await supabase
         .from("weekly_quiz")
         .select("*")
@@ -164,7 +164,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
         return;
       }
 
-      // console.log("✅ Loaded questions:", data);
+      console.log("✅ Loaded questions:", data);
       setQuestions(data);
     };
 
@@ -235,7 +235,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
           week_start_date: getCurrentWeekStartDate(), // added for safety
         };
 
-        // console.log("📦 Payload to insert into weekly_challenges:", payload);
+        console.log("📦 Payload to insert into weekly_challenges:", payload);
 
         const { error } = await supabase
           .from("weekly_challenges")
@@ -245,8 +245,8 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
           console.error("❌ Failed to save weekly challenge:", error);
           submittedRef.current = false; // allow retry if failed
         } else {
-          // console.log("✅ Weekly challenge submitted successfully");
-          // 🧹 Clear storage
+          console.log("✅ Weekly challenge submitted successfully");
+          🧹 Clear storage
           localStorage.removeItem(STORAGE_KEY_INDEX);
 
           localStorage.removeItem(STORAGE_KEY_TIME);
