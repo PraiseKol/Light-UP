@@ -116,7 +116,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         "postgres_changes",
         { event: "*", schema: "public", table: "weekly_challenges" },
         () => {
-          console.log("📊 Weekly challenge update detected");
+          // console.log("📊 Weekly challenge update detected");
           loadLeaderboardsDebounced();
         }
       )

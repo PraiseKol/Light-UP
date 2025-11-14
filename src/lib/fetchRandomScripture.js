@@ -16,7 +16,7 @@ export const fetchRandomScripture = async () => {
     return null;
   }
 
-  console.log("✅ Scriptures fetched from Supabase:", data);
+  // console.log("✅ Scriptures fetched from Supabase:", data);
 
   const randomIndex = Math.floor(Math.random() * data.length);
   return data[randomIndex].text;

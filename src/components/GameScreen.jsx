@@ -127,7 +127,7 @@ export default function GameScreen({
       gameUser?.holy_shield_until &&
       new Date(gameUser.holy_shield_until).getTime() > Date.now()
     ) {
-      console.log("🛡️ Holy Shield active – no life lost");
+      // console.log("🛡️ Holy Shield active – no life lost");
       return;
     }
 
@@ -273,7 +273,7 @@ export default function GameScreen({
         scores.every((row) => row.score === 100);
 
       if (allPerfect) {
-        console.log("🏆 Awarding perfect phase bonus");
+        // console.log("🏆 Awarding perfect phase bonus");
         await awardBonus(
           user.id,
           "perfect_phase",
@@ -282,7 +282,7 @@ export default function GameScreen({
       }
 
       if (scores.length === levelIds.length) {
-        console.log("✅ Awarding phase completion bonus");
+        // console.log("✅ Awarding phase completion bonus");
         await awardBonus(
           user.id,
           "phase_completion",
@@ -301,9 +301,9 @@ export default function GameScreen({
 
     const handleBack = () => {
       if (level?.phaseNumber && level?.number) {
-        console.log(
-          `🔙 Back pressed from Phase ${level.phaseNumber}, Level ${level.number}`
-        );
+        // console.log(
+        //   `🔙 Back pressed from Phase ${level.phaseNumber}, Level ${level.number}`
+        // );
       }
       onBack?.(level?.phaseNumber, level?.number);
     };
