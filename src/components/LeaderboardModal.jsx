@@ -40,7 +40,12 @@ export default function LeaderboardModal({
                 : "text-gray-600 hover:bg-white"
             }`}
           >
-            Weekly Top 10
+            <div>Weekly Top 10</div>
+            {weeklyLeaderboard && weeklyLeaderboard.length > 0 && (
+              <div className="text-xs mt-1 opacity-80">
+                {weeklyLeaderboard[0]?.is_active ? "🔴 Live" : "📅 Last Week"}
+              </div>
+            )}
           </button>
         </div>
 
@@ -90,7 +95,7 @@ export default function LeaderboardModal({
 
                   {/* Score */}
                   <div className="flex-shrink-0 bg-gradient-to-r from-candyYellow to-yellow-500 text-white font-black px-4 py-2 rounded-full shadow-md">
-                    ⭐ {entry.total_score || entry.weekly_score || 0}
+                    ⭐ {entry.total_score || entry.score || 0}
                   </div>
                 </div>
               );

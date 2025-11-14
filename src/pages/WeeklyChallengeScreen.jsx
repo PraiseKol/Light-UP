@@ -88,6 +88,23 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   const submittedRef = useRef(false);
   const questionStartTimeRef = useRef(Date.now());
 
+  // ✅ Clear localStorage when week changes
+  useEffect(() => {
+    const storedWeek = localStorage.getItem("lastWeeklyChallengeWeek");
+    const currentWeek = getCurrentWeekStartDate();
+    
+    if (storedWeek !== currentWeek) {
+      console.log("🧹 New week detected, clearing old localStorage");
+      localStorage.removeItem(STORAGE_KEY_INDEX);
+      localStorage.removeItem(STORAGE_KEY_TIME);
+      localStorage.removeItem(STORAGE_KEY_SCORE);
+      localStorage.removeItem(STORAGE_KEY_CORRECT);
+      localStorage.removeItem(STORAGE_KEY_INCORRECT);
+      localStorage.removeItem(STORAGE_KEY_FINISHED);
+      localStorage.setItem("lastWeeklyChallengeWeek", currentWeek);
+    }
+  }, []);
+
   // ✅ On mount: check if user already attempted this week
   useEffect(() => {
     const checkPreviousAttempt = async () => {
