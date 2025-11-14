@@ -246,7 +246,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
           submittedRef.current = false; // allow retry if failed
         } else {
           console.log("✅ Weekly challenge submitted successfully");
-          🧹 Clear storage
+          // 🧹 Clear storage
           localStorage.removeItem(STORAGE_KEY_INDEX);
 
           localStorage.removeItem(STORAGE_KEY_TIME);
