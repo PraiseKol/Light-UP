@@ -240,9 +240,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   useEffect(() => {
     const updateChallengeStatus = async () => {
       try {
-        const { allowed, countdownText } = await getWeeklyChallengeStatus();
+        // getWeeklyChallengeStatus is now synchronous
+        const { allowed, countdownText } = getWeeklyChallengeStatus();
         setChallengeAllowed(Boolean(allowed));
         setCountdownText(countdownText ?? "");
+        
+        // hasPlayedThisWeek is still async
         if (user?.id) {
           const played = await hasPlayedThisWeek(user.id);
           setChallengePlayed(Boolean(played));
