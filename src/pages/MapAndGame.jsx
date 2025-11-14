@@ -114,8 +114,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       .channel("weekly_leaderboard_updates")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "weekly_challenge_results" },
-        () => loadLeaderboardsDebounced()
+        { event: "*", schema: "public", table: "weekly_challenges" },
+        () => {
+          console.log("📊 Weekly challenge update detected");
+          loadLeaderboardsDebounced();
+        }
       )
       .subscribe();
 
