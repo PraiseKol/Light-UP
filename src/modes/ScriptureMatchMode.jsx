@@ -343,7 +343,13 @@ export default function ScriptureMatchMode({
         score={score}
         onClose={onCorrect}
         onNext={onCorrect}
-        onBackToMap={onBack}
+        onBackToMap={() => {
+          // ✅ Ensure no life loss when navigating back after correct answer
+          hasAnswered.current = true;
+          lifeLostRef.current = true;
+          setIsRunning(false);
+          onBack();
+        }}
         effectsOn={effectsOn}
       />
       <WrongAnswerModal
