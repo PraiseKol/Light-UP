@@ -3,6 +3,11 @@ import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { playSound } from "@/utils/sound";
+import { 
+  subscribeToPushNotifications, 
+  requestNotificationPermission,
+  areNotificationsEnabled 
+} from "@/utils/pushNotifications";
 
 // const soundMap = {
 //   default: null,
@@ -145,6 +150,32 @@ export default function SettingsModal({
 
           {/* Hidden audio player for preview */}
           <audio ref={audioRef} style={{ display: "none" }} />
+        </div>
+
+        {/* Notification Settings */}
+        <div className="border-t border-gray-200 pt-4 mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-gray-800">🔔 Notifications</span>
+            <span className="text-xs text-gray-500">PWA Feature</span>
+          </div>
+          <p className="text-xs text-gray-600 mb-3">
+            Enable push notifications to get alerts about weekly challenges, lives, and more!
+          </p>
+          <Button
+            onClick={async () => {
+              const granted = await requestNotificationPermission();
+              if (granted) {
+                await subscribeToPushNotifications(gameUser.user_id);
+                alert('✅ Notifications enabled!');
+              } else {
+                alert('❌ Please enable notifications in your browser settings.');
+              }
+            }}
+            variant="secondary"
+            className="w-full bg-blue-500 text-white hover:bg-blue-600 rounded-lg shadow-md text-sm"
+          >
+            {areNotificationsEnabled() ? '✅ Notifications Enabled' : '🔔 Enable Notifications'}
+          </Button>
         </div>
 
         {/* Admin Login */}

@@ -105,6 +105,18 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     }
   }, []);
 
+  // Request notification permission when user loads the challenge
+  useEffect(() => {
+    if (user?.id && !localStorage.getItem('notification-permission-asked')) {
+      requestNotificationPermission().then((granted) => {
+        if (granted) {
+          subscribeToPushNotifications(user.id);
+        }
+        localStorage.setItem('notification-permission-asked', 'true');
+      });
+    }
+  }, [user?.id]);
+
   // ✅ On mount: check if user already attempted this week
   useEffect(() => {
     const checkPreviousAttempt = async () => {

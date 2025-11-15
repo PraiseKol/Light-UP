@@ -29,6 +29,7 @@ import Modal from "@/components/ui/modal";
 import { Tooltip } from "@/components/ui/tooltip";
 import GlobalChat from "@/components/GlobalChat";
 import LeaderboardModal from "@/components/LeaderboardModal";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import {
   determineUnlockedPhases,
   wrapLevelsWithStatus,
@@ -400,6 +401,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
   return (
     <div className="relative w-full h-screen flex flex-col overflow-hidden">
+      <PWAInstallPrompt />
       <SpiritualParallaxBackground />
 
       {/* Fixed Top Header */}
