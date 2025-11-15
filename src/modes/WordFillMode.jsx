@@ -244,14 +244,20 @@ export default function WordFillMode({
         </Card>
       </div>
 
-      <RightAnswerModal
-        isOpen={showRightModal}
-        score={score}
-        onClose={onCorrect}
-        onNext={onCorrect}
-        onBackToMap={onBack}
-        effectsOn={effectsOn}
-      />
+  <RightAnswerModal
+    isOpen={showRightModal}
+    score={score}
+    onClose={onCorrect}
+    onNext={onCorrect}
+    onBackToMap={() => {
+      // ✅ Ensure no life loss when navigating back after correct answer
+      hasAnsweredCorrectly.current = true;
+      lifeLostRef.current = true;
+      setIsRunning(false);
+      onBack();
+    }}
+    effectsOn={effectsOn}
+  />
 
       <WrongAnswerModal
         isOpen={showWrongModal}

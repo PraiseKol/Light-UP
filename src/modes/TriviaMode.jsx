@@ -255,7 +255,13 @@ export default function TriviaMode({
         isOpen={showRightModal}
         onClose={onCorrect}
         onNext={onCorrect}
-        onBackToMap={onBack}
+        onBackToMap={() => {
+          // ✅ Ensure no life loss when navigating back after correct answer
+          hasAnswered.current = true;
+          lifeLostRef.current = true;
+          setIsRunning(false);
+          onBack();
+        }}
         score={score}
         effectsOn={effectsOn}
       />
