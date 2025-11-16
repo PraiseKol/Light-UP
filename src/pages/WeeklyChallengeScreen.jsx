@@ -158,26 +158,31 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   // ✅ Fetch weekly quiz questions
   useEffect(() => {
     const fetchQuestions = async () => {
-      console.log("🔄 Fetching weekly quiz questions...");
-      const { data, error } = await supabase
-        .from("weekly_quiz")
-        .select("*")
-        .order("id", { ascending: true });
+      try {
+        console.log("🔄 Fetching weekly quiz questions...");
+        const { data, error } = await supabase
+          .from("weekly_quiz")
+          .select("*")
+          .order("id", { ascending: true });
 
-      if (error) {
-        console.error("❌ Failed to load weekly quiz:", error);
-        setError("Unable to load challenge.");
-        return;
+        if (error) {
+          console.error("❌ Failed to load weekly quiz:", error);
+          setError("Failed to load quiz. Please try again.");
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          console.warn("⚠️ No weekly quiz available.");
+          setError("No questions available for this week's challenge.");
+          return;
+        }
+
+        console.log("✅ Loaded questions:", data);
+        setQuestions(data);
+      } catch (err) {
+        console.error("❌ Exception loading questions:", err);
+        setError("An unexpected error occurred. Please try again.");
       }
-
-      if (!data || data.length === 0) {
-        console.warn("⚠️ No weekly quiz available.");
-        setError("No challenge available this week.");
-        return;
-      }
-
-      console.log("✅ Loaded questions:", data);
-      setQuestions(data);
     };
 
     fetchQuestions();
