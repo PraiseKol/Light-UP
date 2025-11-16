@@ -62,32 +62,32 @@ export default function PWAInstallPrompt() {
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] animate-slide-down">
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 text-white shadow-2xl">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="w-12 h-12 bg-white rounded-xl p-2 shadow-lg flex-shrink-0">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg sm:rounded-xl p-1.5 sm:p-2 shadow-lg flex-shrink-0">
               <img src="/logo192.jpg" alt="Light UP" className="w-full h-full object-contain" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-sm md:text-base">Install Light UP App</h3>
-              <p className="text-xs md:text-sm opacity-90 truncate">
-                Get quick access, offline play & notifications
+              <h3 className="font-bold text-xs sm:text-sm md:text-base leading-tight">Install Light UP App</h3>
+              <p className="text-[10px] sm:text-xs md:text-sm opacity-90 line-clamp-1">
+                Quick access, offline play & notifications
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <Button
               onClick={handleInstall}
-              className="bg-white text-blue-600 hover:bg-blue-50 font-bold px-4 py-2 rounded-lg shadow-lg text-sm md:text-base"
+              className="bg-white text-blue-600 hover:bg-blue-50 font-bold px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 rounded-lg shadow-lg text-xs sm:text-sm md:text-base min-h-[44px] sm:min-h-[auto]"
             >
               Install
             </Button>
             <button
               onClick={handleDismiss}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-white/20 rounded-lg transition-colors min-h-[44px] min-w-[44px] sm:min-h-[auto] sm:min-w-[auto] flex items-center justify-center"
               aria-label="Dismiss"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>

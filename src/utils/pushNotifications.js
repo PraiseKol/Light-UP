@@ -57,8 +57,8 @@ export async function subscribeToPushNotifications(userId) {
     let subscription = await registration.pushManager.getSubscription();
 
     if (!subscription) {
-      // VAPID public key - you'll need to generate this
-      const vapidPublicKey = 'BGxO8MqIu6JJ-qLl9BcxqCKIZFqRJCm5QUbJmXxVqVB5fHQcNxVrT3i2WNLkpXNqGCqxPQh3r_K6JfxLqVWc_gQ';
+      // ✅ Production VAPID public key
+      const vapidPublicKey = 'BMDgOlNQAGJAMuJgeNf2yvGErmk3drza5jZh7WAh8VU9QBugCXMholN-EOHkf4aq6rcZCZGSVfuDQqWHXnIGotw';
       
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,

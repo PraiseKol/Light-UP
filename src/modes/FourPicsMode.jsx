@@ -368,13 +368,25 @@ export default function FourPicsMode({
       <WrongAnswerModal
         isOpen={showWrongModal}
         onRetry={() => resetLevel({ skipIncorrect: true })}
-        onBack={onBack}
+        onBack={() => {
+          // ✅ Life already lost when modal appeared, prevent double deduction
+          hasAnswered.current = true;
+          lifeLostRef.current = true;
+          setIsRunning(false);
+          onBack();
+        }}
         effectsOn={effectsOn}
       />
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
-        onGoToMap={onBack}
+        onGoToMap={() => {
+          // ✅ Life already lost when time ran out, prevent double deduction
+          hasAnswered.current = true;
+          lifeLostRef.current = true;
+          setIsRunning(false);
+          onBack();
+        }}
         effectsOn={effectsOn}
       />
     </div>

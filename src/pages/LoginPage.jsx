@@ -49,36 +49,36 @@ export default function LoginPage() {
       </div>
 
       {/* Avatar + Greeting */}
-      <div className="relative z-10 flex items-center gap-4 mb-8 animate-fadeInDown">
-        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full shadow-xl border-4 border-white/30 bg-white/10 overflow-hidden backdrop-blur-sm">
+      <div className="relative z-10 flex items-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 px-4 animate-fadeInDown">
+        <div className="relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full shadow-xl border-4 border-white/30 bg-white/10 overflow-hidden backdrop-blur-sm flex-shrink-0">
           <img
             src="/images/avatar.png"
             alt="avatar"
             className="w-full h-full rounded-full object-cover"
           />
         </div>
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
           👋 Welcome!
         </h2>
       </div>
 
       {/* Login Card */}
-      <div className="relative z-10 backdrop-blur-xl bg-white/20 mb-8 border-4 border-white/30 rounded-3xl shadow-[0_10px_50px_rgba(0,0,0,0.3)] p-8 sm:p-10 max-w-[450px] w-full mx-4 text-center animate-fadeInUp">
-        <h1 className="text-4xl sm:text-5xl font-black mb-8 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.4)]">
+      <div className="relative z-10 backdrop-blur-xl bg-white/20 mb-6 sm:mb-8 border-4 border-white/30 rounded-2xl sm:rounded-3xl shadow-[0_10px_50px_rgba(0,0,0,0.3)] p-6 sm:p-8 md:p-10 max-w-[95%] sm:max-w-[450px] w-full mx-4 text-center animate-fadeInUp">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 sm:mb-8 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.4)]">
           💡 <span className="drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]">LightUP</span> 🎮
         </h1>
 
         {/* Google Login */}
         <button
           onClick={login}
-          className="mt-6 px-10 py-4 rounded-2xl text-lg font-black shadow-[0_8px_0_#d4a500,0_4px_0_#FFD93D_inset,0_15px_25px_rgba(255,217,61,0.7)] transition-all duration-200 golden-gradient text-white hover:shadow-[0_6px_0_#d4a500,0_3px_0_#FFD93D_inset,0_12px_22px_rgba(255,217,61,0.8)] hover:translate-y-[2px] active:shadow-[0_2px_0_#d4a500,0_1px_0_#FFD93D_inset] active:translate-y-[6px] btn-3d"
+          className="w-full sm:w-auto mt-4 sm:mt-6 px-6 sm:px-8 md:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-lg font-black shadow-[0_6px_0_#d4a500,0_3px_0_#FFD93D_inset,0_12px_20px_rgba(255,217,61,0.7)] sm:shadow-[0_8px_0_#d4a500,0_4px_0_#FFD93D_inset,0_15px_25px_rgba(255,217,61,0.7)] transition-all duration-200 golden-gradient text-white hover:shadow-[0_4px_0_#d4a500,0_2px_0_#FFD93D_inset,0_10px_18px_rgba(255,217,61,0.8)] sm:hover:shadow-[0_6px_0_#d4a500,0_3px_0_#FFD93D_inset,0_12px_22px_rgba(255,217,61,0.8)] hover:translate-y-[2px] active:shadow-[0_2px_0_#d4a500,0_1px_0_#FFD93D_inset] active:translate-y-[6px] btn-3d min-h-[44px]"
         >
           Sign in with Google
         </button>
       </div>
 
       {/* Hero Carousel */}
-      <div className="w-full max-w-3xl h-64 sm:h-72 md:h-80 mb-8 relative rounded-3xl shadow-[0_10px_50px_rgba(0,0,0,0.3)] overflow-hidden border-4 border-white/30 animate-fadeInDown backdrop-blur-sm">
+      <div className="w-[95%] sm:w-full max-w-3xl h-48 sm:h-64 md:h-72 lg:h-80 mb-6 sm:mb-8 relative rounded-2xl sm:rounded-3xl shadow-[0_10px_50px_rgba(0,0,0,0.3)] overflow-hidden border-4 border-white/30 animate-fadeInDown backdrop-blur-sm mx-4">
         <div
           className="flex transition-transform duration-700 ease-in-out"
           style={{ transform: `translateX(-${currentImage * 100}%)` }}
