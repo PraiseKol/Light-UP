@@ -121,6 +121,10 @@ export default function GameScreen({
 
   const handleIncorrect = async () => {
     if (!user?.id || gameUser?.lives <= 0) return;
+    
+    // Defensive check - prevent double life loss
+    if (window.lifeLostFlag) return;
+    window.lifeLostFlag = true;
 
     // ✅ Block life loss if Holy Shield is active
     if (
@@ -142,8 +146,12 @@ export default function GameScreen({
       await refetch();
     }
 
-    await refetch();
-  };
+    } finally {
+      playSound("life-lost", effectsOn);
+      await refetch();
+      // Reset flag after a short delay
+      setTimeout(() => { window.lifeLostFlag = false; }, 100);
+    }
 
   const onPowerupUsed = async (key) => {
     if (!gameUser?.powerups_inventory?.[key]) return;

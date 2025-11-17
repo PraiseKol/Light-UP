@@ -2,7 +2,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { playSound } from "@/utils/sound";
 
-export default function WrongAnswerModal({ isOpen, onRetry, onBack, effectsOn }) {
+export default function WrongAnswerModal({ isOpen, onRetry, onBack, effectsOn, currentLives = 1 }) {
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog onClose={onBack || (() => {})} className="relative z-50">
@@ -33,9 +33,14 @@ export default function WrongAnswerModal({ isOpen, onRetry, onBack, effectsOn })
                   playSound("back", effectsOn);
                   onRetry();
                 }}
-                className="w-full bg-blue-600 text-white py-1 md:py-2 rounded hover:bg-blue-700 transition"
+                disabled={currentLives <= 0}
+                className={`w-full py-1 md:py-2 rounded transition ${
+                  currentLives <= 0
+                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
               >
-                🔁 Retry
+                {currentLives <= 0 ? "⏰ No more lives, wait for regeneration" : "🔁 Retry"}
               </button>
               <button
                 onClick={() => {
