@@ -27,13 +27,23 @@ export async function loseLife(userId, currentLives) {
   }
 
   // ❤️ Deduct life if no shield
+  // Build update object conditionally
+  const updates = {
+    lives: currentLives - 1,
+    updated_at: new Date().toISOString(),
+  };
+
+  // Only set last_life_lost_at if:
+  // 1. It's currently NULL (no active regeneration), OR
+  // 2. User is at full lives (5) and about to lose first life
+  if (!user.last_life_lost_at || user.lives === 5) {
+    updates.last_life_lost_at = new Date().toISOString();
+  }
+  // Otherwise, preserve existing last_life_lost_at timestamp
+
   const { data, error } = await supabase
     .from("game_users")
-    .update({
-      lives: currentLives - 1,
-      last_life_lost_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
+    .update(updates)
     .eq("user_id", userId)
     .select()
     .single();

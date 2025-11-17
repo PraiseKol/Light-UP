@@ -148,6 +148,8 @@ export default function ScriptureMatchMode({
   const checkAnswer = useCallback(() => {
     if (hasAnswered.current) return;
     hasAnswered.current = true;
+    
+    // Stop timer immediately to prevent any further ticks
     setIsRunning(false);
 
     const isCorrect = pairs.every(
@@ -155,16 +157,17 @@ export default function ScriptureMatchMode({
     );
 
     if (isCorrect) {
+      lifeLostRef.current = true; // Prevent life loss on back
       playSound("success", effectsOn);
       const earned = calculateScore();
       saveScore(earned);
       setStatus("correct");
     } else {
       playSound("error", effectsOn);
-      handleLifeLoss();
+      onIncorrect?.(); // Lose life when wrong answer detected
       setStatus("wrong");
     }
-  }, [pairs, matches, calculateScore, saveScore, handleLifeLoss, effectsOn, setIsRunning]);
+  }, [pairs, matches, calculateScore, saveScore, onIncorrect, effectsOn, setIsRunning]);
 
   const resetLevel = useResetLevel({
     setModals: {
@@ -354,26 +357,16 @@ export default function ScriptureMatchMode({
       />
       <WrongAnswerModal
         isOpen={status === "wrong"}
+        currentLives={user?.lives || 0}
         onRetry={() => resetLevel({ skipIncorrect: true })}
-        onBack={() => {
-          // ✅ Life already lost when modal appeared, prevent double deduction
-          hasAnswered.current = true;
-          lifeLostRef.current = true;
-          setIsRunning(false);
-          onBack();
-        }}
+        onBack={onBack}
         effectsOn={effectsOn}
       />
       <TimeUpModal
         isOpen={status === "timeup"}
+        currentLives={user?.lives || 0}
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
-        onGoToMap={() => {
-          // ✅ Life already lost when time ran out, prevent double deduction
-          hasAnswered.current = true;
-          lifeLostRef.current = true;
-          setIsRunning(false);
-          onBack();
-        }}
+        onGoToMap={onBack}
         effectsOn={effectsOn}
       />
     </div>
