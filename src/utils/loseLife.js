@@ -7,7 +7,7 @@ export async function loseLife(userId, currentLives) {
   // 🔎 First fetch latest user state (with shield info)
   const { data: user, error: fetchError } = await supabase
     .from("game_users")
-    .select("lives, holy_shield_until")
+    .select("lives, holy_shield_until, last_life_lost_at")
     .eq("user_id", userId)
     .single();
 

@@ -227,6 +227,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   }, [showScriptureModal]);
 
   const handleBackFromGame = () => {
+    // ✅ Mark as safe navigation so we don't penalize intentional exits
+    safelyNavigatingRef.current = true;
+
     setSelectedLevel(null);
     const currentLevelId = gameUser.current_level_id;
     const currentLevelEl = levelRefs.current[currentLevelId];
@@ -239,6 +242,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         });
       }, 100);
     }
+
+    // 🔄 Clear the flag shortly after navigation completes
+    setTimeout(() => {
+      safelyNavigatingRef.current = false;
+    }, 1000);
   };
 
   useEffect(() => {
