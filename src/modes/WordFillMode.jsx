@@ -28,6 +28,7 @@ export default function WordFillMode({
   activePowerups,
   effectsOn = true,
   onBack,
+  gameUser, // ✅ Add gameUser prop
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
@@ -45,17 +46,17 @@ export default function WordFillMode({
   const lifeLostRef = useRef(false);
 
   const { timeLeft, setTimeLeft, setIsRunning } = useTimer(30, () => {
+    setIsRunning(false); // ✅ Stop timer FIRST
     if (!hasAnsweredCorrectly.current && !userInput.trim()) {
       playSound("error", effectsOn);
-      setShowTimeUpModal(true);
       if (onIncorrect && !lifeLostRef.current) {
-        onIncorrect();
         lifeLostRef.current = true;
+        onIncorrect();
       }
+      setShowTimeUpModal(true);
     } else if (!hasAnsweredCorrectly.current) {
       checkAnswer();
     }
-    setIsRunning(false);
   });
 
   // Grace Period
@@ -135,7 +136,7 @@ export default function WordFillMode({
   const checkAnswer = useCallback(() => {
     if (hasAnsweredCorrectly.current || disableIfNoLives) return;
 
-    stopTimer();
+    setIsRunning(false); // ✅ Stop timer FIRST
 
     const isCorrect =
       userInput.trim().toLowerCase() === answer.trim().toLowerCase();
@@ -145,21 +146,22 @@ export default function WordFillMode({
       if (isCorrect) {
         playSound("success", effectsOn);
         hasAnsweredCorrectly.current = true;
+        lifeLostRef.current = true; // ✅ Prevent any life loss on correct answer
         const earned = getScoreFromTime(timeLeft);
         setScore(earned);
         await saveScore(earned);
         if (onScore) onScore(earned);
         setShowRightModal(true);
       } else {
+        playSound("error", effectsOn);
         if (onIncorrect && !lifeLostRef.current) {
-          onIncorrect();
-          playSound("error", effectsOn);
           lifeLostRef.current = true;
+          onIncorrect();
         }
         setShowWrongModal(true);
       }
     }, 300);
-  }, [userInput, answer, timeLeft, disableIfNoLives]);
+  }, [userInput, answer, timeLeft, disableIfNoLives, setIsRunning, onIncorrect, onScore, effectsOn]);
 
   const backgroundUrl =
     "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//WordFillBackground.jpg";
@@ -249,40 +251,24 @@ export default function WordFillMode({
     score={score}
     onClose={onCorrect}
     onNext={onCorrect}
-    onBackToMap={() => {
-      // ✅ Ensure no life loss when navigating back after correct answer
-      hasAnsweredCorrectly.current = true;
-      lifeLostRef.current = true;
-      setIsRunning(false);
-      onBack();
-    }}
+    onBackToMap={onBack}
     effectsOn={effectsOn}
   />
 
       <WrongAnswerModal
         isOpen={showWrongModal}
         onRetry={() => resetLevel({ skipIncorrect: true })}
-        onBack={() => {
-          // ✅ Life already lost when modal appeared, prevent double deduction
-          hasAnsweredCorrectly.current = true;
-          lifeLostRef.current = true;
-          setIsRunning(false);
-          onBack();
-        }}
+        onBack={onBack}
         effectsOn={effectsOn}
+        currentLives={gameUser?.lives || 0}
       />
 
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
-        onGoToMap={() => {
-          // ✅ Life already lost when time ran out, prevent double deduction
-          hasAnsweredCorrectly.current = true;
-          lifeLostRef.current = true;
-          setIsRunning(false);
-          onBack();
-        }}
+        onGoToMap={onBack}
         effectsOn={effectsOn}
+        currentLives={gameUser?.lives || 0}
       />
     </div>
   );

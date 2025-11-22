@@ -107,14 +107,23 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
 
   // Request notification permission when user loads the challenge
   useEffect(() => {
-    if (user?.id && !localStorage.getItem('notification-permission-asked')) {
-      requestNotificationPermission().then((granted) => {
-        if (granted) {
-          subscribeToPushNotifications(user.id);
+    const requestPermissions = async () => {
+      if (user?.id && !localStorage.getItem('notification-permission-asked')) {
+        try {
+          const { requestNotificationPermission, subscribeToPushNotifications } = await import('@/utils/pushNotifications');
+          const granted = await requestNotificationPermission();
+          if (granted) {
+            await subscribeToPushNotifications(user.id);
+          }
+          localStorage.setItem('notification-permission-asked', 'true');
+        } catch (error) {
+          console.error("❌ Notification permission error:", error);
+          // Don't block the challenge if notifications fail
         }
-        localStorage.setItem('notification-permission-asked', 'true');
-      });
-    }
+      }
+    };
+    
+    requestPermissions();
   }, [user?.id]);
 
   // ✅ On mount: check if user already attempted this week
