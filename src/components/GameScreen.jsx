@@ -126,32 +126,34 @@ export default function GameScreen({
     if (window.lifeLostFlag) return;
     window.lifeLostFlag = true;
 
-    // ✅ Block life loss if Holy Shield is active
-    if (
-      gameUser?.holy_shield_until &&
-      new Date(gameUser.holy_shield_until).getTime() > Date.now()
-    ) {
-      console.log("🛡️ Holy Shield active – no life lost");
-      return;
-    }
+    try {
+      // ✅ Block life loss if Holy Shield is active
+      if (
+        gameUser?.holy_shield_until &&
+        new Date(gameUser.holy_shield_until).getTime() > Date.now()
+      ) {
+        console.log("🛡️ Holy Shield active – no life lost");
+        return;
+      }
 
-    await loseLife(user.id, gameUser.lives);
+      await loseLife(user.id, gameUser.lives);
 
-    // If that was their last life, mark them as out of game
-    if (gameUser.lives - 1 <= 0) {
-      await supabase
-        .from("game_users")
-        .update({ in_game: false, updated_at: new Date().toISOString() })
-        .eq("user_id", user.id);
-      await refetch();
-    }
-
+      // If that was their last life, mark them as out of game
+      if (gameUser.lives - 1 <= 0) {
+        await supabase
+          .from("game_users")
+          .update({ in_game: false, updated_at: new Date().toISOString() })
+          .eq("user_id", user.id);
+      }
+    } catch (error) {
+      console.error("Error in handleIncorrect:", error);
     } finally {
       playSound("life-lost", effectsOn);
       await refetch();
       // Reset flag after a short delay
       setTimeout(() => { window.lifeLostFlag = false; }, 100);
     }
+  };
 
   const onPowerupUsed = async (key) => {
     if (!gameUser?.powerups_inventory?.[key]) return;
@@ -361,6 +363,7 @@ export default function GameScreen({
                 question={questionData.question}
                 answer={questionData.answer}
                 effectsOn={effectsOn}
+                gameUser={gameUser}
               />
             )}
             {mode === "trivia" && (
@@ -370,6 +373,7 @@ export default function GameScreen({
                 options={questionData.options}
                 answer={questionData.answer}
                 effectsOn={effectsOn}
+                gameUser={gameUser}
               />
             )}
             {mode === "four-pics" && (
@@ -379,6 +383,7 @@ export default function GameScreen({
                 imageUrls={questionData.image_urls}
                 letters={questionData.letters}
                 effectsOn={effectsOn}
+                gameUser={gameUser}
               />
             )}
             {mode === "scripture-match" && (

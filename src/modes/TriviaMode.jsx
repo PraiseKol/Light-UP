@@ -31,6 +31,7 @@ export default function TriviaMode({
   onIncorrect,
   activePowerups,
   effectsOn = true,
+  gameUser, // ✅ Add gameUser prop
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
@@ -48,6 +49,7 @@ export default function TriviaMode({
   const cardContentRef = useRef(null);
 
   const { timeLeft, reset, setIsRunning, setTimeLeft } = useTimer(30, () => {
+    setIsRunning(false); // ✅ Stop timer FIRST
     if (hasAnswered.current) return;
 
     if (selected) {
@@ -56,11 +58,11 @@ export default function TriviaMode({
       hasAnswered.current = true;
       setStatus("timeup");
       playSound("error", effectsOn);
-      setShowTimeUpModal(true);
       if (!lifeLostRef.current && onIncorrect) {
         lifeLostRef.current = true;
         onIncorrect();
       }
+      setShowTimeUpModal(true);
     }
   });
 
@@ -148,7 +150,7 @@ export default function TriviaMode({
   const checkAnswer = () => {
     if (hasAnswered.current) return;
     hasAnswered.current = true;
-    setIsRunning(false);
+    setIsRunning(false); // ✅ Stop timer FIRST
 
     const isCorrect =
       selected?.trim().toLowerCase() === answer.trim().toLowerCase();
@@ -157,6 +159,7 @@ export default function TriviaMode({
     setTimeout(() => {
       if (isCorrect) {
         playSound("success", effectsOn);
+        lifeLostRef.current = true; // ✅ Prevent any life loss on correct answer
         const earned = getScoreFromTime(timeLeft);
         setScore(earned);
         saveScore(earned);
@@ -255,13 +258,7 @@ export default function TriviaMode({
         isOpen={showRightModal}
         onClose={onCorrect}
         onNext={onCorrect}
-        onBackToMap={() => {
-          // ✅ Ensure no life loss when navigating back after correct answer
-          hasAnswered.current = true;
-          lifeLostRef.current = true;
-          setIsRunning(false);
-          onBack();
-        }}
+        onBackToMap={onBack}
         score={score}
         effectsOn={effectsOn}
       />
@@ -269,27 +266,17 @@ export default function TriviaMode({
       <WrongAnswerModal
         isOpen={showWrongModal}
         onRetry={() => resetLevel({ skipIncorrect: true })}
-        onBack={() => {
-          // ✅ Life already lost when modal appeared, prevent double deduction
-          hasAnswered.current = true;
-          lifeLostRef.current = true;
-          setIsRunning(false);
-          onBack();
-        }}
+        onBack={onBack}
         effectsOn={effectsOn}
+        currentLives={gameUser?.lives || 0}
       />
 
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
-        onGoToMap={() => {
-          // ✅ Life already lost when time ran out, prevent double deduction
-          hasAnswered.current = true;
-          lifeLostRef.current = true;
-          setIsRunning(false);
-          onBack();
-        }}
+        onGoToMap={onBack}
         effectsOn={effectsOn}
+        currentLives={gameUser?.lives || 0}
       />
     </div>
   );

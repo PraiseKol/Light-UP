@@ -18,6 +18,7 @@ export default function FourPicsMode({
   onIncorrect,
   activePowerups,
   effectsOn = true,
+  gameUser, // ✅ Add gameUser prop
 }) {
   const INITIAL_TIME = 30;
 
@@ -48,14 +49,14 @@ export default function FourPicsMode({
   }, []);
 
   const { timeLeft, setTimeLeft, setIsRunning } = useTimer(INITIAL_TIME, () => {
+    setIsRunning(false); // ✅ Stop timer FIRST
     if (input.every((slot) => slot === "")) {
-      handleLifeLoss();
       playSound("error", effectsOn);
+      handleLifeLoss();
       setShowTimeUpModal(true);
     } else {
       checkAnswer();
     }
-    setIsRunning(false);
   });
 
   useEffect(() => {
@@ -153,18 +154,19 @@ export default function FourPicsMode({
   const checkAnswer = () => {
     if (!question?.answer || hasAnswered.current) return;
     hasAnswered.current = true;
-    setIsRunning(false);
+    setIsRunning(false); // ✅ Stop timer FIRST
 
     const correct =
       input.join("").toLowerCase() === question.answer.toLowerCase();
     if (correct) {
       playSound("success", effectsOn);
+      lifeLostRef.current = true; // ✅ Prevent any life loss on correct answer
       const earned = calculateScore();
       saveScore(earned);
       setShowRightModal(true);
     } else {
-      handleLifeLoss();
       playSound("error", effectsOn);
+      handleLifeLoss();
       setShowWrongModal(true);
     }
   };
@@ -355,39 +357,23 @@ export default function FourPicsMode({
         isOpen={showRightModal}
         onClose={onCorrect}
         onNext={onCorrect}
-        onBackToMap={() => {
-          // ✅ Ensure no life loss when navigating back after correct answer
-          hasAnswered.current = true;
-          lifeLostRef.current = true;
-          setIsRunning(false);
-          onBack();
-        }}
+        onBackToMap={onBack}
         score={score}
         effectsOn={effectsOn}
       />
       <WrongAnswerModal
         isOpen={showWrongModal}
         onRetry={() => resetLevel({ skipIncorrect: true })}
-        onBack={() => {
-          // ✅ Life already lost when modal appeared, prevent double deduction
-          hasAnswered.current = true;
-          lifeLostRef.current = true;
-          setIsRunning(false);
-          onBack();
-        }}
+        onBack={onBack}
         effectsOn={effectsOn}
+        currentLives={gameUser?.lives || 0}
       />
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
-        onGoToMap={() => {
-          // ✅ Life already lost when time ran out, prevent double deduction
-          hasAnswered.current = true;
-          lifeLostRef.current = true;
-          setIsRunning(false);
-          onBack();
-        }}
+        onGoToMap={onBack}
         effectsOn={effectsOn}
+        currentLives={gameUser?.lives || 0}
       />
     </div>
   );
