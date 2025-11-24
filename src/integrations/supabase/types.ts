@@ -266,6 +266,7 @@ export type Database = {
           created_at: string | null
           effects_on: boolean | null
           full_name: string | null
+          has_seen_explainer_video: boolean | null
           holy_shield_until: string | null
           in_game: boolean | null
           in_game_level: string | null
@@ -291,6 +292,7 @@ export type Database = {
           created_at?: string | null
           effects_on?: boolean | null
           full_name?: string | null
+          has_seen_explainer_video?: boolean | null
           holy_shield_until?: string | null
           in_game?: boolean | null
           in_game_level?: string | null
@@ -316,6 +318,7 @@ export type Database = {
           created_at?: string | null
           effects_on?: boolean | null
           full_name?: string | null
+          has_seen_explainer_video?: boolean | null
           holy_shield_until?: string | null
           in_game?: boolean | null
           in_game_level?: string | null

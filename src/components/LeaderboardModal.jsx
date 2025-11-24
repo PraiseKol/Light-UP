@@ -6,11 +6,18 @@ export default function LeaderboardModal({
   onClose, 
   totalLeaderboard = [], 
   weeklyLeaderboard = [],
+  monthlyLeaderboard = [],
   currentUserId 
 }) {
-  const [showTotal, setShowTotal] = useState(true);
+  const [selectedTab, setSelectedTab] = useState('overall'); // 'overall', 'weekly', 'monthly'
 
-  const leaderboard = showTotal ? totalLeaderboard : weeklyLeaderboard;
+  const leaderboard = 
+    selectedTab === 'overall' ? totalLeaderboard :
+    selectedTab === 'weekly' ? weeklyLeaderboard :
+    monthlyLeaderboard;
+
+  // Get current month name
+  const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
 
   return (
     <Modal 
@@ -20,12 +27,12 @@ export default function LeaderboardModal({
       className="max-w-2xl"
     >
       <div className="space-y-4">
-        {/* Toggle between Overall and Weekly */}
+        {/* Toggle between Overall, Weekly, and Monthly */}
         <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
           <button
-            onClick={() => setShowTotal(true)}
-            className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
-              showTotal
+            onClick={() => setSelectedTab('overall')}
+            className={`flex-1 py-3 px-3 rounded-lg font-bold transition-all text-sm ${
+              selectedTab === 'overall'
                 ? "candy-gradient text-white shadow-lg"
                 : "text-gray-600 hover:bg-white"
             }`}
@@ -33,9 +40,9 @@ export default function LeaderboardModal({
             Overall Top 10
           </button>
           <button
-            onClick={() => setShowTotal(false)}
-            className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
-              !showTotal
+            onClick={() => setSelectedTab('weekly')}
+            className={`flex-1 py-3 px-3 rounded-lg font-bold transition-all text-sm ${
+              selectedTab === 'weekly'
                 ? "candy-gradient text-white shadow-lg"
                 : "text-gray-600 hover:bg-white"
             }`}
@@ -46,6 +53,19 @@ export default function LeaderboardModal({
                 {weeklyLeaderboard[0]?.is_active ? "🔴 Live" : "📅 Last Week"}
               </div>
             )}
+          </button>
+          <button
+            onClick={() => setSelectedTab('monthly')}
+            className={`flex-1 py-3 px-3 rounded-lg font-bold transition-all text-sm ${
+              selectedTab === 'monthly'
+                ? "candy-gradient text-white shadow-lg"
+                : "text-gray-600 hover:bg-white"
+            }`}
+          >
+            <div>📅 This Month</div>
+            <div className="text-xs mt-1 opacity-80">
+              {new Date().toLocaleString('default', { month: 'short' })}
+            </div>
           </button>
         </div>
 

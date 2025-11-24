@@ -7,7 +7,7 @@ import { saveProgress } from "@/lib/saveProgress";
 import { fetchTotalScore } from "@/lib/fetchTotalScore";
 import { fetchRandomScripture } from "@/lib/fetchRandomScripture";
 import { fetchLeaderboard } from "@/lib/fetchLeaderboard";
-import { fetchMainLeaderboard } from "@/lib/api/leaderboard";
+import { fetchMainLeaderboard, fetchMonthlyLeaderboard } from "@/lib/api/leaderboard";
 import { supabase } from "@/lib/supabaseClient";
 import { useGameUser } from "@/hooks/useGameUser";
 import { LivesDisplay } from "@/components/LivesDisplay";
@@ -30,6 +30,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import GlobalChat from "@/components/GlobalChat";
 import LeaderboardModal from "@/components/LeaderboardModal";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import ExplainerVideoModal from "@/components/ExplainerVideoModal";
 import {
   determineUnlockedPhases,
   wrapLevelsWithStatus,
@@ -56,10 +57,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [countdownText, setCountdownText] = useState("");
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState([]);
   const [totalLeaderboard, setTotalLeaderboard] = useState([]);
+  const [monthlyLeaderboard, setMonthlyLeaderboard] = useState([]);
   const [showStore, setShowStore] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showMoreModal, setShowMoreModal] = useState(false);
+  const [showExplainerVideo, setShowExplainerVideo] = useState(false);
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
@@ -100,8 +103,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     const loadLeaderboards = async () => {
       const weekly = await fetchLeaderboard();
       const total = await fetchMainLeaderboard();
+      const monthly = await fetchMonthlyLeaderboard();
       setWeeklyLeaderboard(weekly);
       setTotalLeaderboard(total);
+      setMonthlyLeaderboard(monthly);
     };
 
     const loadLeaderboardsDebounced = () => {
@@ -138,6 +143,13 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       clearTimeout(leaderboardTimeout);
     };
   }, []);
+
+  // Auto-show explainer video for first-time users
+  useEffect(() => {
+    if (gameUser && gameUser.player_name && !gameUser.has_seen_explainer_video) {
+      setShowExplainerVideo(true);
+    }
+  }, [gameUser]);
 
   const startLevel = async (level) => {
     if (!user || !level) return;
@@ -454,8 +466,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             </Tooltip>
           </div>
 
-          {/* Right: Powerups */}
-          <div className="hidden lg:flex gap-2">
+          {/* Right: Powerups + Video Tutorial Icon */}
+          <div className="hidden lg:flex gap-2 items-center">
             {Object.entries(gameUser.powerups_inventory || {}).map(
               ([key, count]) => (
                 <Tooltip key={key} content={getPowerUpTooltip(key)}>
@@ -465,6 +477,19 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 </Tooltip>
               )
             )}
+            
+            {/* Video Tutorial Replay Button */}
+            <Tooltip content="Watch tutorial video">
+              <button
+                onClick={() => {
+                  playSound("optionSelect", effectsOn);
+                  setShowExplainerVideo(true);
+                }}
+                className="bg-purple-500/80 hover:bg-purple-600 px-3 py-2 rounded-full border-2 border-white/30 font-bold text-white text-lg hover:scale-110 transition-all shadow-lg"
+              >
+                🎬
+              </button>
+            </Tooltip>
           </div>
         </div>
       </header>
@@ -757,6 +782,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         onClose={() => setShowLeaderboardModal(false)}
         totalLeaderboard={totalLeaderboard}
         weeklyLeaderboard={weeklyLeaderboard}
+        monthlyLeaderboard={monthlyLeaderboard}
         currentUserId={user?.id}
       />
 
@@ -779,6 +805,17 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         className="max-w-md"
       >
         <div className="space-y-3">
+          <button
+            onClick={() => {
+              playSound("optionSelect", effectsOn);
+              setShowMoreModal(false);
+              setShowExplainerVideo(true);
+            }}
+            className="w-full btn-3d bg-gradient-to-r from-purple-500 to-purple-700 text-white font-bold px-6 py-4 rounded-xl shadow-lg hover:scale-105 transition-all"
+          >
+            🎬 Watch Tutorial
+          </button>
+
           <button
             onClick={() => {
               playSound("optionSelect", effectsOn);
@@ -833,6 +870,13 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </div>
         </Modal>
       )}
+
+      {/* Explainer Video Modal */}
+      <ExplainerVideoModal
+        isOpen={showExplainerVideo}
+        onClose={() => setShowExplainerVideo(false)}
+        userId={user?.id}
+      />
 
       <AppToaster />
     </div>
