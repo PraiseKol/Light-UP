@@ -51,7 +51,7 @@ export default function LevelMap({
   // Calculate container height based on max level position
   useEffect(() => {
     const maxY = Math.max(...phase.levels.map((l) => l.position.y));
-    setContainerHeight(maxY + 200);
+    setContainerHeight(maxY + 300); // Increased padding for better scrolling
   }, [phase]);
 
   // Get button center coordinates
@@ -101,11 +101,16 @@ export default function LevelMap({
         strokeWidth = 8;
       }
 
+      // Improved smooth curve calculation
+      const dx = currCenter.x - prevCenter.x;
+      const dy = currCenter.y - prevCenter.y;
+      const controlPointOffset = Math.abs(dx) * 0.6;
+
       paths.push({
         id: `${prevLevel.id}-${level.id}`,
-        d: `M ${prevCenter.x} ${prevCenter.y}
-            C ${(prevCenter.x + currCenter.x) / 2} ${prevCenter.y},
-              ${(prevCenter.x + currCenter.x) / 2} ${currCenter.y},
+        d: `M ${prevCenter.x} ${prevCenter.y} 
+            C ${prevCenter.x} ${prevCenter.y + controlPointOffset}, 
+              ${currCenter.x} ${currCenter.y - controlPointOffset}, 
               ${currCenter.x} ${currCenter.y}`,
         color: strokeColor,
         width: strokeWidth,
@@ -117,7 +122,7 @@ export default function LevelMap({
   };
 
   useEffect(() => {
-    const timer = setTimeout(computePaths, 100);
+    const timer = setTimeout(computePaths, 300); // Increased delay for better mounting
     window.addEventListener("resize", computePaths);
     return () => {
       clearTimeout(timer);
@@ -195,19 +200,34 @@ export default function LevelMap({
         </defs>
 
         {pathData.map((p, i) => (
-          <motion.path
-            key={i}
-            d={p.d}
-            fill="none"
-            stroke={p.color}
-            strokeWidth={p.width + 4}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            filter={p.glow ? "url(#divineGlow)" : undefined}
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 1.2, delay: i * 0.08, ease: "easeInOut" }}
-          />
+          <g key={i}>
+            {/* Shadow layer for 3D depth */}
+            <motion.path
+              d={p.d}
+              fill="none"
+              stroke="rgba(0,0,0,0.15)"
+              strokeWidth={p.width + 6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 1.2, delay: i * 0.08, ease: "easeInOut" }}
+              style={{ transform: "translate(2px, 3px)" }}
+            />
+            {/* Main path */}
+            <motion.path
+              d={p.d}
+              fill="none"
+              stroke={p.color}
+              strokeWidth={p.width + 4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              filter={p.glow ? "url(#divineGlow)" : undefined}
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 1.2, delay: i * 0.08, ease: "easeInOut" }}
+            />
+          </g>
         ))}
       </svg>
 

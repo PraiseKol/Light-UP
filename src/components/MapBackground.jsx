@@ -46,12 +46,12 @@ export default function MapBackground() {
         </svg>
       </div>
 
-      {/* Animated floating light particles (divine light) */}
+      {/* Animated floating light particles (divine light) - Reduced count */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(15)].map((_, i) => (
+        {[...Array(8)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 bg-yellow-200/60 rounded-full blur-sm"
+            className="absolute w-2 h-2 bg-yellow-200/40 rounded-full blur-sm"
             initial={{
               x: Math.random() * 100 + "%",
               y: Math.random() * 100 + "%",
@@ -78,7 +78,7 @@ export default function MapBackground() {
 
       {/* Subtle pattern overlay for texture */}
       <div
-        className="absolute inset-0 opacity-5"
+        className="absolute inset-0 opacity-3"
         style={{
           backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)",
           backgroundSize: "50px 50px",
