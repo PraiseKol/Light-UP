@@ -26,8 +26,13 @@ export async function fetchMonthlyLeaderboard() {
     .gte('completed_at', startOfMonth.toISOString())
     .lte('completed_at', endOfMonth.toISOString());
 
-  if (progressError || !progressData) {
+  if (progressError) {
     console.error("Failed to fetch monthly progress:", progressError);
+    return [];
+  }
+
+  if (!progressData || progressData.length === 0) {
+    console.log("No progress data for current month");
     return [];
   }
 
@@ -40,27 +45,39 @@ export async function fetchMonthlyLeaderboard() {
     return acc;
   }, {});
 
-  // Step 3: Get top 10 user IDs
-  const topUsers = Object.values(aggregated)
+  // Step 3: Convert to array and sort to get top users
+  const allUsers = Object.values(aggregated);
+  console.log(`Total unique users this month: ${allUsers.length}`);
+  
+  const topUsers = allUsers
     .sort((a, b) => b.total_score - a.total_score)
     .slice(0, 10);
+
+  console.log(`Top ${topUsers.length} users for monthly leaderboard:`, topUsers);
 
   if (topUsers.length === 0) return [];
 
   // Step 4: Fetch player names for top users
   const userIds = topUsers.map(u => u.user_id);
-  const { data: userData } = await supabase
+  const { data: userData, error: userError } = await supabase
     .from('game_users')
     .select('user_id, player_name')
     .in('user_id', userIds);
+
+  if (userError) {
+    console.error("Failed to fetch user names:", userError);
+  }
 
   // Step 5: Merge data
   const userMap = {};
   userData?.forEach(u => { userMap[u.user_id] = u.player_name; });
 
-  return topUsers.map(u => ({
+  const result = topUsers.map(u => ({
     user_id: u.user_id,
     total_score: u.total_score,
     player_name: userMap[u.user_id] || 'Anonymous'
   }));
+
+  console.log('Final monthly leaderboard result:', result);
+  return result;
 }
