@@ -1,12 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import LevelButton from "./LevelButton";
-import { Lock } from "lucide-react";
-import { levelPhases } from "@/data/levelData";
-import avatarIcon from "@/assets/avatar.png";
-import { useGameUser } from "@/hooks/useGameUser";
-
-import clouds from "@/assets/clouds.png";          // ✅ Vercel-safe import
-import goldenPath from "@/assets/golden-path.png"; // ✅ Vercel-safe import
+import MapBackground from "./MapBackground";
 
 export default function LevelMap({
   phase,
@@ -17,232 +12,268 @@ export default function LevelMap({
   isLocked,
   levelRefs,
 }) {
-  const containerRef = useRef(null);
-  const { gameUser } = useGameUser();
-  const [paths, setPaths] = useState([]);
+  const scrollContainerRef = useRef(null);
+  const buttonRefs = useRef([]);
+  const [pathData, setPathData] = useState([]);
+  const [containerHeight, setContainerHeight] = useState(0);
+
+  // Determine if a level is unlocked
+  const isLevelUnlocked = (level) => {
+    const levelIdx = phase.levels.findIndex((l) => l.id === level.id);
+    if (levelIdx === 0) return true; // First level always unlocked
+    const prevLevel = phase.levels[levelIdx - 1];
+    return completedLevels.includes(prevLevel.id);
+  };
+
+  const isPhaseUnlocked = phaseIndex === 0 || completedLevels.some((id) => {
+    const prevPhaseLastLevel = phase.levels[phase.levels.length - 1];
+    return id === prevPhaseLastLevel.id;
+  });
+
+  const handleLevelClick = (level) => {
+    if (isLevelUnlocked(level) && isPhaseUnlocked) {
+      onSelectLevel(level);
+    }
+  };
 
   // Auto-scroll to current level
   useEffect(() => {
-    if (!containerRef.current) return;
-
-    if (!currentLevelId && completedLevels.length === 0) {
-      containerRef.current.scrollTo({
-        top: containerRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    } else if (currentLevelId && levelRefs.current[currentLevelId]) {
-      levelRefs.current[currentLevelId].scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-        inline: "center",
-      });
+    if (currentLevelId && buttonRefs.current[currentLevelId]) {
+      setTimeout(() => {
+        buttonRefs.current[currentLevelId]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 300);
     }
-  }, [currentLevelId, completedLevels, levelRefs]);
+  }, [currentLevelId]);
 
-  const isPhase1 = phaseIndex === 0;
-  const prevPhaseLastLevelId = !isPhase1
-    ? levelPhases[phaseIndex - 1].levels.slice(-1)[0].id
-    : null;
-
-  const phaseUnlocked =
-    isPhase1 || completedLevels.includes(prevPhaseLastLevelId);
-
-  const [unlocking, setUnlocking] = useState(false);
-  const wasLocked = useRef(!phaseUnlocked);
-
+  // Calculate container height based on max level position
   useEffect(() => {
-    if (wasLocked.current && phaseUnlocked) {
-      setUnlocking(true);
-      wasLocked.current = false;
-      setTimeout(() => setUnlocking(false), 800);
-    }
-  }, [phaseUnlocked]);
+    const maxY = Math.max(...phase.levels.map((l) => l.position.y));
+    setContainerHeight(maxY + 200);
+  }, [phase]);
 
-  // Get button center
-  function getButtonCenter(levelId) {
-    const el = levelRefs.current[levelId];
-    if (!el || !containerRef.current) return null;
+  // Get button center coordinates
+  const getButtonCenter = (idx) => {
+    const el = buttonRefs.current[idx];
+    if (!el || !scrollContainerRef.current) return null;
 
     const rect = el.getBoundingClientRect();
-    const containerRect = containerRef.current.getBoundingClientRect();
+    const containerRect = scrollContainerRef.current.getBoundingClientRect();
+    const scrollTop = scrollContainerRef.current.scrollTop;
 
     return {
       x: rect.left + rect.width / 2 - containerRect.left,
-      y: rect.top + rect.height / 2 - containerRect.top,
+      y: rect.top + rect.height / 2 - containerRect.top + scrollTop,
     };
-  }
+  };
 
-  // Compute connecting glow paths
-  useEffect(() => {
-    function computePaths() {
-      const newPaths = [];
+  // Compute paths between levels
+  const computePaths = () => {
+    const paths = [];
 
-      phase.levels.forEach((level, i) => {
-        if (i === 0) return;
+    phase.levels.forEach((level, i) => {
+      if (i === 0) return;
 
-        const prev = phase.levels[i - 1];
-        const prevCenter = getButtonCenter(prev.id);
-        const currCenter = getButtonCenter(level.id);
+      const prevLevel = phase.levels[i - 1];
+      const prevCenter = getButtonCenter(i - 1);
+      const currCenter = getButtonCenter(i);
 
-        if (!prevCenter || !currCenter) return;
+      if (!prevCenter || !currCenter) return;
 
-        const prevCompleted = completedLevels.includes(prev.id);
+      const prevCompleted = completedLevels.includes(prevLevel.id);
+      const currUnlocked = isLevelUnlocked(level);
 
-        newPaths.push({
-          id: `${prev.id}-${level.id}`,
-          d: `M ${prevCenter.x} ${prevCenter.y}
-               C ${(prevCenter.x + currCenter.x) / 2} ${prevCenter.y},
-                 ${(prevCenter.x + currCenter.x) / 2} ${currCenter.y},
-                 ${currCenter.x} ${currCenter.y}`,
-          color: prevCompleted ? "url(#goldGradient)" : "#888888",
-          width: prevCompleted ? 20 : 14,
-          glow: prevCompleted,
-        });
+      let strokeColor;
+      let strokeWidth;
+      let glow = false;
+
+      if (prevCompleted) {
+        strokeColor = "url(#goldenScroll)";
+        strokeWidth = 16;
+        glow = true;
+      } else if (currUnlocked) {
+        strokeColor = "url(#divinePath)";
+        strokeWidth = 12;
+      } else {
+        strokeColor = "url(#ancientPath)";
+        strokeWidth = 8;
+      }
+
+      paths.push({
+        id: `${prevLevel.id}-${level.id}`,
+        d: `M ${prevCenter.x} ${prevCenter.y}
+            C ${(prevCenter.x + currCenter.x) / 2} ${prevCenter.y},
+              ${(prevCenter.x + currCenter.x) / 2} ${currCenter.y},
+              ${currCenter.x} ${currCenter.y}`,
+        color: strokeColor,
+        width: strokeWidth,
+        glow,
       });
+    });
 
-      setPaths(newPaths);
-    }
+    setPathData(paths);
+  };
 
-    computePaths();
+  useEffect(() => {
+    const timer = setTimeout(computePaths, 100);
     window.addEventListener("resize", computePaths);
-    return () => window.removeEventListener("resize", computePaths);
-  }, [phase, completedLevels]);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", computePaths);
+    };
+  }, [phase, completedLevels, currentLevelId]);
 
   return (
     <div
-      ref={containerRef}
-      className="
-        relative w-full min-h-[1400px] pb-20
-        rounded-3xl shadow-[0_10px_50px_rgba(79,156,249,0.4)]
-        bg-gradient-to-b from-sky-100/40 via-purple-50/30 to-pink-50/40
-        backdrop-blur-sm border-4 border-white/50
-        max-w-3xl lg:max-w-6xl xl:max-w-7xl mx-auto mb-12
-      "
+      ref={scrollContainerRef}
+      className="relative w-full h-full overflow-y-auto overflow-x-hidden pb-32"
       style={{
-        backgroundImage: `url(${clouds})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
       }}
     >
-      {/* Phase Title */}
-      <div className="text-center py-8 sticky top-0 z-10 bg-gradient-to-b from-white/40 via-blue-50/30 to-transparent backdrop-blur-md">
-        <h2 className="text-4xl md:text-7xl font-black bg-gradient-to-r from-candyBlue via-candyPurple to-candyPink bg-clip-text text-transparent drop-shadow-[0_4px_10px_rgba(79,156,249,0.4)]">
-          Phase {phase.phaseNumber}
-        </h2>
-      </div>
+      {/* New biblical landscape background */}
+      <MapBackground />
 
-      {/* SVG paths */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none">
+      {/* Phase title banner - Candy Crush style */}
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="sticky top-0 z-30 py-4 px-6 mb-8"
+      >
+        <div className="max-w-md mx-auto relative">
+          {/* Ribbon background */}
+          <div className="bg-gradient-to-r from-purple-600 via-purple-500 to-purple-600 rounded-2xl shadow-[0_6px_0_#6b21a8,0_8px_20px_rgba(147,51,234,0.4)] px-6 py-3 border-4 border-purple-700">
+            <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent rounded-xl" />
+            <h2 className="text-2xl sm:text-3xl font-black text-white text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] relative z-10">
+              {phase.title}
+            </h2>
+          </div>
+          
+          {/* Decorative ribbons on sides */}
+          <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-12 bg-purple-700 rounded-l-full shadow-lg" />
+          <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-12 bg-purple-700 rounded-r-full shadow-lg" />
+        </div>
+      </motion.div>
+
+      {/* SVG paths connecting levels - Golden biblical scroll style */}
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{ minHeight: containerHeight }}
+      >
         <defs>
-          <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#FFD93D" />
-            <stop offset="50%" stopColor="#FFA500" />
-            <stop offset="100%" stopColor="#FFD93D" />
+          {/* Golden scroll gradient for completed paths */}
+          <linearGradient id="goldenScroll" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#fbbf24" stopOpacity="1" />
+            <stop offset="50%" stopColor="#f59e0b" stopOpacity="1" />
+            <stop offset="100%" stopColor="#d97706" stopOpacity="1" />
           </linearGradient>
 
-          <filter id="pathGlow">
-            <feGaussianBlur stdDeviation="4" result="blur" />
+          {/* Divine path gradient for unlocked paths */}
+          <linearGradient id="divinePath" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#818cf8" stopOpacity="0.9" />
+            <stop offset="50%" stopColor="#a78bfa" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#c084fc" stopOpacity="0.7" />
+          </linearGradient>
+
+          {/* Locked path gradient */}
+          <linearGradient id="ancientPath" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#d1d5db" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#9ca3af" stopOpacity="0.3" />
+          </linearGradient>
+
+          {/* Divine glow filter */}
+          <filter id="divineGlow">
+            <feGaussianBlur stdDeviation="6" result="coloredBlur" />
             <feMerge>
-              <feMergeNode in="blur" />
+              <feMergeNode in="coloredBlur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
 
-        {paths.map((p) => (
-          <path
-            key={p.id}
+        {pathData.map((p, i) => (
+          <motion.path
+            key={i}
             d={p.d}
             fill="none"
             stroke={p.color}
-            strokeWidth={p.width}
+            strokeWidth={p.width + 4}
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{
-              filter: p.glow
-                ? "url(#pathGlow) drop-shadow(0 0 12px rgba(255,215,0,0.9))"
-                : "none",
-            }}
-            vectorEffect="non-scaling-stroke"
+            filter={p.glow ? "url(#divineGlow)" : undefined}
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.2, delay: i * 0.08, ease: "easeInOut" }}
           />
         ))}
       </svg>
 
-      {/* LEVEL BUTTONS */}
-      {phase.levels.map((level, i) => {
-        const isFirst = i === 0;
-        const prevCompleted = isFirst
-          ? phaseUnlocked
-          : completedLevels.includes(phase.levels[i - 1].id);
-
-        const isUnlocked = level.completed || prevCompleted;
-        const isCurrent = level.id === currentLevelId;
-
+      {/* Level buttons */}
+      {phase.levels.map((level, idx) => {
+        const isUnlocked = isLevelUnlocked(level);
         return (
           <div
             key={level.id}
+            ref={(el) => (buttonRefs.current[idx] = el)}
             className="absolute"
             style={{
               left: `${level.position.x}%`,
-              top: `${level.position.y}%`,
+              top: `${level.position.y}px`,
               transform: "translate(-50%, -50%)",
-              zIndex: isCurrent ? 20 : 10,
             }}
           >
-            <div
-              ref={(el) => {
-                if (el) levelRefs.current[level.id] = el;
-              }}
-            >
-              <LevelButton
-                level={level}
-                isUnlocked={isUnlocked}
-                onClick={() => isUnlocked && phaseUnlocked && onSelectLevel(level)}
-              />
-            </div>
+            <LevelButton
+              level={level}
+              isUnlocked={isUnlocked}
+              onClick={handleLevelClick}
+            />
 
-            {/* Current player indicator */}
-            {isCurrent && (
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center animate-float">
-                <img
-                  src={avatarIcon}
-                  alt="Avatar"
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-[0_6px_20px_rgba(79,156,249,0.8)] border-4 border-white ring-4 ring-candyBlue/40 animate-pulse"
-                />
-                <div className="mt-2 px-3 py-1 bg-gradient-to-r from-candyYellow to-yellow-600 text-white text-xs font-black rounded-full shadow-lg">
+            {/* "YOU" indicator above current level */}
+            {currentLevelId === level.id && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap"
+              >
+                <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg border-2 border-white">
                   YOU
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
         );
       })}
 
-      {/* Lock Overlay */}
-      {(!phaseUnlocked || (phaseUnlocked && isLocked)) && (
-        <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center z-30">
-          <div className="bg-white/20 backdrop-blur-md rounded-full p-8 mb-6 shadow-[0_0_40px_rgba(255,255,255,0.3)] animate-float">
-            <Lock className="w-16 h-16 text-white drop-shadow-lg animate-pulse" />
-          </div>
-          <p className="text-white text-xl font-black drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
-            {!phaseUnlocked
-              ? `Complete Phase ${phase.phaseNumber - 1} to Unlock`
-              : "Out of Lives - Visit the Store!"}
-          </p>
+      {/* Overlay if phase is locked */}
+      {(!isPhaseUnlocked || (currentLevelId && !isLevelUnlocked)) && (
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0, rotate: -10 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            className="bg-gradient-to-br from-white via-purple-50 to-blue-50 rounded-3xl p-8 max-w-sm mx-4 text-center shadow-[0_10px_40px_rgba(0,0,0,0.3)] border-4 border-purple-300"
+          >
+            <motion.div
+              animate={{ rotate: [0, -10, 10, -10, 0] }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-7xl mb-4"
+            >
+              🔒
+            </motion.div>
+            <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600 mb-3">
+              {!isPhaseUnlocked ? "Phase Locked" : "Level Locked"}
+            </h3>
+            <p className="text-gray-700 font-medium text-lg">
+              {!isPhaseUnlocked
+                ? "Complete previous phases to continue your journey"
+                : "Complete earlier levels to unlock this one"}
+            </p>
+          </motion.div>
         </div>
       )}
-
-      {/* 🌟 Golden Path at Bottom
-      <div
-        className="absolute bottom-0 left-0 w-full h-40 opacity-90 pointer-events-none"
-        style={{
-          backgroundImage: `url(${goldenPath})`,
-          backgroundSize: "cover",
-          backgroundPosition: "bottom",
-          backgroundRepeat: "no-repeat",
-        }}
-      /> */}
     </div>
   );
 }

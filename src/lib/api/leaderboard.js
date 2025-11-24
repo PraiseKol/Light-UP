@@ -15,42 +15,52 @@ export async function fetchMainLeaderboard() {
 }
 
 export async function fetchMonthlyLeaderboard() {
-  // Get start and end of current month
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-  const { data, error } = await supabase
+  // Step 1: Get all progress data for current month
+  const { data: progressData, error: progressError } = await supabase
     .from('progress')
-    .select('user_id, score, game_users!inner(player_name)')
+    .select('user_id, score')
     .gte('completed_at', startOfMonth.toISOString())
     .lte('completed_at', endOfMonth.toISOString());
 
-  if (error) {
-    console.error("Failed to fetch monthly leaderboard:", error);
+  if (progressError || !progressData) {
+    console.error("Failed to fetch monthly progress:", progressError);
     return [];
   }
 
-  // Aggregate scores by user_id
-  const aggregated = data.reduce((acc, record) => {
-    const userId = record.user_id;
-    const playerName = record.game_users?.player_name || 'Anonymous';
-    
-    if (!acc[userId]) {
-      acc[userId] = { 
-        user_id: userId, 
-        player_name: playerName, 
-        total_score: 0 
-      };
+  // Step 2: Aggregate scores by user_id
+  const aggregated = progressData.reduce((acc, record) => {
+    if (!acc[record.user_id]) {
+      acc[record.user_id] = { user_id: record.user_id, total_score: 0 };
     }
-    acc[userId].total_score += record.score || 0;
+    acc[record.user_id].total_score += record.score || 0;
     return acc;
   }, {});
 
-  // Convert to array, sort, and get top 10
-  const monthlyLeaderboard = Object.values(aggregated)
+  // Step 3: Get top 10 user IDs
+  const topUsers = Object.values(aggregated)
     .sort((a, b) => b.total_score - a.total_score)
     .slice(0, 10);
 
-  return monthlyLeaderboard;
+  if (topUsers.length === 0) return [];
+
+  // Step 4: Fetch player names for top users
+  const userIds = topUsers.map(u => u.user_id);
+  const { data: userData } = await supabase
+    .from('game_users')
+    .select('user_id, player_name')
+    .in('user_id', userIds);
+
+  // Step 5: Merge data
+  const userMap = {};
+  userData?.forEach(u => { userMap[u.user_id] = u.player_name; });
+
+  return topUsers.map(u => ({
+    user_id: u.user_id,
+    total_score: u.total_score,
+    player_name: userMap[u.user_id] || 'Anonymous'
+  }));
 }
