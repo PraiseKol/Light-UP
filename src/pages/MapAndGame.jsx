@@ -615,8 +615,13 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
                   {/* Map Container */}
                   <div className="relative w-full" style={{ minHeight: `${containerHeight}px` }}>
-                    {/* Golden Path SVG */}
-                    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
+                    {/* Golden Path SVG - Using viewBox to allow percentage-based coordinates */}
+                    <svg 
+                      className="absolute inset-0 w-full h-full pointer-events-none" 
+                      viewBox={`0 0 100 ${containerHeight}`}
+                      preserveAspectRatio="none"
+                      style={{ zIndex: 0 }}
+                    >
                       <defs>
                         <linearGradient id={`goldenPath-${originalIndex}`} x1="0%" y1="0%" x2="100%" y2="0%">
                           <stop offset="0%" stopColor="#FFD93D" />
@@ -627,9 +632,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                       {wrappedLevels.map((level, idx) => {
                         if (idx === 0) return null;
                         const prevLevel = wrappedLevels[idx - 1];
-                        const x1 = `${prevLevel.position.x}%`;
+                        const x1 = prevLevel.position.x;
                         const y1 = prevLevel.position.y;
-                        const x2 = `${level.position.x}%`;
+                        const x2 = level.position.x;
                         const y2 = level.position.y;
                         const midY = (y1 + y2) / 2;
                         
@@ -776,31 +781,37 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       </main>
 
       {/* Fixed Bottom Navigation - Desktop */}
-      <footer className="hidden lg:block fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-white/95 to-blue-50/95 backdrop-blur-xl border-t-4 border-white/50 shadow-[0_-4px_20px_rgba(79,156,249,0.3)]">
+      <footer className="hidden lg:block fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-pink-200 via-pink-300 to-pink-400 border-t-4 border-pink-500 shadow-[0_-4px_20px_rgba(236,72,153,0.4)]">
         <div className="max-w-7xl mx-auto px-4 py-3">
           {/* Row 1: Primary Actions */}
-          <div className="flex items-center justify-center gap-3 mb-2">
+          <div className="flex items-center justify-center gap-4 mb-2">
             <Tooltip content="Customize your player name and game settings">
               <button
                 onClick={() => {
                   playSound("optionSelect", effectsOn);
                   setShowSettings(true);
                 }}
-                className="btn-3d bg-white text-candyBlue font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all"
+                className="relative"
               >
-                ⚙️ Settings
+                <div className="w-16 h-16 rounded-full bg-gradient-to-b from-blue-300 via-blue-400 to-blue-600 shadow-[0_4px_0_#1e40af,0_6px_10px_rgba(30,64,175,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#1e40af] transition-all hover:scale-105">
+                  <span className="text-3xl">⚙️</span>
+                </div>
+                <span className="text-xs font-bold text-pink-900 mt-1 block text-center">Settings</span>
               </button>
             </Tooltip>
 
-            <Tooltip content="Buy power-ups with talents. buy talents, check out bonuses earned ">
+            <Tooltip content="Buy power-ups with talents. buy talents, check out bonuses earned">
               <button
                 onClick={() => {
                   playSound("optionSelect", effectsOn);
                   setShowStore(true);
                 }}
-                className="btn-3d golden-gradient text-white font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all"
+                className="relative"
               >
-                🎁 Store
+                <div className="w-16 h-16 rounded-full bg-gradient-to-b from-green-300 via-green-400 to-green-600 shadow-[0_4px_0_#166534,0_6px_10px_rgba(22,101,52,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#166534] transition-all hover:scale-105">
+                  <span className="text-3xl">🎁</span>
+                </div>
+                <span className="text-xs font-bold text-pink-900 mt-1 block text-center">Store</span>
               </button>
             </Tooltip>
 
@@ -810,9 +821,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                   playSound("optionSelect", effectsOn);
                   navigate("/multiplayer/create");
                 }}
-                className="btn-3d bg-gradient-to-r from-candyGreen to-green-500 text-white font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all"
+                className="relative"
               >
-                🎮 Multiplayer
+                <div className="w-16 h-16 rounded-full bg-gradient-to-b from-purple-300 via-purple-400 to-purple-600 shadow-[0_4px_0_#6b21a8,0_6px_10px_rgba(107,33,168,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#6b21a8] transition-all hover:scale-105">
+                  <span className="text-3xl">🎮</span>
+                </div>
+                <span className="text-xs font-bold text-pink-900 mt-1 block text-center">Multiplayer</span>
               </button>
             </Tooltip>
 
@@ -823,29 +837,32 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                   handleWeeklyChallengeClick();
                 }}
                 disabled={!challengeAllowed}
-                className="btn-3d candy-gradient text-white font-bold px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="relative"
               >
-                🥊{" "}
-                {challengeAllowed && !challengePlayed
-                  ? "Weekly Quiz"
-                  : challengePlayed
-                  ? "Played"
-                  : `Opens ${countdownText}`}
+                <div className={`w-20 h-20 -mt-2 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-600 shadow-[0_4px_0_#b45309,0_6px_10px_rgba(180,83,9,0.4)] border-4 border-white flex items-center justify-center transition-all hover:scale-105 ${challengeAllowed && !challengePlayed ? 'ring-4 ring-yellow-200/50 animate-pulse' : ''} ${!challengeAllowed ? 'opacity-50 cursor-not-allowed' : 'active:translate-y-1 active:shadow-[0_2px_0_#b45309]'}`}>
+                  <span className="text-3xl">🥊</span>
+                </div>
+                <span className="text-xs font-bold text-pink-900 mt-1 block text-center">
+                  {challengeAllowed && !challengePlayed ? "EVENTS" : challengePlayed ? "Played" : "Locked"}
+                </span>
               </button>
             </Tooltip>
           </div>
 
           {/* Row 2: Secondary Actions */}
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-4">
             <Tooltip content="View top players and weekend top players">
               <button
                 onClick={() => {
                   playSound("optionSelect", effectsOn);
                   setShowLeaderboardModal(true);
                 }}
-                className="btn-3d bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold px-5 py-2.5 rounded-xl shadow-md hover:scale-105 transition-all"
+                className="relative"
               >
-                🏆 Leaderboards
+                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 shadow-[0_3px_0_#92400e,0_4px_8px_rgba(146,64,14,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_1px_0_#92400e] transition-all hover:scale-105">
+                  <span className="text-xl">🏆</span>
+                </div>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Ranks</span>
               </button>
             </Tooltip>
 
@@ -855,30 +872,39 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                   playSound("optionSelect", effectsOn);
                   setShowChatModal(true);
                 }}
-                className="btn-3d bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold px-5 py-2.5 rounded-xl shadow-md hover:scale-105 transition-all"
+                className="relative"
               >
-                💬 Chat
+                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-pink-300 via-pink-400 to-pink-600 shadow-[0_3px_0_#be185d,0_4px_8px_rgba(190,24,93,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_1px_0_#be185d] transition-all hover:scale-105">
+                  <span className="text-xl">💬</span>
+                </div>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Chat</span>
               </button>
             </Tooltip>
 
             <Tooltip content="Send feedback or report bugs">
-              <div>
-                <FeedbackButton
-                  effectsOn={effectsOn}
-                  sound={sound}
-                  setSound={setSound}
-                />
+              <div className="relative flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-indigo-300 via-indigo-400 to-indigo-600 shadow-[0_3px_0_#3730a3,0_4px_8px_rgba(55,48,163,0.4)] border-2 border-white/50 flex items-center justify-center transition-all hover:scale-105">
+                  <FeedbackButton
+                    effectsOn={effectsOn}
+                    sound={sound}
+                    setSound={setSound}
+                  />
+                </div>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Feedback</span>
               </div>
             </Tooltip>
 
             <Tooltip content="Support the team with a donation">
-              <div>
-                <DonationsButton
-                  userId={user?.id}
-                  effectsOn={effectsOn}
-                  playSound={playSound}
-                  sound={sound}
-                />
+              <div className="relative flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-red-300 via-red-400 to-red-600 shadow-[0_3px_0_#991b1b,0_4px_8px_rgba(153,27,27,0.4)] border-2 border-white/50 flex items-center justify-center transition-all hover:scale-105">
+                  <DonationsButton
+                    userId={user?.id}
+                    effectsOn={effectsOn}
+                    playSound={playSound}
+                    sound={sound}
+                  />
+                </div>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Donate</span>
               </div>
             </Tooltip>
           </div>
@@ -886,8 +912,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       </footer>
 
       {/* Fixed Bottom Navigation - Mobile */}
-      <footer className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-white/95 to-blue-50/95 backdrop-blur-xl border-t-4 border-white/50 shadow-[0_-4px_20px_rgba(79,156,249,0.3)]">
-        <div className="flex items-center justify-around px-2 py-3">
+      <footer className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-pink-200 via-pink-300 to-pink-400 border-t-4 border-pink-500 shadow-[0_-4px_20px_rgba(236,72,153,0.4)]">
+        <div className="flex items-center justify-around px-2 py-2.5">
           {/* Settings */}
           <Tooltip content="Customize settings">
             <button
@@ -895,12 +921,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 playSound("optionSelect", effectsOn);
                 setShowSettings(true);
               }}
-              className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
+              className="flex flex-col items-center gap-1"
             >
-              <span className="text-2xl">⚙️</span>
-              <span className="text-[10px] font-bold text-gray-700">
-                Settings
-              </span>
+              <div className="w-14 h-14 rounded-full bg-gradient-to-b from-blue-300 via-blue-400 to-blue-600 shadow-[0_4px_0_#1e40af,0_6px_10px_rgba(30,64,175,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#1e40af] transition-all">
+                <span className="text-2xl">⚙️</span>
+              </div>
+              <span className="text-[10px] font-bold text-pink-900">Settings</span>
             </button>
           </Tooltip>
 
@@ -911,10 +937,29 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 playSound("optionSelect", effectsOn);
                 setShowStore(true);
               }}
-              className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
+              className="flex flex-col items-center gap-1"
             >
-              <span className="text-2xl">🎁</span>
-              <span className="text-[10px] font-bold text-gray-700">Store</span>
+              <div className="w-14 h-14 rounded-full bg-gradient-to-b from-green-300 via-green-400 to-green-600 shadow-[0_4px_0_#166534,0_6px_10px_rgba(22,101,52,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#166534] transition-all">
+                <span className="text-2xl">🎁</span>
+              </div>
+              <span className="text-[10px] font-bold text-pink-900">Shop</span>
+            </button>
+          </Tooltip>
+
+          {/* Weekly Quiz - Center & Highlighted */}
+          <Tooltip content={challengeAllowed ? "Play weekly quiz" : `Opens ${countdownText}`}>
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                handleWeeklyChallengeClick();
+              }}
+              disabled={!challengeAllowed}
+              className="flex flex-col items-center gap-1"
+            >
+              <div className={`w-16 h-16 -mt-3 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-600 shadow-[0_4px_0_#b45309,0_6px_10px_rgba(180,83,9,0.4)] border-4 border-white flex items-center justify-center transition-all ${challengeAllowed && !challengePlayed ? 'ring-4 ring-yellow-200/50 animate-pulse' : ''} ${!challengeAllowed ? 'opacity-50' : 'active:translate-y-1 active:shadow-[0_2px_0_#b45309]'}`}>
+                <span className="text-3xl">🥊</span>
+              </div>
+              <span className="text-[10px] font-bold text-pink-900">EVENTS</span>
             </button>
           </Tooltip>
 
@@ -925,25 +970,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 playSound("optionSelect", effectsOn);
                 navigate("/multiplayer/create");
               }}
-              className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
+              className="flex flex-col items-center gap-1"
             >
-              <span className="text-2xl">🎮</span>
-              <span className="text-[10px] font-bold text-gray-700">Multi</span>
-            </button>
-          </Tooltip>
-
-          {/* Weekly Quiz */}
-          <Tooltip content={challengeAllowed ? "Play weekly quiz" : `Opens ${countdownText}`}>
-            <button
-              onClick={() => {
-                playSound("optionSelect", effectsOn);
-                handleWeeklyChallengeClick();
-              }}
-              disabled={!challengeAllowed}
-              className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all disabled:opacity-50"
-            >
-              <span className="text-2xl">🥊</span>
-              <span className="text-[10px] font-bold text-gray-700">Quiz</span>
+              <div className="w-14 h-14 rounded-full bg-gradient-to-b from-purple-300 via-purple-400 to-purple-600 shadow-[0_4px_0_#6b21a8,0_6px_10px_rgba(107,33,168,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#6b21a8] transition-all">
+                <span className="text-2xl">🎮</span>
+              </div>
+              <span className="text-[10px] font-bold text-pink-900">Multi</span>
             </button>
           </Tooltip>
 
@@ -954,10 +986,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 playSound("optionSelect", effectsOn);
                 setShowMoreModal(true);
               }}
-              className="flex flex-col items-center gap-1 px-2 py-2 hover:bg-white/50 rounded-xl transition-all"
+              className="flex flex-col items-center gap-1"
             >
-              <span className="text-2xl">⋯</span>
-              <span className="text-[10px] font-bold text-gray-700">More</span>
+              <div className="w-14 h-14 rounded-full bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 shadow-[0_4px_0_#374151,0_6px_10px_rgba(55,65,81,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#374151] transition-all">
+                <span className="text-2xl">⋯</span>
+              </div>
+              <span className="text-[10px] font-bold text-pink-900">More</span>
             </button>
           </Tooltip>
         </div>
