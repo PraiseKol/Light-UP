@@ -19,12 +19,12 @@ export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn, 
         </Transition.Child>
 
         <div className="fixed inset-0 flex items-center justify-center p-3 md:p-4">
-          <Dialog.Panel className="w-full max-w-xs md:max-w-sm rounded-2xl bg-white p-6 shadow-lg text-center space-y-3 md:space-y-4">
-            <Dialog.Title className="text-xl md:text-2xl font-bold text-red-600">
-              ⏰ Time’s Up!
+          <Dialog.Panel className="w-full max-w-xs md:max-w-sm rounded-2xl bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 border-2 border-orange-300 p-6 shadow-[0_8px_0_#ea580c,0_12px_20px_rgba(234,88,12,0.4)] text-center space-y-3 md:space-y-4">
+            <Dialog.Title className="text-xl md:text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+              ⏰ Time's Up!
             </Dialog.Title>
             <Dialog.Description className="text-gray-700">
-              You didn’t complete the level in time.
+              You didn't complete the level in time.
             </Dialog.Description>
 
             <div className="space-y-1 md:space-y-2">
@@ -34,10 +34,10 @@ export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn, 
                   onTryAgain();
                 }}
                 disabled={currentLives <= 0}
-                className={`w-full py-1 md:py-2 rounded transition ${
+                className={`w-full py-1 md:py-2 rounded-full font-bold transition-all ${
                   currentLives <= 0
                     ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600 text-white shadow-[0_4px_0_#1e40af] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#1e40af]"
                 }`}
               >
                 {currentLives <= 0 ? "⏰ No more lives, wait for regeneration" : "🔁 Try Again"}
@@ -47,7 +47,7 @@ export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn, 
                   playSound("click", effectsOn);
                   onGoToMap();
                 }}
-                className="w-full bg-gray-200 text-gray-800 py-1 md:py-2 rounded hover:bg-gray-300 transition"
+                className="w-full bg-gradient-to-b from-gray-300 to-gray-400 text-gray-800 py-1 md:py-2 rounded-full font-bold hover:scale-105 shadow-[0_4px_0_#6b7280] active:translate-y-1 active:shadow-[0_2px_0_#6b7280] transition-all"
               >
                 🔙 Return to Map
               </button>

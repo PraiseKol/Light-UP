@@ -269,7 +269,7 @@ export default function FourPicsMode({
   const images = question.image_urls.split(",").map((url) => url.trim());
 
   return (
-    <div className="p-8 md:p-6 bg-gradient-to-br from-yellow-50 to-orange-100 rounded-xl shadow-lg max-w-2xl mx-auto animate-fadeInUp">
+    <div className="p-8 md:p-6 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 rounded-2xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] border-2 border-pink-200 max-w-2xl mx-auto animate-fadeInUp">
       <div className="space-y-1 mb-2 md:mb-4">
         <div className="flex justify-between items-center">
           <div className="text-xs text-gray-500 mb-1 md:mb-2">
@@ -329,7 +329,7 @@ export default function FourPicsMode({
             handleBackspace();
           }}
           disabled={input.every((slot) => slot === "") || hasAnswered.current}
-          className="bg-gray-200 hover:bg-gray-300 text-black"
+          className="bg-gradient-to-b from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-black font-bold rounded-full shadow-[0_4px_0_#6b7280] active:translate-y-1 active:shadow-[0_2px_0_#6b7280]"
         >
           ⌫
         </Button>
@@ -339,6 +339,7 @@ export default function FourPicsMode({
             checkAnswer();
           }}
           disabled={hasAnswered.current || input.includes("")}
+          className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white font-bold rounded-full shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d]"
         >
           ✅ Submit
         </Button>
@@ -346,7 +347,7 @@ export default function FourPicsMode({
           <Button
             onClick={applyDivineHint}
             disabled={divineHintApplied}
-            className="bg-purple-500 hover:bg-purple-600 text-white"
+            className="bg-gradient-to-b from-purple-400 via-purple-500 to-purple-600 text-white font-bold rounded-full shadow-[0_4px_0_#7c3aed] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#7c3aed]"
           >
             ✨ Divine Hint
           </Button>

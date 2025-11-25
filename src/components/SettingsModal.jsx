@@ -114,10 +114,10 @@ export default function SettingsModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="relative bg-gradient-to-br from-white via-blue-50 to-sky-100 p-6 rounded-2xl shadow-2xl w-[90%] max-w-md border border-blue-200">
+      <div className="relative bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-6 rounded-2xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] w-[90%] max-w-md border-2 border-pink-200">
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-yellow-100/10 to-transparent pointer-events-none" />
 
-        <h2 className="text-2xl font-bold text-blue-800 mb-4 text-center">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-4 text-center">
           ⚙️ Player Settings
         </h2>
         <div className="text-center text-xs text-blue-900"><i>Refresh after saving to see changes </i> </div>
@@ -284,7 +284,7 @@ export default function SettingsModal({
               handleSave();
             }}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md"
+            className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 hover:scale-105 text-white px-4 py-2 rounded-full shadow-[0_4px_0_#be185d] active:translate-y-1 active:shadow-[0_2px_0_#be185d] font-bold"
           >
             {loading ? "Saving..." : "Save"}
           </Button>

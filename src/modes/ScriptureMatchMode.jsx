@@ -10,8 +10,7 @@ import { useUser } from "@supabase/auth-helpers-react";
 import { useResetLevel } from "@/hooks/useResetLevel";
 import { playSound } from "@/utils/sound";
 
-const scriptureMatchBackground =
-  "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//ScriptureMatchBackground.png";
+// Removed background image - using candy gradient instead
 
 export default function ScriptureMatchMode({
   question,
@@ -238,15 +237,11 @@ export default function ScriptureMatchMode({
     shuffledVerses.find((v) => v.verse === verse)?.matchedByHint;
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: `url(${scriptureMatchBackground})` }}
-      />
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c]">
       <div className="relative z-10 flex justify-center items-center px-4 py-10">
         <div className="w-full max-w-4xl animate-fade-in-up">
           <div className="mb-20 md:mb-auto"></div>
-          <div className="p-6 rounded-xl shadow-lg bg-white/90 border space-y-4 md:space-y-6">
+          <div className="p-6 rounded-2xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] bg-gradient-to-br from-white/95 via-pink-50/90 to-purple-50/90 border-2 border-pink-200 space-y-4 md:space-y-6">
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <div className="text-xs md:text-sm text-gray-600 font-medium">
@@ -331,7 +326,7 @@ export default function ScriptureMatchMode({
                   playSound("submitAnswer", effectsOn);
                   checkAnswer();
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white font-bold rounded-full shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d] px-8 py-3"
               >
                 ✅ Submit
               </Button>

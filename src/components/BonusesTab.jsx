@@ -103,9 +103,9 @@ export default function BonusesTab({ userId }) {
   if (error) return <div>{error}</div>;
 
   return (
-    <div className="p-2 md:p-4 max-w-xl md:max-w-3xl mx-auto">
-      <h2 className="text-sm md:text-2xl font-bold mb-2 md:mb-6 text-center text-gray-800">
-        Your Bonuses
+    <div className="p-2 md:p-4 max-w-xl md:max-w-3xl mx-auto bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 rounded-2xl border-2 border-green-200 shadow-[0_8px_0_#16a34a,0_12px_20px_rgba(22,163,74,0.4)]">
+      <h2 className="text-sm md:text-2xl font-bold mb-2 md:mb-6 text-center bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+        🎁 Your Bonuses
       </h2>
       {Object.keys(bonusCount).length === 0 ? (
         <p className="text-center text-gray-500">No bonuses awarded yet.</p>
