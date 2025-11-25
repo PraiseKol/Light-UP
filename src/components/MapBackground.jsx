@@ -46,12 +46,12 @@ export default function MapBackground() {
         </svg>
       </div>
 
-      {/* Animated floating light particles (divine light) - Reduced count */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(8)].map((_, i) => (
+      {/* Animated floating light particles (divine light) - Further optimized */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(5)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 bg-yellow-200/40 rounded-full blur-sm"
+            className="absolute w-2 h-2 bg-yellow-200/30 rounded-full blur-sm"
             initial={{
               x: Math.random() * 100 + "%",
               y: Math.random() * 100 + "%",
@@ -67,7 +67,7 @@ export default function MapBackground() {
               ],
             }}
             transition={{
-              duration: 10 + Math.random() * 10,
+              duration: 15 + Math.random() * 10,
               repeat: Infinity,
               repeatType: "reverse",
               ease: "easeInOut",
