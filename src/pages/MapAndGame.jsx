@@ -262,15 +262,39 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     if (completedLevels.length > 0) {
       const unlocked = determineUnlockedPhases(completedLevels, levelPhases);
       setUnlockedPhases(unlocked);
-      const highestIndex = Math.max(...unlocked);
-      setTimeout(() => {
-        phaseRefs.current[highestIndex]?.scrollIntoView({
-          behavior: "smooth",
-          block: "end",
-        });
-      }, 500);
     }
   }, [completedLevels]);
+
+  // 🌟 Auto-scroll to current level (first incomplete level)
+  useEffect(() => {
+    if (!selectedLevel && completedLevels !== undefined && !progressLoading) {
+      const scrollToCurrentLevel = () => {
+        // Find the first incomplete level across all phases
+        for (const phase of levelPhases) {
+          for (const level of phase.levels) {
+            if (!completedLevels.includes(level.id)) {
+              const levelEl = levelRefs.current[level.id];
+              if (levelEl) {
+                levelEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+              }
+            }
+          }
+        }
+        // If all levels complete, scroll to highest phase
+        const highestIndex = Math.max(...(unlockedPhases.length > 0 ? unlockedPhases : [0]));
+        if (phaseRefs.current[highestIndex]) {
+          phaseRefs.current[highestIndex]?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      };
+      
+      // Delay to ensure refs are populated
+      setTimeout(scrollToCurrentLevel, 300);
+    }
+  }, [completedLevels, progressLoading, selectedLevel, levelPhases, unlockedPhases]);
 
   useEffect(() => {
     if (showNextLevelModal) {
@@ -780,11 +804,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         )}
       </main>
 
-      {/* Fixed Bottom Navigation - Desktop */}
+      {/* Fixed Bottom Navigation - Desktop - Single Row */}
       <footer className="hidden lg:block fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-pink-200 via-pink-300 to-pink-400 border-t-4 border-pink-500 shadow-[0_-4px_20px_rgba(236,72,153,0.4)]">
         <div className="max-w-7xl mx-auto px-4 py-3">
-          {/* Row 1: Primary Actions */}
-          <div className="flex items-center justify-center gap-4 mb-2">
+          <div className="flex items-center justify-center gap-3">
+            {/* Settings */}
             <Tooltip content="Customize your player name and game settings">
               <button
                 onClick={() => {
@@ -793,14 +817,15 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-16 h-16 rounded-full bg-gradient-to-b from-blue-300 via-blue-400 to-blue-600 shadow-[0_4px_0_#1e40af,0_6px_10px_rgba(30,64,175,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#1e40af] transition-all hover:scale-105">
-                  <span className="text-3xl">⚙️</span>
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-blue-300 via-blue-400 to-blue-600 shadow-[0_4px_0_#1e40af,0_6px_10px_rgba(30,64,175,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#1e40af] transition-all hover:scale-105">
+                  <span className="text-2xl">⚙️</span>
                 </div>
-                <span className="text-xs font-bold text-pink-900 mt-1 block text-center">Settings</span>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Settings</span>
               </button>
             </Tooltip>
 
-            <Tooltip content="Buy power-ups with talents. buy talents, check out bonuses earned">
+            {/* Store */}
+            <Tooltip content="Buy power-ups, talents, check bonuses">
               <button
                 onClick={() => {
                   playSound("optionSelect", effectsOn);
@@ -808,14 +833,15 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-16 h-16 rounded-full bg-gradient-to-b from-green-300 via-green-400 to-green-600 shadow-[0_4px_0_#166534,0_6px_10px_rgba(22,101,52,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#166534] transition-all hover:scale-105">
-                  <span className="text-3xl">🎁</span>
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-green-300 via-green-400 to-green-600 shadow-[0_4px_0_#166534,0_6px_10px_rgba(22,101,52,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#166534] transition-all hover:scale-105">
+                  <span className="text-2xl">🎁</span>
                 </div>
-                <span className="text-xs font-bold text-pink-900 mt-1 block text-center">Store</span>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Shop</span>
               </button>
             </Tooltip>
 
-            <Tooltip content="Create or join multiplayer games with friends">
+            {/* Multiplayer */}
+            <Tooltip content="Create or join multiplayer games">
               <button
                 onClick={() => {
                   playSound("optionSelect", effectsOn);
@@ -823,14 +849,15 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-16 h-16 rounded-full bg-gradient-to-b from-purple-300 via-purple-400 to-purple-600 shadow-[0_4px_0_#6b21a8,0_6px_10px_rgba(107,33,168,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#6b21a8] transition-all hover:scale-105">
-                  <span className="text-3xl">🎮</span>
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-purple-300 via-purple-400 to-purple-600 shadow-[0_4px_0_#6b21a8,0_6px_10px_rgba(107,33,168,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#6b21a8] transition-all hover:scale-105">
+                  <span className="text-2xl">🎮</span>
                 </div>
-                <span className="text-xs font-bold text-pink-900 mt-1 block text-center">Multiplayer</span>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Multi</span>
               </button>
             </Tooltip>
 
-            <Tooltip content={challengeAllowed ? "Play the weekly challenge to earn bonus rewards!" : `Weekly challenge opens ${countdownText}`}>
+            {/* Events - Highlighted, Slightly Larger */}
+            <Tooltip content={challengeAllowed ? "Play weekly challenge" : `Opens ${countdownText}`}>
               <button
                 onClick={() => {
                   playSound("optionSelect", effectsOn);
@@ -839,19 +866,17 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 disabled={!challengeAllowed}
                 className="relative"
               >
-                <div className={`w-20 h-20 -mt-2 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-600 shadow-[0_4px_0_#b45309,0_6px_10px_rgba(180,83,9,0.4)] border-4 border-white flex items-center justify-center transition-all hover:scale-105 ${challengeAllowed && !challengePlayed ? 'ring-4 ring-yellow-200/50 animate-pulse' : ''} ${!challengeAllowed ? 'opacity-50 cursor-not-allowed' : 'active:translate-y-1 active:shadow-[0_2px_0_#b45309]'}`}>
+                <div className={`w-18 h-18 -mt-1 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-600 shadow-[0_5px_0_#b45309,0_6px_12px_rgba(180,83,9,0.5)] border-3 border-white flex items-center justify-center transition-all hover:scale-110 ${challengeAllowed && !challengePlayed ? 'ring-4 ring-yellow-200/50 animate-pulse' : ''} ${!challengeAllowed ? 'opacity-50 cursor-not-allowed' : 'active:translate-y-1 active:shadow-[0_2px_0_#b45309]'}`}>
                   <span className="text-3xl">🥊</span>
                 </div>
-                <span className="text-xs font-bold text-pink-900 mt-1 block text-center">
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">
                   {challengeAllowed && !challengePlayed ? "EVENTS" : challengePlayed ? "Played" : "Locked"}
                 </span>
               </button>
             </Tooltip>
-          </div>
 
-          {/* Row 2: Secondary Actions */}
-          <div className="flex items-center justify-center gap-4">
-            <Tooltip content="View top players and weekend top players">
+            {/* Leaderboard */}
+            <Tooltip content="View top players">
               <button
                 onClick={() => {
                   playSound("optionSelect", effectsOn);
@@ -859,14 +884,15 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 shadow-[0_3px_0_#92400e,0_4px_8px_rgba(146,64,14,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_1px_0_#92400e] transition-all hover:scale-105">
-                  <span className="text-xl">🏆</span>
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 shadow-[0_4px_0_#92400e,0_6px_10px_rgba(146,64,14,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#92400e] transition-all hover:scale-105">
+                  <span className="text-2xl">🏆</span>
                 </div>
                 <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Ranks</span>
               </button>
             </Tooltip>
 
-            <Tooltip content="Chat with other players globally">
+            {/* Chat */}
+            <Tooltip content="Chat with players globally">
               <button
                 onClick={() => {
                   playSound("optionSelect", effectsOn);
@@ -874,38 +900,27 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-pink-300 via-pink-400 to-pink-600 shadow-[0_3px_0_#be185d,0_4px_8px_rgba(190,24,93,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_1px_0_#be185d] transition-all hover:scale-105">
-                  <span className="text-xl">💬</span>
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-pink-300 via-pink-400 to-pink-600 shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#be185d] transition-all hover:scale-105">
+                  <span className="text-2xl">💬</span>
                 </div>
                 <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Chat</span>
               </button>
             </Tooltip>
 
-            <Tooltip content="Send feedback or report bugs">
-              <div className="relative flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-indigo-300 via-indigo-400 to-indigo-600 shadow-[0_3px_0_#3730a3,0_4px_8px_rgba(55,48,163,0.4)] border-2 border-white/50 flex items-center justify-center transition-all hover:scale-105">
-                  <FeedbackButton
-                    effectsOn={effectsOn}
-                    sound={sound}
-                    setSound={setSound}
-                  />
+            {/* More Options */}
+            <Tooltip content="Feedback, Donate, and more">
+              <button
+                onClick={() => {
+                  playSound("optionSelect", effectsOn);
+                  setShowMoreModal(true);
+                }}
+                className="relative"
+              >
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 shadow-[0_4px_0_#374151,0_6px_10px_rgba(55,65,81,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#374151] transition-all hover:scale-105">
+                  <span className="text-2xl">⋯</span>
                 </div>
-                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Feedback</span>
-              </div>
-            </Tooltip>
-
-            <Tooltip content="Support the team with a donation">
-              <div className="relative flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-red-300 via-red-400 to-red-600 shadow-[0_3px_0_#991b1b,0_4px_8px_rgba(153,27,27,0.4)] border-2 border-white/50 flex items-center justify-center transition-all hover:scale-105">
-                  <DonationsButton
-                    userId={user?.id}
-                    effectsOn={effectsOn}
-                    playSound={playSound}
-                    sound={sound}
-                  />
-                </div>
-                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Donate</span>
-              </div>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">More</span>
+              </button>
             </Tooltip>
           </div>
         </div>

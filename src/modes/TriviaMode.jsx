@@ -11,9 +11,6 @@ import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
 import { playSound } from "@/utils/sound";
 
-const triviaBackground =
-  "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds/TriviaBackground.png";
-
 const getScoreFromTime = (timeLeft) => {
   if (timeLeft > 20) return 100;
   if (timeLeft > 10) return 75;
@@ -31,7 +28,7 @@ export default function TriviaMode({
   onIncorrect,
   activePowerups,
   effectsOn = true,
-  gameUser, // ✅ Add gameUser prop
+  gameUser,
 }) {
   const userContext = useUser();
   const user = userContext?.id ? userContext : null;
@@ -49,7 +46,7 @@ export default function TriviaMode({
   const cardContentRef = useRef(null);
 
   const { timeLeft, reset, setIsRunning, setTimeLeft } = useTimer(30, () => {
-    setIsRunning(false); // ✅ Stop timer FIRST
+    setIsRunning(false);
     if (hasAnswered.current) return;
 
     if (selected) {
@@ -70,7 +67,6 @@ export default function TriviaMode({
     cardContentRef.current?.focus();
   }, []);
 
-  // Grace Period
   useEffect(() => {
     if (activePowerups?.grace_period) {
       setTimeLeft((prev) => prev + 15);
@@ -78,7 +74,6 @@ export default function TriviaMode({
     }
   }, [activePowerups, setTimeLeft]);
 
-  // Divine Hint: reduce options
   useEffect(() => {
     if (
       activePowerups?.divine_hint &&
@@ -117,10 +112,9 @@ export default function TriviaMode({
   const saveScore = async (earnedScore) => {
     if (!user || !level) return;
 
-    const levelId = `phase-${level.phaseNumber}-level-${level.number}`; // unique levelId
+    const levelId = `phase-${level.phaseNumber}-level-${level.number}`;
 
     try {
-      // Upsert score (only overwrite if new score is higher)
       const { data: existing } = await supabase
         .from("progress")
         .select("score")
@@ -150,7 +144,7 @@ export default function TriviaMode({
   const checkAnswer = () => {
     if (hasAnswered.current) return;
     hasAnswered.current = true;
-    setIsRunning(false); // ✅ Stop timer FIRST
+    setIsRunning(false);
 
     const isCorrect =
       selected?.trim().toLowerCase() === answer.trim().toLowerCase();
@@ -159,7 +153,7 @@ export default function TriviaMode({
     setTimeout(() => {
       if (isCorrect) {
         playSound("success", effectsOn);
-        lifeLostRef.current = true; // ✅ Prevent any life loss on correct answer
+        lifeLostRef.current = true;
         const earned = getScoreFromTime(timeLeft);
         setScore(earned);
         saveScore(earned);
@@ -177,18 +171,15 @@ export default function TriviaMode({
   };
 
   return (
-    <div
-      className="min-h-screen flex justify-center items-center bg-cover bg-center px2 md:px-4"
-      style={{ backgroundImage: `url(${triviaBackground})` }}
-    >
+    <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c] px-2 md:px-4 py-4">
       <div className="w-full max-w-xl animate-fadeInUp">
-        <Card className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-xl p-3 md:p-6">
+        <Card className="bg-gradient-to-br from-pink-50 via-white to-blue-50 backdrop-blur-md border-4 border-pink-300 shadow-2xl p-3 md:p-6 rounded-2xl">
           <div className="space-y-1 mb-2 md:mb-4">
             <div className="flex justify-between items-center">
-              <div className="text-xs md:text-sm text-gray-600 font-normal md:font-medium">
+              <div className="text-xs md:text-sm text-pink-700 font-bold">
                 Phase {level?.phaseNumber} • Level {level?.number} Trivia
               </div>
-              <div className="text-[10px] md:text-xs text-gray-500 font-semibold">
+              <div className="text-[10px] md:text-xs text-orange-600 font-black bg-yellow-100 px-2 py-1 rounded-full">
                 {timeLeft}s
               </div>
             </div>
@@ -197,7 +188,7 @@ export default function TriviaMode({
           
           </div>
 
-          <CardHeader className="text-sm md:text-xl text-gray-800 mb-4">
+          <CardHeader className="text-sm md:text-xl text-gray-900 font-bold mb-4 leading-snug">
             {question}
           </CardHeader>
 
@@ -228,10 +219,10 @@ export default function TriviaMode({
                       if (!hasAnswered.current) setSelected(opt);
                       playSound("optionSelect", effectsOn);
                     }}
-                    className={`w-full px-3 md:px-4 py-2 md:py-3 rounded-md text-left border transition ${
+                    className={`w-full px-3 md:px-4 py-2 md:py-3 rounded-xl text-left font-semibold border-2 transition-all shadow-lg ${
                       isSelected
-                        ? "border-blue-600 bg-blue-100 font-semibold"
-                        : "border-gray-300 hover:bg-gray-100"
+                        ? "border-pink-500 bg-gradient-to-r from-pink-100 to-yellow-100 scale-105 shadow-pink-300"
+                        : "border-gray-300 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:border-blue-300"
                     }`}
                   >
                     {opt}
@@ -246,9 +237,9 @@ export default function TriviaMode({
                 checkAnswer();
               }}
               disabled={!selected || hasAnswered.current}
-              className="w-full bg-blue-600 text-white hover:bg-blue-700 transition"
+              className="w-full bg-gradient-to-r from-green-400 to-emerald-500 text-white font-black text-lg py-3 rounded-xl shadow-[0_4px_0_#059669] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#059669] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ✅ Submit
+              ✅ Submit Answer
             </Button>
           </CardContent>
         </Card>
