@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { levelPhases } from "@/data/levelData";
 import { useAuth } from "@/auth/AuthProvider";
 import { fetchProgress } from "@/lib/fetchProgress";
@@ -75,41 +75,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [shakingLevel, setShakingLevel] = useState(null);
 
   const { user } = useAuth();
-  
-  // Helper: Get highest completed phase for avatar unlocking
-  const getHighestCompletedPhase = () => {
-    let maxPhase = 0;
-    completedLevels.forEach(levelId => {
-      const match = levelId.match(/P(\d+)-L\d+/);
-      if (match) {
-        const phaseNum = parseInt(match[1]);
-        if (phaseNum > maxPhase) maxPhase = phaseNum;
-      }
-    });
-    return maxPhase;
-  };
-
-  const highestCompletedPhase = getHighestCompletedPhase();
-
-  // Helper: Convert score to stars (0, 50, 75, 100 → 0, 1, 2, 3 stars)
-  const getStarsFromScore = (score) => {
-    if (score >= 100) return 3;
-    if (score >= 75) return 2;
-    if (score >= 50) return 1;
-    return 0;
-  };
-
-  // Helper: Shake animation for locked levels
-  const handleLockedClick = (levelId) => {
-    setShakingLevel(levelId);
-    setTimeout(() => setShakingLevel(null), 500);
-  };
-
-  // Get current avatar emoji
-  const getCurrentAvatar = () => {
-    const avatarId = gameUser?.selected_avatar || 'avatar1';
-    return AVATARS.find(a => a.id === avatarId)?.emoji || '🕊️';
-  };
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -153,6 +118,39 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       queryClient.invalidateQueries(["levelScores", user?.id]);
     },
   });
+
+  // Helper: Get highest completed phase for avatar unlocking (computed from completedLevels)
+  const highestCompletedPhase = useMemo(() => {
+    let maxPhase = 0;
+    completedLevels.forEach(levelId => {
+      const match = levelId.match(/P(\d+)-L\d+/);
+      if (match) {
+        const phaseNum = parseInt(match[1]);
+        if (phaseNum > maxPhase) maxPhase = phaseNum;
+      }
+    });
+    return maxPhase;
+  }, [completedLevels]);
+
+  // Helper: Convert score to stars (0, 50, 75, 100 → 0, 1, 2, 3 stars)
+  const getStarsFromScore = (score) => {
+    if (score >= 100) return 3;
+    if (score >= 75) return 2;
+    if (score >= 50) return 1;
+    return 0;
+  };
+
+  // Helper: Shake animation for locked levels
+  const handleLockedClick = (levelId) => {
+    setShakingLevel(levelId);
+    setTimeout(() => setShakingLevel(null), 500);
+  };
+
+  // Get current avatar emoji
+  const getCurrentAvatar = () => {
+    const avatarId = gameUser?.selected_avatar || 'avatar1';
+    return AVATARS.find(a => a.id === avatarId)?.emoji || '🕊️';
+  };
 
   const phaseRefs = useRef([]);
   const levelRefs = useRef({});
