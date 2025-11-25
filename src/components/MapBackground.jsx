@@ -3,67 +3,85 @@ import { motion } from "framer-motion";
 export default function MapBackground() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Sky gradient - warm biblical sunset/dawn colors */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-300 via-purple-200 to-orange-100" />
+      {/* Deep teal to navy gradient sky matching reference */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0d2847] via-[#1a4a5e] to-[#2d5a4a]" />
 
-      {/* Distant mountains layer */}
-      <div className="absolute bottom-0 left-0 right-0 h-1/2">
-        <svg
-          className="absolute bottom-0 w-full h-full opacity-30"
-          viewBox="0 0 1200 400"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M0,300 Q200,150 400,200 T800,180 L1200,220 L1200,400 L0,400 Z"
-            fill="#8B5CF6"
-            opacity="0.3"
+      {/* Stars scattered across sky */}
+      <div className="absolute inset-0">
+        {[...Array(50)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full opacity-80"
+            style={{
+              top: `${Math.random() * 70}%`,
+              left: `${Math.random() * 100}%`,
+              animation: `twinkle ${2 + Math.random() * 3}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 2}s`,
+            }}
           />
-          <path
-            d="M0,320 Q300,180 600,220 T1200,250 L1200,400 L0,400 Z"
-            fill="#7C3AED"
-            opacity="0.2"
-          />
+        ))}
+      </div>
+
+      {/* Temple silhouette in distance */}
+      <div className="absolute bottom-[25%] right-[10%] opacity-30">
+        <svg width="120" height="100" viewBox="0 0 120 100" fill="none">
+          <rect x="40" y="30" width="40" height="50" fill="#1a3a2e" />
+          <polygon points="60,10 30,30 90,30" fill="#1a3a2e" />
+          <rect x="50" y="50" width="8" height="30" fill="#0d2020" />
+          <rect x="62" y="50" width="8" height="30" fill="#0d2020" />
         </svg>
       </div>
 
-      {/* Mid-ground rolling hills */}
-      <div className="absolute bottom-0 left-0 right-0 h-2/5">
+      {/* Tree silhouette on left */}
+      <div className="absolute bottom-[20%] left-[8%] opacity-40">
+        <svg width="80" height="100" viewBox="0 0 80 100" fill="none">
+          <rect x="35" y="60" width="10" height="40" fill="#1a3a2e" />
+          <circle cx="40" cy="40" r="30" fill="#2d5a4a" />
+          <circle cx="30" cy="30" r="25" fill="#1e4a3a" />
+          <circle cx="50" cy="35" r="28" fill="#234a3a" />
+        </svg>
+      </div>
+
+      {/* Rolling green hills in foreground */}
+      <div className="absolute bottom-0 left-0 right-0 h-[30%]">
         <svg
           className="absolute bottom-0 w-full h-full"
           viewBox="0 0 1200 300"
           preserveAspectRatio="none"
         >
+          {/* Back hill */}
           <path
-            d="M0,200 Q200,120 400,160 T800,140 L1200,180 L1200,300 L0,300 Z"
-            fill="#86efac"
+            d="M0,150 Q200,80 400,120 T800,100 L1200,140 L1200,300 L0,300 Z"
+            fill="#166534"
             opacity="0.6"
           />
+          {/* Front hill */}
           <path
-            d="M0,220 Q300,150 600,180 T1200,200 L1200,300 L0,300 Z"
-            fill="#4ade80"
-            opacity="0.5"
+            d="M0,180 Q300,120 600,160 T1200,180 L1200,300 L0,300 Z"
+            fill="#22c55e"
+            opacity="0.8"
           />
         </svg>
       </div>
 
-      {/* Animated floating light particles (divine light) - Further optimized */}
+      {/* Floating light particles (sparkles) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(5)].map((_, i) => (
+        {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 bg-yellow-200/30 rounded-full blur-sm"
+            className="absolute w-2 h-2 bg-yellow-200/40 rounded-full blur-sm"
             initial={{
-              x: Math.random() * 100 + "%",
-              y: Math.random() * 100 + "%",
+              x: `${Math.random() * 100}%`,
+              y: `${Math.random() * 100}%`,
             }}
             animate={{
               y: [
-                Math.random() * 100 + "%",
-                Math.random() * 100 + "%",
+                `${Math.random() * 100}%`,
+                `${Math.random() * 100}%`,
               ],
               x: [
-                Math.random() * 100 + "%",
-                Math.random() * 100 + "%",
+                `${Math.random() * 100}%`,
+                `${Math.random() * 100}%`,
               ],
             }}
             transition={{

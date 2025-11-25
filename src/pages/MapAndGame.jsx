@@ -11,9 +11,9 @@ import { fetchMainLeaderboard, fetchMonthlyLeaderboard } from "@/lib/api/leaderb
 import { supabase } from "@/lib/supabaseClient";
 import { useGameUser } from "@/hooks/useGameUser";
 import { LivesDisplay } from "@/components/LivesDisplay";
-import SpiritualParallaxBackground from "@/components/SpiritualParallaxBackground";
-import LevelMap from "@/components/LevelMap";
+import MapBackground from "@/components/MapBackground";
 import GameScreen from "@/components/GameScreen";
+import { Lock, Star } from "lucide-react";
 import AppToaster from "@/components/ui/toaster";
 import ScriptureModal from "@/components/ScriptureModal";
 import SettingsModal from "@/components/SettingsModal";
@@ -63,6 +63,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [showChatModal, setShowChatModal] = useState(false);
   const [showMoreModal, setShowMoreModal] = useState(false);
   const [showExplainerVideo, setShowExplainerVideo] = useState(false);
+  const [shakingLevel, setShakingLevel] = useState(null);
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
@@ -85,12 +86,27 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     staleTime: 1000 * 60,
   });
 
+  // level scores query for stars display
+  const { data: levelScores = {} } = useQuery({
+    queryKey: ["levelScores", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('progress')
+        .select('level_id, score')
+        .eq('user_id', user.id);
+      return Object.fromEntries((data || []).map(r => [r.level_id, r.score]));
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60,
+  });
+
   // mutation for saving progress
   const saveProgressMutation = useMutation({
     mutationFn: saveProgress,
     onSuccess: () => {
       queryClient.invalidateQueries(["progress", user?.id]);
       queryClient.invalidateQueries(["totalScore", user?.id]);
+      queryClient.invalidateQueries(["levelScores", user?.id]);
     },
   });
 
@@ -294,6 +310,21 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     return firstIncomplete ? firstIncomplete.id : null;
   };
 
+  // Convert score to stars (0→0, 50→1, 75→2, 100→3)
+  const getStarsFromScore = (score) => {
+    if (score >= 100) return 3;
+    if (score >= 75) return 2;
+    if (score >= 50) return 1;
+    return 0;
+  };
+
+  // Handle locked level click with shake animation
+  const handleLockedClick = (levelId) => {
+    setShakingLevel(levelId);
+    setTimeout(() => setShakingLevel(null), 500);
+    toast.error("Complete the previous level first!");
+  };
+
   const handleWeeklyChallengeClick = () => {
     if (challengeAllowed && !challengePlayed) {
       if (window.confirm("You only get one attempt this week. Proceed?")) {
@@ -422,7 +453,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   return (
     <div className="relative w-full h-screen flex flex-col overflow-hidden">
       <PWAInstallPrompt />
-      <SpiritualParallaxBackground />
+      <MapBackground />
 
       {/* Fixed Top Header */}
       <header className="fixed top-0 left-0 right-0 z-50 candy-gradient py-2 lg:py-3 px-3 lg:px-4 shadow-[0_4px_20px_rgba(79,156,249,0.5)] border-b-4 border-white/30">
@@ -510,31 +541,146 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               );
 
               const currentPhaseId = getCurrentLevelId(phase);
+              const levelsPerPhase = phase.levels.length;
+              const containerHeight = (levelsPerPhase * 130) + 300;
 
               return (
                 <div
                   key={originalIndex}
                   ref={(el) => (phaseRefs.current[originalIndex] = el)}
-                  className="relative"
+                  className="relative mb-20"
                 >
-                  <LevelMap
-                    phase={{ ...phase, levels: wrappedLevels }}
-                    phaseIndex={originalIndex}
-                    completedLevels={completedLevels}
-                    currentLevelId={currentPhaseId}
-                    isLocked={gameUser.lives === 0}
-                    onSelectLevel={(level) => {
-                      if (gameUser.lives > 0) startLevel(level);
-                      else
-                        toast.error(
-                          "You're out of lives! Please wait to get more."
+                  {/* Phase Title Banner */}
+                  <div className="sticky top-20 z-10 mb-8">
+                    <div className="bg-gradient-to-r from-[#FFD93D] via-[#FFC107] to-[#FFD93D] py-3 px-6 rounded-full shadow-[0_4px_20px_rgba(255,193,7,0.6)] border-4 border-white/50 text-center">
+                      <h2 className="text-white font-black text-xl lg:text-2xl drop-shadow-lg">
+                        📜 {phase.title}
+                      </h2>
+                    </div>
+                  </div>
+
+                  {/* Map Container */}
+                  <div className="relative w-full" style={{ minHeight: `${containerHeight}px` }}>
+                    {/* Golden Path SVG */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
+                      <defs>
+                        <linearGradient id={`goldenPath-${originalIndex}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#FFD93D" />
+                          <stop offset="50%" stopColor="#FFC107" />
+                          <stop offset="100%" stopColor="#FFD93D" />
+                        </linearGradient>
+                      </defs>
+                      {wrappedLevels.map((level, idx) => {
+                        if (idx === 0) return null;
+                        const prevLevel = wrappedLevels[idx - 1];
+                        const x1 = `${prevLevel.position.x}%`;
+                        const y1 = prevLevel.position.y;
+                        const x2 = `${level.position.x}%`;
+                        const y2 = level.position.y;
+                        const midY = (y1 + y2) / 2;
+                        
+                        return (
+                          <path
+                            key={`path-${level.id}`}
+                            d={`M ${x1} ${y1} Q ${x1} ${midY}, ${x2} ${y2}`}
+                            fill="none"
+                            stroke={`url(#goldenPath-${originalIndex})`}
+                            strokeWidth="16"
+                            strokeLinecap="round"
+                            opacity="0.9"
+                          />
                         );
-                    }}
-                    sound={sound}
-                    setSound={setSound}
-                    effectsOn={effectsOn}
-                    levelRefs={levelRefs}
-                  />
+                      })}
+                    </svg>
+
+                    {/* Level Nodes */}
+                    {wrappedLevels.map((level, idx) => {
+                      const isCompleted = completedLevels.includes(level.id);
+                      const isCurrentLevel = currentPhaseId === level.id;
+                      const isPreviousCompleted = idx === 0 || completedLevels.includes(wrappedLevels[idx - 1].id);
+                      const isLevelUnlocked = isUnlocked && isPreviousCompleted;
+                      const score = levelScores[level.id] || 0;
+                      const stars = getStarsFromScore(score);
+
+                      return (
+                        <div
+                          key={level.id}
+                          ref={(el) => (levelRefs.current[level.id] = el)}
+                          className="absolute"
+                          style={{
+                            left: `${level.position.x}%`,
+                            top: `${level.position.y}px`,
+                            transform: 'translate(-50%, -50%)',
+                            zIndex: 10,
+                          }}
+                        >
+                          {/* "YOU" Indicator */}
+                          {isCurrentLevel && (
+                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-yellow-400 text-white font-black text-xs px-3 py-1 rounded-full shadow-lg animate-bounce">
+                              YOU
+                            </div>
+                          )}
+
+                          {/* Level Node Button */}
+                          <button
+                            onClick={() => {
+                              if (gameUser.lives === 0) {
+                                toast.error("You're out of lives! Please wait to get more.");
+                                return;
+                              }
+                              if (isLevelUnlocked) {
+                                playSound("optionSelect", effectsOn);
+                                startLevel(level);
+                              } else {
+                                playSound("error", effectsOn);
+                                handleLockedClick(level.id);
+                              }
+                            }}
+                            disabled={!isLevelUnlocked}
+                            className={`
+                              relative w-20 h-20 rounded-full 
+                              border-4 shadow-2xl transition-all duration-200
+                              ${isLevelUnlocked 
+                                ? 'bg-[#2563eb] border-[#fbbf24] hover:scale-110 cursor-pointer' 
+                                : 'bg-gray-600 border-gray-700 cursor-not-allowed opacity-80'
+                              }
+                              ${isCurrentLevel ? 'ring-4 ring-yellow-300 animate-pulse shadow-[0_0_40px_rgba(251,191,36,0.9)]' : ''}
+                              ${shakingLevel === level.id ? 'animate-wiggle' : ''}
+                            `}
+                            style={{
+                              boxShadow: isCurrentLevel 
+                                ? '0 0 40px rgba(251, 191, 36, 0.9), 0 10px 30px rgba(0, 0, 0, 0.5)' 
+                                : '0 10px 30px rgba(0, 0, 0, 0.4)',
+                            }}
+                          >
+                            {isLevelUnlocked ? (
+                              <span className="text-white font-black text-3xl drop-shadow-lg">
+                                {level.number}
+                              </span>
+                            ) : (
+                              <Lock className="text-gray-400 w-8 h-8 mx-auto" />
+                            )}
+                          </button>
+
+                          {/* Stars Display for Completed Levels */}
+                          {isCompleted && (
+                            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-1">
+                              {[...Array(3)].map((_, starIdx) => (
+                                <Star
+                                  key={starIdx}
+                                  className={`w-5 h-5 ${
+                                    starIdx < stars 
+                                      ? 'text-yellow-400 fill-yellow-400' 
+                                      : 'text-gray-500 fill-gray-500'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}

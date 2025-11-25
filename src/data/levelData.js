@@ -14,18 +14,17 @@ const defaultPhaseTitles = [
 ];
 
 /**
- * Generate positions for levels along a zigzag path (Candy Crush style)
- * Uses simple left-center-right pattern for reliable positioning
+ * Generate positions for levels along a snaking path (Candy Crush style)
+ * Creates a winding S-curve from bottom to top
  */
 function getCurvedPosition(index, total) {
-  // Zigzag pattern: left(25%) → center(50%) → right(75%) → center(50%) → repeat
-  const positions = [25, 50, 75, 50];
-  const x = positions[index % 4];
+  // Zigzag pattern: right(75%) → center(50%) → left(25%) → center(50%) → repeat
+  const xPositions = [75, 50, 25, 50];
+  const x = xPositions[index % 4];
   
-  // Vertical position - 140px between each level for proper spacing
-  const verticalSpacing = 140;
-  const topPadding = 120;
-  const y = topPadding + (index * verticalSpacing);
+  // 130px vertical spacing between levels, starting from bottom
+  const verticalSpacing = 130;
+  const y = verticalSpacing * index;
 
   return { x, y };
 }
