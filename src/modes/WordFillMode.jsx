@@ -166,7 +166,7 @@ export default function WordFillMode({
   return (
     <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c] px-4">
       <div className="w-full max-w-xl animate-fadeInUp">
-        <Card className="bg-gradient-to-br from-white/95 via-pink-50/90 to-purple-50/90 backdrop-blur-md border-2 border-pink-200 shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] p-4 md:p-6 rounded-2xl"
+        <Card className="bg-gradient-to-br from-white/95 via-pink-50/90 to-purple-50/90 backdrop-blur-md border-2 border-pink-200 shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] p-4 md:p-6 rounded-2xl">
           <div className="space-y-1">
             <div className="flex justify-between items-center">
               <div className="text-xs md:text-sm text-gray-600 font-normal md:font-medium">
