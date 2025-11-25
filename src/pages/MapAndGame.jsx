@@ -474,27 +474,48 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
   if (!user || gameUserLoading || progressLoading || scoreLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen candy-gradient">
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_60px_rgba(79,156,249,0.5)] p-12 max-w-md text-center border-4 border-white/50 animate-popIn">
-          <div className="text-6xl font-black mb-6 bg-gradient-to-r from-candyBlue via-candyPurple to-candyPink bg-clip-text text-transparent drop-shadow-2xl animate-float">
+      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-pink-300 via-purple-400 to-blue-400 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-20 h-20 bg-candyYellow/30 rounded-full blur-3xl animate-float" />
+          <div className="absolute bottom-32 right-20 w-32 h-32 bg-candyPink/30 rounded-full blur-3xl animate-float [animation-delay:1s]" />
+          <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-candyBlue/30 rounded-full blur-3xl animate-float [animation-delay:0.5s]" />
+        </div>
+
+        {/* Main loading card */}
+        <div className="relative bg-gradient-to-br from-white/95 via-pink-50/90 to-purple-50/90 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_0_rgba(0,0,0,0.1),0_20px_60px_rgba(79,156,249,0.6)] p-8 sm:p-12 max-w-md w-[90%] text-center border-4 border-white/60 animate-popIn">
+          {/* Glowing orb decoration at top */}
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-20 h-20 bg-gradient-to-br from-candyYellow to-candyOrange rounded-full shadow-[0_0_40px_rgba(255,217,61,0.8)] animate-float border-4 border-white/60" />
+          
+          {/* Title */}
+          <div className="text-5xl sm:text-6xl font-black mb-4 bg-gradient-to-r from-candyBlue via-candyPurple to-candyPink bg-clip-text text-transparent drop-shadow-lg animate-float">
             Light UP
           </div>
-          <div className="flex items-center justify-center space-x-4 mb-8">
-            <div className="w-6 h-6 golden-gradient rounded-full animate-bounce [animation-delay:-0.3s] shadow-lg" />
-            <div className="w-6 h-6 bg-candyPink rounded-full animate-bounce [animation-delay:-0.15s] shadow-lg" />
-            <div className="w-6 h-6 bg-candyBlue rounded-full animate-bounce shadow-lg" />
+          
+          {/* Animated bouncing orbs */}
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="w-8 h-8 bg-gradient-to-br from-candyYellow to-candyOrange rounded-full animate-bounce [animation-delay:-0.3s] shadow-[0_4px_0_rgba(0,0,0,0.1),0_0_20px_rgba(255,217,61,0.5)] border-2 border-white/60" />
+            <div className="w-8 h-8 bg-gradient-to-br from-candyPink to-purple-400 rounded-full animate-bounce [animation-delay:-0.15s] shadow-[0_4px_0_rgba(0,0,0,0.1),0_0_20px_rgba(255,107,157,0.5)] border-2 border-white/60" />
+            <div className="w-8 h-8 bg-gradient-to-br from-candyBlue to-blue-500 rounded-full animate-bounce shadow-[0_4px_0_rgba(0,0,0,0.1),0_0_20px_rgba(79,156,249,0.5)] border-2 border-white/60" />
           </div>
-          <div className="text-5xl font-black mb-8 bg-gradient-to-r from-candyOrange via-candyYellow to-candyGreen bg-clip-text text-transparent drop-shadow-md animate-float [animation-delay:0.5s]">
+          
+          {/* Subtitle */}
+          <div className="text-4xl sm:text-5xl font-black mb-8 bg-gradient-to-r from-candyOrange via-candyYellow to-candyGreen bg-clip-text text-transparent drop-shadow-md animate-float [animation-delay:0.5s]">
             your Word!
           </div>
-          <div className="h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+          
+          {/* Progress bar with 3D effect */}
+          <div className="relative h-4 bg-gray-300 rounded-full overflow-hidden shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] border-2 border-gray-400/30">
             <div
-              className="h-full candy-gradient rounded-full animate-pulse shadow-lg"
+              className="h-full bg-gradient-to-r from-candyBlue via-candyPurple to-candyPink rounded-full animate-pulse shadow-[0_0_15px_rgba(79,156,249,0.6)]"
               style={{ width: "70%" }}
-            ></div>
+            />
           </div>
-          <p className="mt-8 text-base text-gray-600 tracking-wide font-bold animate-pulse">
-            ✨ Preparing your spiritual journey...
+          
+          {/* Loading message */}
+          <p className="mt-6 text-base sm:text-lg text-gray-700 tracking-wide font-bold animate-pulse flex items-center justify-center gap-2">
+            <span className="text-2xl animate-spin">✨</span>
+            Preparing your spiritual journey...
           </p>
         </div>
       </div>
