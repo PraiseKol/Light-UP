@@ -94,6 +94,51 @@ export default function MapBackground() {
         ))}
       </div>
 
+      {/* Animated Dove */}
+      <motion.div 
+        className="absolute top-[15%] right-[12%] text-3xl opacity-70"
+        animate={{ y: [0, -15, 0], rotate: [0, 8, -8, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        🕊️
+      </motion.div>
+
+      {/* Animated Cross with Glow */}
+      <motion.div 
+        className="absolute top-[35%] left-[8%] text-4xl"
+        animate={{ opacity: [0.4, 0.8, 0.4], scale: [1, 1.1, 1] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <div className="text-yellow-300/50 drop-shadow-[0_0_8px_rgba(253,224,71,0.6)]">✝</div>
+      </motion.div>
+
+      {/* Animated Angel */}
+      <motion.div 
+        className="absolute top-[55%] right-[10%] text-3xl opacity-60"
+        animate={{ y: [-8, 8, -8] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        👼
+      </motion.div>
+
+      {/* Second Dove */}
+      <motion.div 
+        className="absolute top-[70%] left-[15%] text-2xl opacity-50"
+        animate={{ x: [-5, 5, -5], rotate: [-5, 5, -5] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      >
+        🕊️
+      </motion.div>
+
+      {/* Glowing Cross Bottom */}
+      <motion.div 
+        className="absolute bottom-[35%] right-[18%] text-3xl"
+        animate={{ opacity: [0.3, 0.7, 0.3] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <div className="text-yellow-200/40 drop-shadow-[0_0_10px_rgba(253,224,71,0.5)]">✝</div>
+      </motion.div>
+
       {/* Subtle pattern overlay for texture */}
       <div
         className="absolute inset-0 opacity-3"

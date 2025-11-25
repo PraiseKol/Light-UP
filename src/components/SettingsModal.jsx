@@ -3,11 +3,22 @@ import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { playSound } from "@/utils/sound";
+import { Lock } from "lucide-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { 
   subscribeToPushNotifications, 
   requestNotificationPermission,
   areNotificationsEnabled 
 } from "@/utils/pushNotifications";
+
+// Avatar configuration with unlock requirements
+const AVATARS = [
+  { id: 'avatar1', name: 'Dove', emoji: '🕊️', unlockPhase: 0 },
+  { id: 'avatar2', name: 'Lamb', emoji: '🐑', unlockPhase: 0 },
+  { id: 'avatar3', name: 'Lion', emoji: '🦁', unlockPhase: 5 },
+  { id: 'avatar4', name: 'Eagle', emoji: '🦅', unlockPhase: 10 },
+  { id: 'avatar5', name: 'Crown', emoji: '👑', unlockPhase: 20 },
+];
 
 // const soundMap = {
 //   default: null,
@@ -21,15 +32,22 @@ export default function SettingsModal({
   onClose,
   gameUser,
   onSave,
-  sound, // <-- now a prop from App.jsx
-  setSound, // <-- function to update App.jsx state
+  sound,
+  setSound,
+  highestCompletedPhase = 0, // Pass from parent
 }) {
   const [name, setName] = useState(gameUser?.player_name || "");
   const [loading, setLoading] = useState(false);
   const [effectsOn, setEffectsOn] = useState(gameUser?.effects_on ?? true);
+  const [selectedAvatar, setSelectedAvatar] = useState(gameUser?.selected_avatar || 'avatar1');
 
   const audioRef = useRef(null);
   const navigate = useNavigate();
+
+  const isAvatarUnlocked = (avatarId) => {
+    const avatar = AVATARS.find(a => a.id === avatarId);
+    return avatar ? highestCompletedPhase >= avatar.unlockPhase : false;
+  };
 
   // Play preview audio when sound prop changes (user selects a new sound)
   // useEffect(() => {
@@ -53,10 +71,11 @@ export default function SettingsModal({
   //   };
   // }, [sound]);
 
-  // When gameUser changes, sync local inputs for name and effectsOn only
+  // When gameUser changes, sync local inputs
   useEffect(() => {
     setName(gameUser?.player_name || "");
     setEffectsOn(gameUser?.effects_on ?? true);
+    setSelectedAvatar(gameUser?.selected_avatar || 'avatar1');
   }, [gameUser]);
 
   const handleSave = async () => {
@@ -65,8 +84,9 @@ export default function SettingsModal({
       .from("game_users")
       .update({
         player_name: name,
-        sound, // send current selected sound prop to DB
+        sound,
         effects_on: effectsOn,
+        selected_avatar: selectedAvatar,
       })
       .eq("user_id", gameUser.user_id);
 
@@ -77,6 +97,7 @@ export default function SettingsModal({
         name,
         sound,
         effectsOn,
+        selectedAvatar,
       });
       onClose();
     } else {
@@ -150,6 +171,56 @@ export default function SettingsModal({
 
           {/* Hidden audio player for preview */}
           <audio ref={audioRef} style={{ display: "none" }} />
+        </div>
+
+        {/* Avatar Selection */}
+        <div className="border-t border-gray-200 pt-4 mt-4">
+          <label className="text-sm font-medium mb-3 block text-gray-800">🎭 Choose Your Avatar</label>
+          <div className="grid grid-cols-5 gap-3">
+            {AVATARS.map(avatar => {
+              const unlocked = isAvatarUnlocked(avatar.id);
+              const isSelected = selectedAvatar === avatar.id;
+              return (
+                <Tooltip 
+                  key={avatar.id} 
+                  content={unlocked ? avatar.name : `Unlock at Phase ${avatar.unlockPhase}`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (unlocked) {
+                        setSelectedAvatar(avatar.id);
+                        playSound("select", effectsOn);
+                      }
+                    }}
+                    disabled={!unlocked}
+                    className={`relative rounded-full border-3 p-2 transition-all ${
+                      isSelected 
+                        ? 'border-yellow-400 ring-4 ring-yellow-300 scale-110 shadow-lg' 
+                        : unlocked 
+                        ? 'border-blue-300 hover:border-blue-400 hover:scale-105' 
+                        : 'border-gray-300 opacity-40 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="text-3xl">{avatar.emoji}</div>
+                    {!unlocked && (
+                      <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center">
+                        <Lock className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+                    {!unlocked && (
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[9px] px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                        Phase {avatar.unlockPhase}
+                      </div>
+                    )}
+                  </button>
+                </Tooltip>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Complete phases to unlock more avatars!
+          </p>
         </div>
 
         {/* Notification Settings */}
