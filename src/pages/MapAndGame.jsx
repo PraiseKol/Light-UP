@@ -43,6 +43,15 @@ import {
 } from "@/utils/weeklyChallenge";
 import avatar from "@/assets/avatar.png";
 
+// Avatar configuration matching SettingsModal
+const AVATARS = [
+  { id: 'avatar1', name: 'Dove', emoji: '🕊️', unlockPhase: 0 },
+  { id: 'avatar2', name: 'Lamb', emoji: '🐑', unlockPhase: 0 },
+  { id: 'avatar3', name: 'Lion', emoji: '🦁', unlockPhase: 5 },
+  { id: 'avatar4', name: 'Eagle', emoji: '🦅', unlockPhase: 10 },
+  { id: 'avatar5', name: 'Crown', emoji: '👑', unlockPhase: 20 },
+];
+
 export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const safelyNavigatingRef = useRef(false);
@@ -66,6 +75,41 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [shakingLevel, setShakingLevel] = useState(null);
 
   const { user } = useAuth();
+  
+  // Helper: Get highest completed phase for avatar unlocking
+  const getHighestCompletedPhase = () => {
+    let maxPhase = 0;
+    completedLevels.forEach(levelId => {
+      const match = levelId.match(/P(\d+)-L\d+/);
+      if (match) {
+        const phaseNum = parseInt(match[1]);
+        if (phaseNum > maxPhase) maxPhase = phaseNum;
+      }
+    });
+    return maxPhase;
+  };
+
+  const highestCompletedPhase = getHighestCompletedPhase();
+
+  // Helper: Convert score to stars (0, 50, 75, 100 → 0, 1, 2, 3 stars)
+  const getStarsFromScore = (score) => {
+    if (score >= 100) return 3;
+    if (score >= 75) return 2;
+    if (score >= 50) return 1;
+    return 0;
+  };
+
+  // Helper: Shake animation for locked levels
+  const handleLockedClick = (levelId) => {
+    setShakingLevel(levelId);
+    setTimeout(() => setShakingLevel(null), 500);
+  };
+
+  // Get current avatar emoji
+  const getCurrentAvatar = () => {
+    const avatarId = gameUser?.selected_avatar || 'avatar1';
+    return AVATARS.find(a => a.id === avatarId)?.emoji || '🕊️';
+  };
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -310,21 +354,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     return firstIncomplete ? firstIncomplete.id : null;
   };
 
-  // Convert score to stars (0→0, 50→1, 75→2, 100→3)
-  const getStarsFromScore = (score) => {
-    if (score >= 100) return 3;
-    if (score >= 75) return 2;
-    if (score >= 50) return 1;
-    return 0;
-  };
-
-  // Handle locked level click with shake animation
-  const handleLockedClick = (levelId) => {
-    setShakingLevel(levelId);
-    setTimeout(() => setShakingLevel(null), 500);
-    toast.error("Complete the previous level first!");
-  };
-
   const handleWeeklyChallengeClick = () => {
     if (challengeAllowed && !challengePlayed) {
       if (window.confirm("You only get one attempt this week. Proceed?")) {
@@ -525,6 +554,33 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         </div>
       </header>
 
+      {/* Mini-Map Progress Indicator */}
+      {!selectedLevel && (
+        <div className="fixed top-24 right-2 sm:right-4 z-40 bg-white/90 backdrop-blur rounded-xl shadow-xl p-2 sm:p-3 w-16 sm:w-20 border-2 border-blue-200">
+          <div className="text-center text-[9px] sm:text-xs font-bold text-gray-700 mb-1">Progress</div>
+          <div className="relative h-24 sm:h-32 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className="absolute bottom-0 w-full bg-gradient-to-t from-yellow-400 to-yellow-300 transition-all duration-500"
+              style={{ height: `${Math.min(100, (completedLevels.length / (levelPhases.length * 10)) * 100)}%` }}
+            />
+            {/* Current phase marker */}
+            <div 
+              className="absolute left-1/2 -translate-x-1/2 w-2 sm:w-3 h-2 sm:h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg"
+              style={{ 
+                bottom: `${Math.min(100, ((highestCompletedPhase) / levelPhases.length) * 100)}%`,
+                transition: 'bottom 0.5s ease'
+              }}
+            />
+          </div>
+          <div className="text-center text-[9px] sm:text-[10px] font-bold text-gray-600 mt-1">
+            Phase {Math.max(1, highestCompletedPhase)}
+          </div>
+          <div className="text-center text-[8px] sm:text-[9px] text-gray-500">
+            {Math.round((completedLevels.length / (levelPhases.length * 10)) * 100)}%
+          </div>
+        </div>
+      )}
+
       {/* Scrollable Center (ONLY level maps scroll) */}
       <main className="pt-20 pb-28 flex-1 overflow-y-auto">
         {!selectedLevel ? (
@@ -614,14 +670,19 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                             zIndex: 10,
                           }}
                         >
-                          {/* "YOU" Indicator */}
+                          {/* Avatar on Current Level */}
                           {isCurrentLevel && (
-                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-yellow-400 text-white font-black text-xs px-3 py-1 rounded-full shadow-lg animate-bounce">
-                              YOU
+                            <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+                              <div className="text-4xl animate-bounce drop-shadow-lg">
+                                {getCurrentAvatar()}
+                              </div>
+                              <span className="bg-yellow-400 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-lg">
+                                YOU
+                              </span>
                             </div>
                           )}
 
-                          {/* Level Node Button */}
+                          {/* Level Node Button - Responsive with Light Bulb */}
                           <button
                             onClick={() => {
                               if (gameUser.lives === 0) {
@@ -638,13 +699,15 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                             }}
                             disabled={!isLevelUnlocked}
                             className={`
-                              relative w-20 h-20 rounded-full 
-                              border-4 shadow-2xl transition-all duration-200
+                              relative rounded-full 
+                              w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20
+                              border-2 sm:border-3 lg:border-4 
+                              shadow-2xl transition-all duration-200
                               ${isLevelUnlocked 
                                 ? 'bg-[#2563eb] border-[#fbbf24] hover:scale-110 cursor-pointer' 
                                 : 'bg-gray-600 border-gray-700 cursor-not-allowed opacity-80'
                               }
-                              ${isCurrentLevel ? 'ring-4 ring-yellow-300 animate-pulse shadow-[0_0_40px_rgba(251,191,36,0.9)]' : ''}
+                              ${isCurrentLevel ? 'ring-2 sm:ring-3 lg:ring-4 ring-yellow-300 animate-pulse shadow-[0_0_40px_rgba(251,191,36,0.9)]' : ''}
                               ${shakingLevel === level.id ? 'animate-wiggle' : ''}
                             `}
                             style={{
@@ -654,11 +717,22 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                             }}
                           >
                             {isLevelUnlocked ? (
-                              <span className="text-white font-black text-3xl drop-shadow-lg">
-                                {level.number}
-                              </span>
+                              <div className="relative flex items-center justify-center">
+                                {/* Light Bulb Icon */}
+                                <svg 
+                                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-yellow-300" 
+                                  viewBox="0 0 24 24" 
+                                  fill="currentColor"
+                                >
+                                  <path d="M12 2C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2 14h-4v-1h4v1zm0-2h-4v-1h4v1zm.85-3.5c-.26.21-.35.28-.85.5v1.5h-4v-1.5c-.5-.22-.59-.29-.85-.5C8.47 10.72 8 9.89 8 9c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .89-.47 1.72-1.15 2.5z"/>
+                                </svg>
+                                {/* Level Number inside bulb */}
+                                <span className="absolute text-[10px] sm:text-xs lg:text-sm font-black text-amber-900 drop-shadow-sm">
+                                  {level.number}
+                                </span>
+                              </div>
                             ) : (
-                              <Lock className="text-gray-400 w-8 h-8 mx-auto" />
+                              <Lock className="text-gray-400 w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 mx-auto" />
                             )}
                           </button>
 
@@ -906,7 +980,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         onSave={handleSavePlayerName}
         sound={sound}
         setSound={setSound}
-        effectsOn={effectsOn}
+        highestCompletedPhase={highestCompletedPhase}
       />
 
       <Modal
