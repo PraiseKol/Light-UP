@@ -33,6 +33,8 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,svg,woff2,mp3,wav,m4a}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit for large audio/image files
         runtimeCaching: [
