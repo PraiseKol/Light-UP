@@ -163,16 +163,10 @@ export default function WordFillMode({
     }, 300);
   }, [userInput, answer, timeLeft, disableIfNoLives, setIsRunning, onIncorrect, onScore, effectsOn]);
 
-  const backgroundUrl =
-    "https://rhanvchqlilmzxmufode.supabase.co/storage/v1/object/public/backgrounds//WordFillBackground.jpg";
-
   return (
-    <div
-      className="min-h-screen flex justify-center items-center bg-cover bg-center px-4 " 
-      style={{ backgroundImage: `url(${backgroundUrl})` }}
-    >
-      <div className="w-full max-w-xl animate-fadeInUp ">
-        <Card className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-xl p-4 md:p-6">
+    <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c] px-4">
+      <div className="w-full max-w-xl animate-fadeInUp">
+        <Card className="bg-gradient-to-br from-white/95 via-pink-50/90 to-purple-50/90 backdrop-blur-md border-2 border-pink-200 shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] p-4 md:p-6 rounded-2xl"
           <div className="space-y-1">
             <div className="flex justify-between items-center">
               <div className="text-xs md:text-sm text-gray-600 font-normal md:font-medium">
@@ -234,13 +228,13 @@ export default function WordFillMode({
                 checkAnswer();
               }}
               disabled={hasAnsweredCorrectly.current || disableIfNoLives}
-              className={`mt-4 md:mt-6 w-full py-2 md:py-3 rounded-lg transition ${
+              className={`mt-4 md:mt-6 w-full py-2 md:py-3 rounded-full font-bold transition-all ${
                 disableIfNoLives
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d]"
               }`}
             >
-              {disableIfNoLives ? "No Lives Left" : "Submit Answer"}
+              {disableIfNoLives ? "⏰ No Lives Left" : "✅ Submit Answer"}
             </button>
           </CardContent>
         </Card>

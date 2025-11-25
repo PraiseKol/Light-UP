@@ -62,9 +62,10 @@ export default function DonationsButton({
     <>
       <Button
         className={`${fullWidth ? "w-full" : ""} 
-          btn-3d bg-gradient-to-r from-green-600 to-green-500 
-          text-white font-bold px-5 py-2.5 rounded-xl shadow-md 
-          hover:scale-105 transition-all`}
+          bg-gradient-to-b from-green-400 via-green-500 to-green-600 
+          text-white font-bold px-5 py-2.5 rounded-full 
+          shadow-[0_4px_0_#16a34a,0_6px_10px_rgba(22,163,74,0.4)]
+          hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#16a34a] transition-all`}
         onClick={() => {
           playSound("optionSelect", effectsOn);
           setShowModal(true);

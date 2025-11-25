@@ -93,10 +93,10 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
   };
 
   return (
-    <div className="p-3 md:p-6 max-w-xl md:max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-yellow-100">
+    <div className="p-3 md:p-6 max-w-xl md:max-w-2xl mx-auto bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 rounded-2xl shadow-[0_8px_0_#ca8a04,0_12px_20px_rgba(202,138,4,0.4)] border-2 border-yellow-200">
       <div className="space-y-2 md:space-y-4 mb-2 md:mb-5">
-        <h2 className="text-sm md:text-2xl font-extrabold mb-3 text-yellow-700 text-center">
-          Talent Store
+        <h2 className="text-sm md:text-2xl font-extrabold mb-3 bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent text-center">
+          💎 Talent Store
         </h2>
         <p className="text-center text-xs md:text-sm text-gray-500 mb-6">
           Top up your talents and lives here.

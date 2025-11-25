@@ -484,25 +484,25 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-yellow-50 via-white to-blue-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c] relative overflow-hidden">
       {/* HUD */}
-      <div className="sticky top-0 z-10 flex justify-between items-center px-6 py-4 bg-white/80 backdrop-blur-md shadow-md rounded-b-2xl">
-        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow">
-          ⏳ <span className="font-bold text-gray-800">{timeLeft}s</span>
+      <div className="sticky top-0 z-10 flex justify-between items-center px-6 py-4 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md shadow-[0_4px_0_#be185d] rounded-b-2xl border-b-2 border-pink-200">
+        <div className="flex items-center gap-2 bg-white/90 px-4 py-2 rounded-full shadow-[0_3px_0_#f472b6]">
+          ⏳ <span className="font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">{timeLeft}s</span>
         </div>
-        <div className="text-lg font-bold text-indigo-700">
-          Score: <span className="text-orange-500">{score}</span>
+        <div className="text-lg font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+          Score: <span className="text-pink-600 drop-shadow-sm">{score}</span>
         </div>
-        <div className="bg-white px-4 py-2 rounded-full shadow">
+        <div className="bg-white/90 px-4 py-2 rounded-full shadow-[0_3px_0_#f472b6] font-bold text-purple-600">
           Q {currentIndex + 1}/{questions.length}
         </div>
       </div>
 
       {/* Progress bar */}
       <div className="px-6 mt-4">
-        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+        <div className="w-full bg-gray-700/50 rounded-full h-3 overflow-hidden shadow-inner border-2 border-pink-200">
           <div
-            className="bg-gradient-to-r from-orange-400 to-pink-500 h-full transition-all duration-500 ease-out"
+            className="bg-gradient-to-r from-pink-400 via-purple-500 to-blue-500 h-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(236,72,153,0.6)]"
             style={{
               width: `${((currentIndex + 1) / questions.length) * 100}%`,
             }}
@@ -512,18 +512,18 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
 
       {/* Question */}
       <div className="p-6 flex justify-center">
-        <div className="bg-white rounded-3xl shadow-xl p-6 w-full max-w-3xl space-y-6 border border-yellow-100 animate-[fadeIn_0.5s_ease]">
+        <div className="bg-gradient-to-br from-white/95 via-pink-50/90 to-purple-50/90 rounded-3xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] p-6 w-full max-w-3xl space-y-6 border-2 border-pink-200 animate-[fadeIn_0.5s_ease]">
           {renderMode()}
         </div>
       </div>
 
       {/* Stats */}
       <div className="mt-6 flex justify-center gap-4">
-        <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full shadow-sm">
-          ✅ Correct: <span className="font-bold">{correctCount}</span>
+        <div className="bg-gradient-to-br from-green-100 to-green-200 text-green-800 px-4 py-2 rounded-full shadow-[0_3px_0_#16a34a] font-bold border-2 border-green-300">
+          ✅ Correct: <span className="font-black">{correctCount}</span>
         </div>
-        <div className="bg-red-100 text-red-800 px-4 py-2 rounded-full shadow-sm">
-          ❌ Incorrect: <span className="font-bold">{incorrectCount}</span>
+        <div className="bg-gradient-to-br from-red-100 to-red-200 text-red-800 px-4 py-2 rounded-full shadow-[0_3px_0_#dc2626] font-bold border-2 border-red-300">
+          ❌ Incorrect: <span className="font-black">{incorrectCount}</span>
         </div>
       </div>
     </div>

@@ -102,14 +102,14 @@ export default function PowerUpStore({
           <button
             key={tab}
             onClick={() => handleTabSwitch(tab)}
-            className={`px-1.5 md:px-4 py-1 md:py-2 text-[10px] md:text-xs rounded-lg ${
+            className={`px-1.5 md:px-4 py-1 md:py-2 text-[10px] md:text-xs rounded-full font-bold transition-all ${
               activeTab === tab
                 ? tab === "powerups"
-                  ? "bg-blue-600 text-white"
+                  ? "bg-gradient-to-b from-blue-400 to-blue-600 text-white shadow-[0_3px_0_#1e40af] scale-105"
                   : tab === "talents"
-                  ? "bg-yellow-600 text-white"
-                  : "bg-green-600 text-white"
-                : "bg-gray-200 text-gray-700"
+                  ? "bg-gradient-to-b from-yellow-400 to-yellow-600 text-white shadow-[0_3px_0_#ca8a04] scale-105"
+                  : "bg-gradient-to-b from-green-400 to-green-600 text-white shadow-[0_3px_0_#16a34a] scale-105"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -119,9 +119,9 @@ export default function PowerUpStore({
 
       {/* Tab Contents */}
       {activeTab === "powerups" && (
-        <div className="p-4 sm:p-6 max-w-sm sm:max-w-2xl mx-auto bg-white rounded-xl sm:rounded-2xl shadow-xl border border-blue-100">
-          <h2 className="text-4xs sm:text-2xl font-extrabold mb-2 sm:mb-3 text-blue-700 text-center">
-            Power-Up Store
+        <div className="p-4 sm:p-6 max-w-sm sm:max-w-2xl mx-auto bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 rounded-xl sm:rounded-2xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] border-2 border-pink-200">
+          <h2 className="text-4xs sm:text-2xl font-extrabold mb-2 sm:mb-3 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent text-center">
+            💫 Power-Up Store
           </h2>
           <p className="text-center text-[8px] sm:text-sm text-gray-500 mb-1 sm:mb-6">
             Exchange your talents for divine advantages (bonuses).
