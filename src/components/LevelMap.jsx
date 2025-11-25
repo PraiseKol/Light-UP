@@ -48,10 +48,10 @@ export default function LevelMap({
     }
   }, [currentLevelId]);
 
-  // Calculate container height based on level count (pixel-based positioning)
+  // Calculate container height based on level count (140px per level)
   useEffect(() => {
     const levelsPerPhase = phase.levels.length;
-    const calculatedHeight = (levelsPerPhase * 120) + 200; // 120px per level + 200px padding
+    const calculatedHeight = (levelsPerPhase * 140) + 300; // 140px per level + 300px padding
     setContainerHeight(calculatedHeight);
     console.log(`📐 Phase ${phase.phaseNumber} container height: ${calculatedHeight}px for ${levelsPerPhase} levels`);
   }, [phase]);
@@ -103,17 +103,12 @@ export default function LevelMap({
         strokeWidth = 8;
       }
 
-      // Improved smooth curve calculation
-      const dx = currCenter.x - prevCenter.x;
-      const dy = currCenter.y - prevCenter.y;
-      const controlPointOffset = Math.abs(dx) * 0.6;
+      // Smooth quadratic curve (simpler, more reliable)
+      const midY = (prevCenter.y + currCenter.y) / 2;
 
       paths.push({
         id: `${prevLevel.id}-${level.id}`,
-        d: `M ${prevCenter.x} ${prevCenter.y} 
-            C ${prevCenter.x} ${prevCenter.y + controlPointOffset}, 
-              ${currCenter.x} ${currCenter.y - controlPointOffset}, 
-              ${currCenter.x} ${currCenter.y}`,
+        d: `M ${prevCenter.x} ${prevCenter.y} Q ${prevCenter.x} ${midY}, ${currCenter.x} ${currCenter.y}`,
         color: strokeColor,
         width: strokeWidth,
         glow,
