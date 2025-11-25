@@ -28,6 +28,7 @@ import PaymentSuccess from "@/pages/PaymentSuccess";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react"; // ✅ Import Vercel Analytics
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 import { useState, useEffect } from "react";
 import { claimDailyStreakBonus } from "@/utils/talentUtils";
@@ -97,6 +98,7 @@ function AppContent() {
 
   return (
     <>
+      <PWAInstallPrompt />
       <BackgroundMusic sound={sound} />
       <Routes>
         {/* Auth */}
