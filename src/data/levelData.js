@@ -20,17 +20,15 @@ const defaultPhaseTitles = [
 function getCurvedPosition(index, total) {
   const progress = index / (total - 1); // 0 → 1
 
-  // Keep the swing close but not touching edges
-  const amplitudeX = 42; // max deviation from center
+  // Horizontal position - percentage for left/right positioning
+  const amplitudeX = 35; // Reduced to prevent edge clipping
   const centerX = 50; // middle of container
+  const x = centerX + Math.sin(progress * Math.PI * 3) * amplitudeX;
 
-  // Smooth sinusoidal horizontal sway
-  const x = centerX + Math.sin(progress * Math.PI * 2) * amplitudeX;
-
-  // Keep y strictly inside [5%, 95%] of phase height
-  const topMargin = 10;
-  const bottomMargin = 95;
-  const y = bottomMargin - progress * (bottomMargin - topMargin);
+  // Vertical position - PIXELS for proper spacing (Candy Crush style)
+  const verticalSpacing = 120; // 120px between each level
+  const topPadding = 100; // Start 100px from top
+  const y = topPadding + (index * verticalSpacing);
 
   return { x, y };
 }

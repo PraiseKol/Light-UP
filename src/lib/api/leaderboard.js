@@ -16,8 +16,20 @@ export async function fetchMainLeaderboard() {
 
 export async function fetchMonthlyLeaderboard() {
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  
+  // Force UTC dates to match database timestamps
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
+  
+  const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+  const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+
+  console.log('📅 Monthly leaderboard date range (UTC):', {
+    start: startOfMonth.toISOString(),
+    end: endOfMonth.toISOString(),
+    year,
+    month: month + 1
+  });
 
   // Step 1: Get all progress data for current month
   const { data: progressData, error: progressError } = await supabase

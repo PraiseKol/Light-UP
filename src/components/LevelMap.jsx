@@ -48,10 +48,12 @@ export default function LevelMap({
     }
   }, [currentLevelId]);
 
-  // Calculate container height based on max level position
+  // Calculate container height based on level count (pixel-based positioning)
   useEffect(() => {
-    const maxY = Math.max(...phase.levels.map((l) => l.position.y));
-    setContainerHeight(maxY + 300); // Increased padding for better scrolling
+    const levelsPerPhase = phase.levels.length;
+    const calculatedHeight = (levelsPerPhase * 120) + 200; // 120px per level + 200px padding
+    setContainerHeight(calculatedHeight);
+    console.log(`📐 Phase ${phase.phaseNumber} container height: ${calculatedHeight}px for ${levelsPerPhase} levels`);
   }, [phase]);
 
   // Get button center coordinates
