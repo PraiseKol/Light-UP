@@ -259,10 +259,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   }, [user, navigate]);
 
   useEffect(() => {
-    if (completedLevels.length > 0) {
-      const unlocked = determineUnlockedPhases(completedLevels, levelPhases);
-      setUnlockedPhases(unlocked);
-    }
+    // Always call determineUnlockedPhases - it correctly handles empty arrays
+    // and ensures Phase 1 is unlocked for new players
+    const unlocked = determineUnlockedPhases(completedLevels, levelPhases);
+    setUnlockedPhases(unlocked);
   }, [completedLevels]);
 
   // 🌟 Auto-scroll to current level (first incomplete level)
