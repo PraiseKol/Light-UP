@@ -134,6 +134,57 @@ export default function MultiplayerQuizManager() {
     if (!error) fetchQuizzes();
   };
 
+  const handleImportWeeklyQuizzes = async () => {
+    if (!window.confirm("This will import all weekly quizzes into multiplayer. Continue?")) return;
+    
+    setLoading(true);
+    
+    // Fetch all weekly quizzes
+    const { data: weeklyQuizzes, error: fetchError } = await supabase
+      .from("weekly_quiz")
+      .select("*");
+    
+    if (fetchError) {
+      alert("Failed to fetch weekly quizzes: " + fetchError.message);
+      setLoading(false);
+      return;
+    }
+    
+    // Check for duplicates by question text
+    const existingQuestions = quizzes.map(q => q.question);
+    const newQuizzes = weeklyQuizzes
+      .filter(q => !existingQuestions.includes(q.question))
+      .map(q => ({
+        question: q.question,
+        answer: q.answer,
+        mode: q.mode,
+        options: q.options ? q.options : null,
+        scripture_reference: q.hint || null,
+        game_id: null
+      }));
+    
+    if (newQuizzes.length === 0) {
+      alert("All weekly quizzes already exist in multiplayer!");
+      setLoading(false);
+      return;
+    }
+    
+    // Insert into multiplayer_quiz
+    const { error: insertError } = await supabase
+      .from("multiplayer_quiz")
+      .insert(newQuizzes);
+    
+    if (insertError) {
+      alert("Failed to import: " + insertError.message);
+      setLoading(false);
+      return;
+    }
+    
+    alert(`Successfully imported ${newQuizzes.length} new quizzes! (${weeklyQuizzes.length - newQuizzes.length} duplicates skipped)`);
+    fetchQuizzes();
+    setLoading(false);
+  };
+
   // Pagination logic
   const totalPages = Math.ceil(quizzes.length / quizzesPerPage);
   const displayedQuizzes = quizzes.slice(
@@ -218,14 +269,23 @@ export default function MultiplayerQuizManager() {
         </div>
       )}
 
-      {/* Delete all quizzes */}
-      <Button
-        variant="destructive"
-        className="mb-4 bg-red-700"
-        onClick={handleDeleteAll}
-      >
-        🚨 Delete ALL Multiplayer Quizzes
-      </Button>
+      {/* Import and Delete Controls */}
+      <div className="flex gap-2 mb-4">
+        <Button
+          className="bg-green-600 hover:bg-green-700 text-white"
+          onClick={handleImportWeeklyQuizzes}
+          disabled={loading}
+        >
+          📥 Import Weekly Quizzes
+        </Button>
+        <Button
+          variant="destructive"
+          className="bg-red-700"
+          onClick={handleDeleteAll}
+        >
+          🚨 Delete ALL Multiplayer Quizzes
+        </Button>
+      </div>
 
       {/* Existing Quizzes */}
       <div className="flex justify-between items-center mb-2">
