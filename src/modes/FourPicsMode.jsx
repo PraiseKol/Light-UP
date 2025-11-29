@@ -268,6 +268,12 @@ export default function FourPicsMode({
 
   const images = question.image_urls.split(",").map((url) => url.trim());
 
+  // Calculate expected lives after loss (accounting for Holy Shield)
+  const isShieldActive = gameUser?.holy_shield_until && new Date(gameUser.holy_shield_until) > new Date();
+  const livesAfterLoss = isShieldActive 
+    ? (gameUser?.lives ?? 0) 
+    : Math.max(0, (gameUser?.lives ?? 1) - 1);
+
   return (
     <div className="p-8 md:p-6 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 rounded-2xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] border-2 border-pink-200 max-w-2xl mx-auto animate-fadeInUp">
       <div className="space-y-1 mb-2 md:mb-4">
@@ -367,14 +373,14 @@ export default function FourPicsMode({
         onRetry={() => resetLevel({ skipIncorrect: true })}
         onBack={onBack}
         effectsOn={effectsOn}
-        currentLives={gameUser?.lives || 0}
+        currentLives={livesAfterLoss}
       />
       <TimeUpModal
         isOpen={showTimeUpModal}
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
         onGoToMap={onBack}
         effectsOn={effectsOn}
-        currentLives={gameUser?.lives || 0}
+        currentLives={livesAfterLoss}
       />
     </div>
   );

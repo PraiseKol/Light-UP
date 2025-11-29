@@ -236,6 +236,12 @@ export default function ScriptureMatchMode({
     Object.values(matches).includes(verse) ||
     shuffledVerses.find((v) => v.verse === verse)?.matchedByHint;
 
+  // Calculate expected lives after loss (accounting for Holy Shield)
+  const isShieldActive = gameUser?.holy_shield_until && new Date(gameUser.holy_shield_until) > new Date();
+  const livesAfterLoss = isShieldActive 
+    ? (gameUser?.lives ?? 0) 
+    : Math.max(0, (gameUser?.lives ?? 1) - 1);
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c]">
       <div className="relative z-10 flex justify-center items-center px-4 py-10">
@@ -352,14 +358,14 @@ export default function ScriptureMatchMode({
       />
       <WrongAnswerModal
         isOpen={status === "wrong"}
-        currentLives={user?.lives || 0}
+        currentLives={livesAfterLoss}
         onRetry={() => resetLevel({ skipIncorrect: true })}
         onBack={onBack}
         effectsOn={effectsOn}
       />
       <TimeUpModal
         isOpen={status === "timeup"}
-        currentLives={user?.lives || 0}
+        currentLives={livesAfterLoss}
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
         onGoToMap={onBack}
         effectsOn={effectsOn}

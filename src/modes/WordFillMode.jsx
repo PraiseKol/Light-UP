@@ -163,6 +163,12 @@ export default function WordFillMode({
     }, 300);
   }, [userInput, answer, timeLeft, disableIfNoLives, setIsRunning, onIncorrect, onScore, effectsOn]);
 
+  // Calculate expected lives after loss (accounting for Holy Shield)
+  const isShieldActive = gameUser?.holy_shield_until && new Date(gameUser.holy_shield_until) > new Date();
+  const livesAfterLoss = isShieldActive 
+    ? (gameUser?.lives ?? 0) 
+    : Math.max(0, (gameUser?.lives ?? 1) - 1);
+
   return (
     <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c] px-4">
       <div className="w-full max-w-xl animate-fadeInUp">
@@ -254,7 +260,7 @@ export default function WordFillMode({
         onRetry={() => resetLevel({ skipIncorrect: true })}
         onBack={onBack}
         effectsOn={effectsOn}
-        currentLives={gameUser?.lives || 0}
+        currentLives={livesAfterLoss}
       />
 
       <TimeUpModal
@@ -262,7 +268,7 @@ export default function WordFillMode({
         onTryAgain={() => resetLevel({ skipIncorrect: true })}
         onGoToMap={onBack}
         effectsOn={effectsOn}
-        currentLives={gameUser?.lives || 0}
+        currentLives={livesAfterLoss}
       />
     </div>
   );
