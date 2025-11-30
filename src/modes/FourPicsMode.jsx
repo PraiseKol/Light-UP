@@ -275,7 +275,8 @@ export default function FourPicsMode({
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
   return (
-    <div className="h-full bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 rounded-2xl p-3 sm:p-4 overflow-auto">
+    <div className="h-full p-3 sm:p-4 overflow-auto">
+      <div className="bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(255,255,255,0.2),0_0_80px_rgba(236,72,153,0.15)] border-2 border-pink-300/50 rounded-2xl p-3 sm:p-4">
       <div className="space-y-2 mb-3">
         <div className="flex justify-between items-center">
           <div className="text-[10px] sm:text-xs text-gray-500">
@@ -350,6 +351,8 @@ export default function FourPicsMode({
         </Button>
       </div>
 
+      </div>
+      
       <RightAnswerModal
         isOpen={showRightModal}
         onClose={onCorrect}

@@ -330,9 +330,23 @@ export default function GameScreen({
     
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c] overflow-hidden">
+    <div className="h-[100dvh] flex flex-col bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900 overflow-hidden relative">
+      {/* Animated twinkling stars */}
+      {[...Array(30)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-1 bg-white rounded-full animate-pulse pointer-events-none"
+          style={{
+            top: `${Math.random() * 100}%`,
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 3}s`,
+            animationDuration: `${2 + Math.random() * 2}s`,
+          }}
+        />
+      ))}
+      
       {/* Top HUD */}
-      <div className="flex-shrink-0 flex justify-between items-center px-3 py-2 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md shadow-md text-xs sm:text-sm">
+      <div className="flex-shrink-0 flex justify-between items-center px-3 py-2 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md shadow-md text-xs sm:text-sm relative z-10">
         <span className="flex items-center gap-2">
           <span className="text-base sm:text-lg">📜</span> 
           <span className="font-bold">Level {level?.number}</span>
@@ -354,7 +368,7 @@ export default function GameScreen({
       </div>
 
       {/* Game content - fills remaining space */}
-      <div className="flex-1 overflow-hidden p-2">
+      <div className="flex-1 overflow-hidden p-2 relative z-10">
         <div className="h-full overflow-auto">
           {mode === "word-fill" && (
             <WordFillMode
@@ -405,7 +419,7 @@ export default function GameScreen({
 
       {/* Power-Up Bar */}
       {gameUser?.powerups_inventory && (
-        <div className="flex-shrink-0 bg-gradient-to-r from-pink-200 via-purple-200 to-blue-200 backdrop-blur-lg border-t-2 border-pink-300 p-2 flex justify-around items-center shadow-[0_-4px_10px_rgba(190,24,93,0.3)]">
+        <div className="flex-shrink-0 bg-gradient-to-r from-pink-200 via-purple-200 to-blue-200 backdrop-blur-lg border-t-2 border-pink-300 p-2 flex justify-around items-center shadow-[0_-4px_10px_rgba(190,24,93,0.3)] relative z-10">
           <button
             onClick={handleDivineHint}
             disabled={!gameUser.powerups_inventory.divine_hint}
