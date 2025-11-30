@@ -73,6 +73,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [showMoreModal, setShowMoreModal] = useState(false);
   const [showExplainerVideo, setShowExplainerVideo] = useState(false);
   const [shakingLevel, setShakingLevel] = useState(null);
+  const [showNoLivesModal, setShowNoLivesModal] = useState(false);
+  const [avatarAnimation, setAvatarAnimation] = useState({
+    isAnimating: false,
+    fromPosition: null,
+    toPosition: null,
+  });
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
@@ -422,6 +428,19 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       });
       setShowNextLevelModal(true);
     } else {
+      // Store position of completed level for animation
+      const completedLevelRef = levelRefs.current[selectedLevel.id];
+      const nextPhase = levelPhases.find(p => p.phaseNumber === selectedLevel.phaseNumber + 1);
+      
+      if (completedLevelRef && nextPhase) {
+        const fromRect = completedLevelRef.getBoundingClientRect();
+        setAvatarAnimation({
+          isAnimating: true,
+          fromPosition: { x: fromRect.left + fromRect.width / 2, y: fromRect.top + fromRect.height / 2 },
+          toPhaseNumber: selectedLevel.phaseNumber + 1,
+        });
+      }
+      
       setScriptureText(
         (await fetchRandomScripture()) ||
           `"The Lord will fight for you; you need only to be still." — Exodus 14:14`
@@ -448,6 +467,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const handleNextPhaseScroll = () => {
     // Always close modal first
     setShowScriptureModal(false);
+
+    // Trigger avatar animation
+    if (avatarAnimation.isAnimating) {
+      // Animation plays, then clear after completion
+      setTimeout(() => {
+        setAvatarAnimation({ isAnimating: false, fromPosition: null, toPhaseNumber: null });
+      }, 1500);
+    }
 
     // Use the highest unlocked phase instead of selectedLevel
     const currentPhaseNum =
@@ -734,7 +761,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                           <button
                             onClick={() => {
                               if (gameUser.lives === 0) {
-                                toast.error("You're out of lives! Please wait to get more.");
+                                playSound("error", effectsOn);
+                                setShowNoLivesModal(true);
                                 return;
                               }
                               if (isLevelUnlocked) {
@@ -1157,6 +1185,75 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             <p className="text-sm text-gray-500">Starting automatically...</p>
           </div>
         </Modal>
+      )}
+
+      {/* No Lives Modal */}
+      <Modal
+        isOpen={showNoLivesModal}
+        onClose={() => setShowNoLivesModal(false)}
+        title="💔 No Lives Remaining"
+        className="max-w-sm"
+      >
+        <div className="text-center py-4">
+          <div className="text-6xl mb-4 animate-bounce">⏰</div>
+          <p className="text-lg font-bold text-gray-700 mb-2">
+            Wait for Regeneration
+          </p>
+          <p className="text-sm text-gray-600 mb-4">
+            Your lives regenerate every 30 minutes.
+          </p>
+          
+          {/* Show live regeneration timer */}
+          <div className="bg-pink-100 rounded-xl p-4 mb-4">
+            <LivesDisplay 
+              lives={gameUser?.lives} 
+              lastLostAt={gameUser?.last_life_lost_at} 
+            />
+          </div>
+          
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                setShowNoLivesModal(false);
+                setShowStore(true);
+              }}
+              className="btn-3d bg-gradient-to-r from-green-500 to-green-700 text-white font-bold px-6 py-3 rounded-xl shadow-lg hover:scale-105 transition-all"
+            >
+              💎 Buy a Life (1 Talent)
+            </button>
+            <button
+              onClick={() => {
+                playSound("back", effectsOn);
+                setShowNoLivesModal(false);
+              }}
+              className="text-gray-500 font-medium hover:text-gray-700 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Avatar Animation Between Phases */}
+      {avatarAnimation.isAnimating && (
+        <div 
+          className="fixed pointer-events-none z-[100]"
+          style={{
+            left: `${avatarAnimation.fromPosition?.x}px`,
+            top: `${avatarAnimation.fromPosition?.y}px`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <div className="animate-avatarJump flex flex-col items-center">
+            <div className="text-5xl drop-shadow-lg">
+              {getCurrentAvatar()}
+            </div>
+            <span className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-black text-xs px-3 py-1 rounded-full shadow-lg mt-2">
+              ⬆️ MOVING UP!
+            </span>
+          </div>
+        </div>
       )}
 
       {/* Explainer Video Modal */}
