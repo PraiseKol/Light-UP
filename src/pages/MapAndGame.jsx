@@ -557,8 +557,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       {/* Fixed Top Header */}
       <header className="fixed top-0 left-0 right-0 z-50 candy-gradient py-2 lg:py-3 px-3 lg:px-4 shadow-[0_4px_20px_rgba(79,156,249,0.5)] border-b-4 border-white/30">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          {/* Left: Player Name & Avatar */}
-          <div className="flex items-center gap-2 lg:gap-3">
+          {/* Left: Player Name & Avatar - Clickable to Settings */}
+          <button
+            onClick={() => {
+              playSound("select", effectsOn);
+              setShowSettings(true);
+            }}
+            className="flex items-center gap-2 lg:gap-3 cursor-pointer hover:scale-105 transition-transform active:scale-95"
+          >
             <img
               src={avatar}
               className="w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 lg:border-3 border-white shadow-lg"
@@ -567,7 +573,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             <span className="text-white font-black text-sm lg:text-lg drop-shadow-lg">
               {gameUser.player_name || "Unnamed"}
             </span>
-          </div>
+          </button>
 
           {/* Center: Stats */}
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -578,35 +584,55 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               </div>
             </Tooltip>
 
-            {/* Lives */}
-            <Tooltip content="Lives regenerate every 30 minutes. Max 5 lives.">
-              <div>
+            {/* Lives - Clickable to Store */}
+            <Tooltip content="Lives regenerate every 30 minutes. Max 5 lives. Click to buy more!">
+              <button
+                onClick={() => {
+                  playSound("select", effectsOn);
+                  setShowStore(true);
+                }}
+                className="hover:scale-105 transition-transform active:scale-95 cursor-pointer"
+              >
                 <LivesDisplay
                   lives={gameUser.lives}
                   lastLostAt={gameUser.last_life_lost_at}
                 />
-              </div>
+              </button>
             </Tooltip>
 
-            {/* Talents */}
-            <Tooltip content="Talents are premium currency. Use them to buy power-ups or a full life!">
-              <div className="bg-white/20 backdrop-blur px-2 lg:px-4 py-1.5 lg:py-2 rounded-full border-2 border-white/30 font-black text-white text-xs lg:text-sm cursor-help">
+            {/* Talents - Clickable to Store */}
+            <Tooltip content="Talents are premium currency. Click to buy more!">
+              <button
+                onClick={() => {
+                  playSound("select", effectsOn);
+                  setShowStore(true);
+                }}
+                className="bg-white/20 backdrop-blur px-2 lg:px-4 py-1.5 lg:py-2 rounded-full border-2 border-white/30 font-black text-white text-xs lg:text-sm cursor-pointer hover:scale-105 transition-transform active:scale-95"
+              >
                 💎 {gameUser.talents ?? 0}
-              </div>
+              </button>
             </Tooltip>
           </div>
 
-          {/* Right: Powerups + Video Tutorial Icon */}
+          {/* Right: Powerups + Video Tutorial Icon - Clickable to Store */}
           <div className="hidden lg:flex gap-2 items-center">
-            {Object.entries(gameUser.powerups_inventory || {}).map(
-              ([key, count]) => (
-                <Tooltip key={key} content={getPowerUpTooltip(key)}>
-                  <div className="bg-white/20 px-3 py-2 rounded-full border-2 border-white/30 font-bold text-white text-sm cursor-help">
-                    {getPowerUpIcon(key)} {count}
-                  </div>
-                </Tooltip>
-              )
-            )}
+            <button
+              onClick={() => {
+                playSound("select", effectsOn);
+                setShowStore(true);
+              }}
+              className="cursor-pointer hover:scale-105 transition-transform active:scale-95 flex gap-2"
+            >
+              {Object.entries(gameUser.powerups_inventory || {}).map(
+                ([key, count]) => (
+                  <Tooltip key={key} content={`${getPowerUpTooltip(key)} - Click to buy more!`}>
+                    <div className="bg-white/20 px-3 py-2 rounded-full border-2 border-white/30 font-bold text-white text-sm">
+                      {getPowerUpIcon(key)} {count}
+                    </div>
+                  </Tooltip>
+                )
+              )}
+            </button>
             
             {/* Video Tutorial Replay Button */}
             <Tooltip content="Watch tutorial video">

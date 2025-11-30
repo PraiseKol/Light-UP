@@ -170,26 +170,26 @@ export default function WordFillMode({
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c] px-4">
-      <div className="w-full max-w-xl animate-fadeInUp">
-        <Card className="bg-gradient-to-br from-white/95 via-pink-50/90 to-purple-50/90 backdrop-blur-md border-2 border-pink-200 shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] p-4 md:p-6 rounded-2xl">
-          <div className="space-y-1">
+    <div className="h-full flex justify-center items-center bg-gradient-to-br from-pink-50 via-white to-purple-50 p-2 sm:p-4">
+      <div className="w-full max-w-xl">
+        <Card className="bg-white/95 backdrop-blur-md border-2 border-pink-200 shadow-lg p-3 sm:p-4 rounded-2xl">
+          <div className="space-y-2 mb-3">
             <div className="flex justify-between items-center">
-              <div className="text-xs md:text-sm text-gray-600 font-normal md:font-medium">
-                Phase {level?.phaseNumber} • Level {level?.number} Word Fill
+              <div className="text-[10px] sm:text-xs text-gray-600 font-medium">
+                Phase {level?.phaseNumber} • Level {level?.number} • Word Fill
               </div>
-              <div className="text-[10px] md:text-xs text-gray-500 font-semibold">
+              <div className="text-xs sm:text-sm text-gray-500 font-semibold">
                 {timeLeft}s
               </div>
             </div>
             <ProgressBar value={timeLeft} max={30} />
           </div>
 
-          <CardHeader className="text-sm md:text-xl text-gray-800 leading-snug">
+          <CardHeader className="text-sm sm:text-lg text-gray-800 leading-snug p-0 mb-3">
             {question}
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="p-0">
             <Input
               value={userInput}
               onFocus={() => divineHint && setDivineHint("")}
@@ -219,7 +219,7 @@ export default function WordFillMode({
                   ? "Out of lives. Please wait..."
                   : "Type your answer..."
               }
-              className={`mb-2 md:mb-3 ${
+              className={`mb-3 text-sm sm:text-base ${
                 status === "wrong"
                   ? "border-red-500"
                   : status === "correct"
@@ -234,7 +234,7 @@ export default function WordFillMode({
                 checkAnswer();
               }}
               disabled={hasAnsweredCorrectly.current || disableIfNoLives}
-              className={`mt-4 md:mt-6 w-full py-2 md:py-3 rounded-full font-bold transition-all ${
+              className={`w-full py-2 sm:py-3 rounded-full font-bold text-sm sm:text-base transition-all ${
                 disableIfNoLives
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d]"
