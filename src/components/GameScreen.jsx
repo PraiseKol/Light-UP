@@ -330,102 +330,99 @@ export default function GameScreen({
     
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c]">
-      {/* Constrain width on mobile */}
-      <div className="w-full sm:max-w-full md:max-w-2xl lg:max-w-3xl mx-auto h-[calc(100vh-120px)] overflow-y-auto p-2 text-sm sm:p-4 sm:text-base bg-gradient-to-br from-white/90 via-pink-50/80 to-purple-50/80 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] border-2 border-pink-200">
-        {/* Top HUD (fixed) */}
-        <div className="flex justify-between items-center px-2 md:px-3 py-1 md:py-2 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md rounded-xl shadow-md text-sm sm:text-base sticky top-0 z-20">
-          <span className="flex items-center gap-2">
-            <span className="text-lg">📜</span> Level {level?.number}
+    <div className="h-[100dvh] flex flex-col bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c] overflow-hidden">
+      {/* Top HUD */}
+      <div className="flex-shrink-0 flex justify-between items-center px-3 py-2 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md shadow-md text-xs sm:text-sm">
+        <span className="flex items-center gap-2">
+          <span className="text-base sm:text-lg">📜</span> 
+          <span className="font-bold">Level {level?.number}</span>
+        </span>
+        <span className="flex items-center gap-2 sm:gap-4">
+          <span className="flex items-center gap-1">
+            ⭐ <span className="font-bold">{userScore}</span>
           </span>
-          <span className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              ⭐ <span>{userScore}</span>
-            </span>
-            <span
-              className={`flex items-center gap-1 ${
-                isHolyShieldActive
-                  ? "animate-pulse text-yellow-500 font-bold drop-shadow-[0_0_6px_rgba(255,223,0,0.8)]"
-                  : ""
-              }`}
-            >
-              ❤️ {gameUser?.lives ?? "?"}
-            </span>
+          <span
+            className={`flex items-center gap-1 font-bold ${
+              isHolyShieldActive
+                ? "animate-pulse text-yellow-500 drop-shadow-[0_0_6px_rgba(255,223,0,0.8)]"
+                : ""
+            }`}
+          >
+            ❤️ {gameUser?.lives ?? "?"}
           </span>
-        </div>
+        </span>
+      </div>
 
-        {/* Scrollable Game mode area */}
-        <div className="flex-1 overflow-y-auto p-1 md:p-2 spcae-y-1 md:space-y-2">
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg p-1 md:p-2 sm:p-4 text-sm sm:text-base">
-            {mode === "word-fill" && (
-              <WordFillMode
-                {...commonProps}
-                question={questionData.question}
-                answer={questionData.answer}
-                effectsOn={effectsOn}
-                gameUser={gameUser}
-              />
-            )}
-            {mode === "trivia" && (
-              <TriviaMode
-                {...commonProps}
-                question={questionData.question}
-                options={questionData.options}
-                answer={questionData.answer}
-                effectsOn={effectsOn}
-                gameUser={gameUser}
-              />
-            )}
-            {mode === "four-pics" && (
-              <FourPicsMode
-                {...commonProps}
-                answer={questionData.answer}
-                imageUrls={questionData.image_urls}
-                letters={questionData.letters}
-                effectsOn={effectsOn}
-                gameUser={gameUser}
-              />
-            )}
-            {mode === "scripture-match" && (
-              <ScriptureMatchMode
-                {...commonProps}
-                question={questionData.question}
-                effectsOn={effectsOn}
-              />
-            )}
-            {!["word-fill", "trivia", "four-pics", "scripture-match"].includes(
-              mode
-            ) && (
-              <div className="p-6 text-center text-gray-700">
-                Mode not supported yet: <strong>{mode}</strong>
-              </div>
-            )}
-          </div>
+      {/* Game content - fills remaining space */}
+      <div className="flex-1 overflow-hidden p-2">
+        <div className="h-full overflow-auto">
+          {mode === "word-fill" && (
+            <WordFillMode
+              {...commonProps}
+              question={questionData.question}
+              answer={questionData.answer}
+              effectsOn={effectsOn}
+              gameUser={gameUser}
+            />
+          )}
+          {mode === "trivia" && (
+            <TriviaMode
+              {...commonProps}
+              question={questionData.question}
+              options={questionData.options}
+              answer={questionData.answer}
+              effectsOn={effectsOn}
+              gameUser={gameUser}
+            />
+          )}
+          {mode === "four-pics" && (
+            <FourPicsMode
+              {...commonProps}
+              answer={questionData.answer}
+              imageUrls={questionData.image_urls}
+              letters={questionData.letters}
+              effectsOn={effectsOn}
+              gameUser={gameUser}
+            />
+          )}
+          {mode === "scripture-match" && (
+            <ScriptureMatchMode
+              {...commonProps}
+              question={questionData.question}
+              effectsOn={effectsOn}
+              gameUser={gameUser}
+            />
+          )}
+          {!["word-fill", "trivia", "four-pics", "scripture-match"].includes(
+            mode
+          ) && (
+            <div className="p-6 text-center text-gray-700">
+              Mode not supported yet: <strong>{mode}</strong>
+            </div>
+          )}
         </div>
       </div>
-      {/* Power-Up Bar (fixed at bottom) */}
 
+      {/* Power-Up Bar */}
       {gameUser?.powerups_inventory && (
-        <div className="sticky bottom-0 left-0 right-0 bg-gradient-to-r from-pink-200 via-purple-200 to-blue-200 backdrop-blur-lg border-t-2 border-pink-300 p-2 sm:p-3 flex justify-around items-center z-50 shadow-[0_-4px_10px_rgba(190,24,93,0.3)] text-[10px] sm:text-xs">
+        <div className="flex-shrink-0 bg-gradient-to-r from-pink-200 via-purple-200 to-blue-200 backdrop-blur-lg border-t-2 border-pink-300 p-2 flex justify-around items-center shadow-[0_-4px_10px_rgba(190,24,93,0.3)]">
           <button
             onClick={handleDivineHint}
             disabled={!gameUser.powerups_inventory.divine_hint}
-            className="flex flex-col items-center font-semibold w-[22%] px-1 sm:px-2 py-1 rounded-full bg-gradient-to-b from-blue-300 to-blue-400 hover:scale-105 shadow-[0_3px_0_#1e40af] active:translate-y-1 active:shadow-[0_1px_0_#1e40af] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all"
+            className="flex flex-col items-center font-semibold w-[22%] px-1 py-1 rounded-full bg-gradient-to-b from-blue-300 to-blue-400 hover:scale-105 shadow-[0_3px_0_#1e40af] active:translate-y-1 active:shadow-[0_1px_0_#1e40af] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs"
           >
-            🧩<span>Divine Hint</span>
-            <span className="text-[10px] sm:text-xs">
-              x{gameUser.powerups_inventory.divine_hint ?? 0}
-            </span>
+            <span className="text-sm sm:text-base">🧩</span>
+            <span className="hidden sm:inline">Hint</span>
+            <span>x{gameUser.powerups_inventory.divine_hint ?? 0}</span>
           </button>
           <button
             onClick={handleGracePeriod}
             disabled={!gameUser.powerups_inventory.grace_period}
-            className="flex flex-col items-center text-xs font-semibold w-[23%] px-2 py-1 rounded-full bg-gradient-to-b from-purple-300 to-purple-400 hover:scale-105 shadow-[0_3px_0_#7c3aed] active:translate-y-1 active:shadow-[0_1px_0_#7c3aed] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all"
+            className="flex flex-col items-center font-semibold w-[23%] px-1 py-1 rounded-full bg-gradient-to-b from-purple-300 to-purple-400 hover:scale-105 shadow-[0_3px_0_#7c3aed] active:translate-y-1 active:shadow-[0_1px_0_#7c3aed] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs"
           >
-            ⏳<span> Grace Period +15s</span>
-            <span className="text-[10px] sm:text-xs">
-              x{gameUser.powerups_inventory.grace_period ?? 0}
-            </span>
+            <span className="text-sm sm:text-base">⏳</span>
+            <span className="hidden sm:inline">Grace</span>
+            <span>x{gameUser.powerups_inventory.grace_period ?? 0}</span>
           </button>
 
           <HolyShieldButton
@@ -438,12 +435,11 @@ export default function GameScreen({
           <button
             onClick={handleHeavenlyMatch}
             disabled={!gameUser.powerups_inventory.heavenly_match}
-            className="flex flex-col items-center text-[10px] sm:text-xs font-semibold w-[22%] px-1 sm:px-2 py-1 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 hover:scale-105 shadow-[0_3px_0_#ca8a04] active:translate-y-1 active:shadow-[0_1px_0_#ca8a04] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all"
+            className="flex flex-col items-center font-semibold w-[22%] px-1 py-1 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 hover:scale-105 shadow-[0_3px_0_#ca8a04] active:translate-y-1 active:shadow-[0_1px_0_#ca8a04] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs"
           >
-            👑<span>Heavenly Match</span>
-            <span className="text-[10px] sm:text-xs">
-              x{gameUser.powerups_inventory.heavenly_match ?? 0}
-            </span>
+            <span className="text-sm sm:text-base">👑</span>
+            <span className="hidden sm:inline">Match</span>
+            <span>x{gameUser.powerups_inventory.heavenly_match ?? 0}</span>
           </button>
         </div>
       )}

@@ -275,40 +275,39 @@ export default function FourPicsMode({
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
   return (
-    <div className="p-8 md:p-6 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 rounded-2xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] border-2 border-pink-200 max-w-2xl mx-auto animate-fadeInUp">
-      <div className="space-y-1 mb-2 md:mb-4">
+    <div className="h-full bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 rounded-2xl p-3 sm:p-4 overflow-auto">
+      <div className="space-y-2 mb-3">
         <div className="flex justify-between items-center">
-          <div className="text-xs text-gray-500 mb-1 md:mb-2">
-            Phase {level?.phaseNumber} • Level {level?.number} Four Pics One
-            Word
+          <div className="text-[10px] sm:text-xs text-gray-500">
+            Phase {level?.phaseNumber} • Level {level?.number} • Four Pics One Word
           </div>
-          <span className="text-xs md:text-sm text-gray-600 font-semibold">
+          <span className="text-xs sm:text-sm text-gray-600 font-semibold">
             {timeLeft}s
           </span>
         </div>
         <ProgressBar value={timeLeft} max={INITIAL_TIME} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
+      <div className="grid grid-cols-2 gap-2 mb-3">
         {images.map((src, idx) => (
           <img
             key={idx}
             src={src}
             alt={`Hint ${idx + 1}`}
-            className="w-full h-32 object-contain rounded-lg border border-gray-200 shadow-sm"
+            className="w-full h-24 sm:h-32 object-contain rounded-lg border border-gray-200 shadow-sm"
           />
         ))}
       </div>
 
-      <div className="flex justify-center gap-1.5 md:gap-2 mb-3 md:mb-4 text-sm md:text-xl font-semibold tracking-wide">
+      <div className="flex justify-center gap-1 sm:gap-2 mb-3 text-base sm:text-xl font-semibold tracking-wide">
         {input.map((ch, i) => (
-          <div key={i} className="w-10 h-10 border-b-4 border-gold text-center">
+          <div key={i} className="w-8 h-8 sm:w-10 sm:h-10 border-b-4 border-gold text-center flex items-center justify-center">
             {ch || ""}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-4 md:grid-cols-6 gap-2 md:gap-3 max-w-md mx-auto mb-3 md:mb-6">
+      <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5 sm:gap-2 max-w-md mx-auto mb-3">
         {shuffledLetters.map((ltr, idx) => (
           <button
             key={idx}
@@ -317,7 +316,7 @@ export default function FourPicsMode({
               handleLetterClick(ltr, idx);
             }}
             disabled={usedIndexes.includes(idx) || hasAnswered.current}
-            className={`w-8 md:w-10 h-8 md:h-10 text-3xs md:text-lg font-semibold md:font-bold rounded-lg transition shadow ${
+            className={`w-full aspect-square text-sm sm:text-lg font-bold rounded-lg transition shadow ${
               usedIndexes.includes(idx)
                 ? "bg-gray-300 text-gray-500"
                 : "bg-gold text-black hover:bg-yellow-400"
@@ -328,14 +327,14 @@ export default function FourPicsMode({
         ))}
       </div>
 
-      <div className="flex justify-center gap-3 md:gap-4">
+      <div className="flex justify-center gap-2 sm:gap-3">
         <Button
           onClick={() => {
             playSound("back", effectsOn);
             handleBackspace();
           }}
           disabled={input.every((slot) => slot === "") || hasAnswered.current}
-          className="bg-gradient-to-b from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-black font-bold rounded-full shadow-[0_4px_0_#6b7280] active:translate-y-1 active:shadow-[0_2px_0_#6b7280]"
+          className="bg-gradient-to-b from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-black font-bold rounded-full shadow-[0_4px_0_#6b7280] active:translate-y-1 active:shadow-[0_2px_0_#6b7280] px-4 py-2 text-sm sm:text-base"
         >
           ⌫
         </Button>
@@ -345,19 +344,10 @@ export default function FourPicsMode({
             checkAnswer();
           }}
           disabled={hasAnswered.current || input.includes("")}
-          className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white font-bold rounded-full shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d]"
+          className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white font-bold rounded-full shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d] px-4 py-2 text-sm sm:text-base"
         >
           ✅ Submit
         </Button>
-        {activePowerups?.divine_hint && (
-          <Button
-            onClick={applyDivineHint}
-            disabled={divineHintApplied}
-            className="bg-gradient-to-b from-purple-400 via-purple-500 to-purple-600 text-white font-bold rounded-full shadow-[0_4px_0_#7c3aed] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#7c3aed]"
-          >
-            ✨ Divine Hint
-          </Button>
-        )}
       </div>
 
       <RightAnswerModal

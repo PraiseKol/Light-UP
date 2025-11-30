@@ -177,15 +177,15 @@ export default function TriviaMode({
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c] px-2 md:px-4 py-4">
-      <div className="w-full max-w-xl animate-fadeInUp">
-        <Card className="bg-gradient-to-br from-pink-50 via-white to-blue-50 backdrop-blur-md border-4 border-pink-300 shadow-2xl p-3 md:p-6 rounded-2xl">
-          <div className="space-y-1 mb-2 md:mb-4">
+    <div className="h-full flex justify-center items-center bg-gradient-to-br from-pink-50 via-white to-purple-50 p-2 sm:p-4">
+      <div className="w-full max-w-xl">
+        <Card className="bg-white/95 backdrop-blur-md border-2 border-pink-300 shadow-lg p-3 sm:p-4 rounded-2xl">
+          <div className="space-y-2 mb-3">
             <div className="flex justify-between items-center">
-              <div className="text-xs md:text-sm text-pink-700 font-bold">
-                Phase {level?.phaseNumber} • Level {level?.number} Trivia
+              <div className="text-[10px] sm:text-xs text-pink-700 font-bold">
+                Phase {level?.phaseNumber} • Level {level?.number} • Trivia
               </div>
-              <div className="text-[10px] md:text-xs text-orange-600 font-black bg-yellow-100 px-2 py-1 rounded-full">
+              <div className="text-xs sm:text-sm text-orange-600 font-black bg-yellow-100 px-2 py-0.5 rounded-full">
                 {timeLeft}s
               </div>
             </div>
@@ -194,25 +194,12 @@ export default function TriviaMode({
           
           </div>
 
-          <CardHeader className="text-sm md:text-xl text-gray-900 font-bold mb-4 leading-snug">
+          <CardHeader className="text-sm sm:text-lg font-bold mb-3 leading-snug p-0">
             {question}
           </CardHeader>
 
-          <CardContent
-            ref={cardContentRef}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (
-                e.key === "Enter" &&
-                selected !== null &&
-                !hasAnswered.current
-              ) {
-                playSound("submitAnswer", effectsOn);
-                checkAnswer();
-              }
-            }}
-          >
-            <div className="space-y-2 md:space-y-3 mb-3 md:mb-6">
+          <CardContent className="p-0">
+            <div className="space-y-2 mb-4">
               {displayOptions.map((opt, i) => {
                 const isSelected = selected === opt;
                 const isDisabled = hasAnswered.current;
@@ -225,7 +212,7 @@ export default function TriviaMode({
                       if (!hasAnswered.current) setSelected(opt);
                       playSound("optionSelect", effectsOn);
                     }}
-                    className={`w-full px-3 md:px-4 py-2 md:py-3 rounded-xl text-left font-semibold border-2 transition-all shadow-lg ${
+                    className={`w-full px-3 py-2 sm:py-3 rounded-xl text-left text-xs sm:text-sm font-semibold border-2 transition-all shadow-md ${
                       isSelected
                         ? "border-pink-500 bg-gradient-to-r from-pink-100 to-yellow-100 scale-105 shadow-pink-300"
                         : "border-gray-300 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:border-blue-300"
@@ -243,7 +230,7 @@ export default function TriviaMode({
                 checkAnswer();
               }}
               disabled={!selected || hasAnswered.current}
-              className="w-full bg-gradient-to-r from-green-400 to-emerald-500 text-white font-black text-lg py-3 rounded-xl shadow-[0_4px_0_#059669] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#059669] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-green-400 to-emerald-500 text-white font-black text-sm sm:text-base py-2 sm:py-3 rounded-xl shadow-[0_4px_0_#059669] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#059669] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ✅ Submit Answer
             </Button>

@@ -21,6 +21,7 @@ export default function ScriptureMatchMode({
   onIncorrect,
   activePowerups,
   effectsOn = true,
+  gameUser, // ✅ Add gameUser prop
 }) {
   const [pairs, setPairs] = useState([]);
   const [shuffledVerses, setShuffledVerses] = useState([]);
@@ -243,100 +244,96 @@ export default function ScriptureMatchMode({
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c]">
-      <div className="relative z-10 flex justify-center items-center px-4 py-10">
-        <div className="w-full max-w-4xl animate-fade-in-up">
-          <div className="mb-20 md:mb-auto"></div>
-          <div className="p-6 rounded-2xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] bg-gradient-to-br from-white/95 via-pink-50/90 to-purple-50/90 border-2 border-pink-200 space-y-4 md:space-y-6">
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <div className="text-xs md:text-sm text-gray-600 font-medium">
-                  Phase {level?.phaseNumber} • Level {level?.number} Scripture
-                  Match. Tip - Drag R - L or Simply Click to Match
+    <div className="h-full bg-gradient-to-br from-pink-50 via-white to-purple-50 p-2 sm:p-4 overflow-auto">
+      <div className="w-full max-w-4xl mx-auto">
+        <div className="p-3 sm:p-4 rounded-2xl shadow-lg bg-white/95 border-2 border-pink-200 space-y-3">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <div className="text-[10px] sm:text-xs text-gray-600 font-medium">
+                Phase {level?.phaseNumber} • Level {level?.number} • Scripture Match
+              </div>
+              <div className="text-xs sm:text-sm text-gray-500 font-semibold">
+                {timeLeft}s
+              </div>
+            </div>
+            <ProgressBar value={timeLeft} max={30} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {/* References */}
+            <div>
+              <h3 className="font-semibold mb-2 text-xs sm:text-sm">📖 References</h3>
+              {pairs.map(({ reference }) => (
+                <div
+                  key={reference}
+                  onClick={() => handleReferenceClick(reference)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleDrop(reference)}
+                  className={`border p-2 min-h-[40px] sm:min-h-[50px] mb-2 flex items-center justify-between cursor-pointer rounded text-xs sm:text-sm ${
+                    selectedReference === reference
+                      ? "bg-blue-100"
+                      : "bg-gray-50"
+                  }`}
+                >
+                  <span className="font-medium">{reference}</span>
+                  {matches[reference] && (
+                    <span className="ml-2 text-[10px] sm:text-xs text-blue-700 flex items-center gap-1">
+                      {matches[reference].substring(0, 20)}...
+                      {!hintedRefs.has(reference) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUndo(reference);
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          ❌
+                        </button>
+                      )}
+                    </span>
+                  )}
                 </div>
-                <div className="text-[10px] md:text-xs text-gray-500 font-semibold">
-                  {timeLeft}s
+              ))}
+            </div>
+
+            {/* Verses */}
+            <div>
+              <h3 className="font-semibold mb-2 text-xs sm:text-sm">📜 Verses</h3>
+              {shuffledVerses.map(({ verse }) => (
+                <div
+                  key={verse}
+                  draggable={!isMatched(verse)}
+                  onDragStart={() => setDraggedVerse({ verse })}
+                  onClick={() => handleVerseClick(verse)}
+                  className={`cursor-pointer border p-2 rounded-lg mb-2 transition text-xs sm:text-sm ${
+                    isMatched(verse)
+                      ? "bg-green-200 text-gray-700"
+                      : selectedVerse === verse
+                      ? "bg-yellow-300"
+                      : "bg-yellow-100 hover:bg-yellow-200 text-black"
+                  }`}
+                >
+                  {verse}
                 </div>
-              </div>
-              <ProgressBar value={timeLeft} max={30} />
+              ))}
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-5 md:gap-6 mt-3 md:mt-4">
-              {/* References */}
-              <div>
-                <h3 className="font-semibold mb-1 md:mb-2">📖 References</h3>
-                {pairs.map(({ reference }) => (
-                  <div
-                    key={reference}
-                    onClick={() => handleReferenceClick(reference)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => handleDrop(reference)}
-                    className={`border p-2 md:p-3 min-h-[40px] md:min-h-[60px] mb-2 md:mb-3 flex items-center justify-between cursor-pointer ${
-                      selectedReference === reference
-                        ? "bg-blue-100"
-                        : "bg-gray-50"
-                    }`}
-                  >
-                    <span>{reference}</span>
-                    {matches[reference] && (
-                      <span className="ml-2 text-xs md:text-sm text-blue-700 font-medium flex items-center gap-2">
-                        {matches[reference]}
-                        {!hintedRefs.has(reference) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUndo(reference);
-                            }}
-                            className="text-red-500 hover:text-red-700 text-[10px]"
-                          >
-                            ❌
-                          </button>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Verses */}
-              <div>
-                <h3 className="font-semibold mb-1 md:mb-2">📜 Verses</h3>
-                {shuffledVerses.map(({ verse }) => (
-                  <div
-                    key={verse}
-                    draggable={!isMatched(verse)}
-                    onDragStart={() => setDraggedVerse({ verse })}
-                    onClick={() => handleVerseClick(verse)}
-                    className={`cursor-pointer border p-2 md:p-3 rounded-lg mb-2 md:mb-3 transition ${
-                      isMatched(verse)
-                        ? "bg-green-200 text-gray-700"
-                        : selectedVerse === verse
-                        ? "bg-yellow-300"
-                        : "bg-yellow-100 hover:bg-yellow-200 text-black"
-                    }`}
-                  >
-                    {verse}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Submit */}
-            <div className="flex justify-center mt-5 md:mt-6">
-              <Button
-                disabled={
-                  hasAnswered.current ||
-                  Object.keys(matches).length !== pairs.length
-                }
-                onClick={() => {
-                  playSound("submitAnswer", effectsOn);
-                  checkAnswer();
-                }}
-                className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white font-bold rounded-full shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d] px-8 py-3"
-              >
-                ✅ Submit
-              </Button>
-            </div>
+          {/* Submit */}
+          <div className="flex justify-center mt-4">
+            <Button
+              disabled={
+                hasAnswered.current ||
+                Object.keys(matches).length !== pairs.length
+              }
+              onClick={() => {
+                playSound("submitAnswer", effectsOn);
+                checkAnswer();
+              }}
+              className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white font-bold rounded-full shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d] px-6 py-2 text-sm sm:text-base"
+            >
+              ✅ Submit
+            </Button>
           </div>
         </div>
       </div>
