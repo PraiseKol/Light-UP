@@ -34,7 +34,7 @@ export default function ExplainerVideoModal({ isOpen, onClose, userId }) {
         <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
           <iframe
             className="w-full h-full"
-            src="https://www.youtube.com/embed/PoabuvlYujg"
+            src="https://www.youtube.com/shorts/PoabuvlYujg?si=mO1UCylizDvMgHtF"
             title="LightUP Explainer Video"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
