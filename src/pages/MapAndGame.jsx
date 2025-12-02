@@ -207,7 +207,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       supabase.removeChannel(totalChannel);
       clearTimeout(leaderboardTimeout);
     };
-  }, []);
+  }, [gameUser?.user_id]);
 
   // Auto-show explainer video for first-time users
   useEffect(() => {

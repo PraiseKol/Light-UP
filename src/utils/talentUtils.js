@@ -99,6 +99,67 @@ export async function awardBonus(userId, bonusType, referenceId = "global") {
 }
 
 /**
+ * Award bonus with duplicate prevention - checks if bonus already awarded
+ */
+export async function awardBonusWithCheck(userId, bonusType, referenceId = "global") {
+  if (!userId || !bonusType) return null;
+
+  const bonusRewards = {
+    accuracy: 2,
+    perfect_phase: 10,
+    phase_completion: 3,
+    daily_day3: 1,
+    daily_day5: 2,
+    daily_day7plus: 3,
+  };
+
+  const reward = bonusRewards[bonusType] || 0;
+  if (reward <= 0) return null;
+
+  // Check for duplicate bonus
+  const { data: existing } = await supabase
+    .from("bonus_awards")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("bonus_type", bonusType)
+    .eq("reference_id", referenceId)
+    .maybeSingle();
+
+  if (existing) {
+    console.log(`⚠️ Bonus already awarded: ${bonusType} for ${referenceId}`);
+    return null;
+  }
+
+  // Award the bonus using Supabase RPC
+  const { data: newBalance, error: rpcError } = await supabase.rpc("adjust_talents", {
+    p_user_id: userId,
+    p_amount: reward,
+    p_transaction_id: `bonus-${bonusType}-${referenceId}-${Date.now()}`
+  });
+
+  if (rpcError) {
+    console.error("❌ Failed to adjust talents:", rpcError);
+    return null;
+  }
+
+  // Record the bonus
+  const { error: insertError } = await supabase
+    .from("bonus_awards")
+    .insert({
+      user_id: userId,
+      bonus_type: bonusType,
+      reference_id: referenceId
+    });
+
+  if (insertError) {
+    console.error("❌ Failed to record bonus:", insertError);
+  }
+
+  console.log(`✅ Bonus awarded: ${bonusType} (+${reward} talents) | New balance: ${newBalance}`);
+  return newBalance;
+}
+
+/**
  * Claim daily streak bonus via dedicated API
  */
 export async function claimDailyStreakBonus(userId) {

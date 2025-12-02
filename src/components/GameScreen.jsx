@@ -16,7 +16,7 @@ import ScriptureMatchMode from "@/modes/ScriptureMatchMode";
 
 import HolyShieldButton from "@/components/HolyShieldButton";
 import { playSound } from "@/utils/sound";
-import { awardBonus } from "@/utils/talentUtils";
+import { awardBonus, awardBonusWithCheck } from "@/utils/talentUtils";
 
 export default function GameScreen({
   level,
@@ -284,7 +284,7 @@ export default function GameScreen({
 
       if (allPerfect) {
         console.log("🏆 Awarding perfect phase bonus");
-        await awardBonus(
+        await awardBonusWithCheck(
           user.id,
           "perfect_phase",
           `phase-${level.phaseNumber}`
@@ -293,7 +293,7 @@ export default function GameScreen({
 
       if (scores.length === levelIds.length) {
         console.log("✅ Awarding phase completion bonus");
-        await awardBonus(
+        await awardBonusWithCheck(
           user.id,
           "phase_completion",
           `phase-${level.phaseNumber}`
