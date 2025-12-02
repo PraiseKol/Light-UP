@@ -64,9 +64,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const [challengeAllowed, setChallengeAllowed] = useState(false);
   const [challengePlayed, setChallengePlayed] = useState(false);
   const [countdownText, setCountdownText] = useState("");
-  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState([]);
-  const [totalLeaderboard, setTotalLeaderboard] = useState([]);
-  const [monthlyLeaderboard, setMonthlyLeaderboard] = useState([]);
+  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState({ topPlayers: [], currentUserRank: null });
+  const [totalLeaderboard, setTotalLeaderboard] = useState({ topPlayers: [], currentUserRank: null });
+  const [monthlyLeaderboard, setMonthlyLeaderboard] = useState({ topPlayers: [], currentUserRank: null });
   const [showStore, setShowStore] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
@@ -165,9 +165,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   useEffect(() => {
     let leaderboardTimeout;
     const loadLeaderboards = async () => {
-      const weekly = await fetchLeaderboard();
-      const total = await fetchMainLeaderboard();
-      const monthly = await fetchMonthlyLeaderboard();
+      const userId = gameUser?.user_id;
+      const weekly = await fetchLeaderboard(userId);
+      const total = await fetchMainLeaderboard(userId);
+      const monthly = await fetchMonthlyLeaderboard(userId);
       setWeeklyLeaderboard(weekly);
       setTotalLeaderboard(total);
       setMonthlyLeaderboard(monthly);
@@ -1122,9 +1123,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       <LeaderboardModal
         isOpen={showLeaderboardModal}
         onClose={() => setShowLeaderboardModal(false)}
-        totalLeaderboard={totalLeaderboard}
-        weeklyLeaderboard={weeklyLeaderboard}
-        monthlyLeaderboard={monthlyLeaderboard}
+        totalLeaderboard={totalLeaderboard.topPlayers}
+        weeklyLeaderboard={weeklyLeaderboard.topPlayers}
+        monthlyLeaderboard={monthlyLeaderboard.topPlayers}
+        currentUserOverallRank={totalLeaderboard.currentUserRank}
+        currentUserWeeklyRank={weeklyLeaderboard.currentUserRank}
+        currentUserMonthlyRank={monthlyLeaderboard.currentUserRank}
         currentUserId={user?.id}
       />
 

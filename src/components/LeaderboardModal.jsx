@@ -7,6 +7,9 @@ export default function LeaderboardModal({
   totalLeaderboard = [], 
   weeklyLeaderboard = [],
   monthlyLeaderboard = [],
+  currentUserOverallRank = null,
+  currentUserWeeklyRank = null,
+  currentUserMonthlyRank = null,
   currentUserId 
 }) {
   const [selectedTab, setSelectedTab] = useState('overall'); // 'overall', 'weekly', 'monthly'
@@ -15,6 +18,11 @@ export default function LeaderboardModal({
     selectedTab === 'overall' ? totalLeaderboard :
     selectedTab === 'weekly' ? weeklyLeaderboard :
     monthlyLeaderboard;
+
+  const currentUserRank = 
+    selectedTab === 'overall' ? currentUserOverallRank :
+    selectedTab === 'weekly' ? currentUserWeeklyRank :
+    currentUserMonthlyRank;
 
   // Get current month name
   const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -72,7 +80,8 @@ export default function LeaderboardModal({
         {/* Leaderboard list */}
         <div className="space-y-2 max-h-[500px] overflow-y-auto">
           {leaderboard && leaderboard.length > 0 ? (
-            leaderboard.map((entry, index) => {
+            <>
+              {leaderboard.map((entry, index) => {
               const isCurrentUser = entry.user_id === currentUserId;
               const rank = index + 1;
               
@@ -119,7 +128,33 @@ export default function LeaderboardModal({
                   </div>
                 </div>
               );
-            })
+            })}
+
+            {/* Show user's position if not in top 10 */}
+            {currentUserRank && !leaderboard.some(e => e.user_id === currentUserId) && (
+              <div className="mt-4 pt-4 border-t-2 border-dashed border-gray-300">
+                <p className="text-center text-gray-500 text-sm font-semibold mb-3">• • • Your Position • • •</p>
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-candyBlue/20 to-candyPurple/20 ring-2 ring-candyBlue shadow-lg">
+                  {/* Rank badge */}
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-black text-lg bg-candyBlue text-white">
+                    {currentUserRank.rank}
+                  </div>
+                  
+                  {/* Player info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold truncate text-candyBlue">
+                      {currentUserRank.player_name || "Anonymous"} (You)
+                    </p>
+                  </div>
+                  
+                  {/* Score */}
+                  <div className="flex-shrink-0 bg-gradient-to-r from-candyYellow to-yellow-500 text-white font-black px-4 py-2 rounded-full shadow-md">
+                    ⭐ {currentUserRank.total_score || currentUserRank.score || 0}
+                  </div>
+                </div>
+              </div>
+            )}
+            </>
           ) : (
             <div className="text-center py-12 text-gray-500">
               <p className="text-lg font-semibold">No leaderboard data yet</p>
