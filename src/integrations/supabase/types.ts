@@ -263,6 +263,7 @@ export type Database = {
       }
       game_users: {
         Row: {
+          consecutive_perfects: number
           created_at: string | null
           effects_on: boolean | null
           full_name: string | null
@@ -290,6 +291,7 @@ export type Database = {
           wallpaper: string | null
         }
         Insert: {
+          consecutive_perfects?: number
           created_at?: string | null
           effects_on?: boolean | null
           full_name?: string | null
@@ -317,6 +319,7 @@ export type Database = {
           wallpaper?: string | null
         }
         Update: {
+          consecutive_perfects?: number
           created_at?: string | null
           effects_on?: boolean | null
           full_name?: string | null

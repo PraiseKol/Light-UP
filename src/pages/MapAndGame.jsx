@@ -9,6 +9,7 @@ import { fetchRandomScripture } from "@/lib/fetchRandomScripture";
 import { fetchLeaderboard } from "@/lib/fetchLeaderboard";
 import { fetchMainLeaderboard, fetchMonthlyLeaderboard } from "@/lib/api/leaderboard";
 import { supabase } from "@/lib/supabaseClient";
+import { updatePerfectStreak } from "@/utils/talentUtils";
 import { useGameUser } from "@/hooks/useGameUser";
 import { LivesDisplay } from "@/components/LivesDisplay";
 import MapBackground from "@/components/MapBackground";
@@ -463,6 +464,35 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       mode: selectedLevel.mode,
       score,
     });
+
+    // Update perfect streak and check for accuracy bonuses
+    const streakResult = await updatePerfectStreak(user.id, score);
+    if (streakResult) {
+      const { streakCount, bonusAwarded } = streakResult;
+      
+      // Show bonus toast if awarded
+      if (bonusAwarded?.awarded) {
+        toast.success(`🎯 Accuracy Bonus! +${bonusAwarded.reward} Talents`, {
+          duration: 4000,
+          style: {
+            background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+            color: "#fff",
+            border: "2px solid #fff",
+            fontWeight: "bold"
+          }
+        });
+      } else if (streakCount >= 3 && score === 100) {
+        // Show progress feedback for streaks of 3+
+        toast.success(`🔥 Perfect streak: ${streakCount}!`, {
+          duration: 2000,
+          style: {
+            background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+            color: "#fff",
+            fontWeight: "bold"
+          }
+        });
+      }
+    }
   };
 
   const handleNextPhaseScroll = () => {

@@ -100,6 +100,7 @@ export async function awardBonus(userId, bonusType, referenceId = "global") {
 
 /**
  * Award bonus with duplicate prevention - checks if bonus already awarded
+ * Returns { awarded: true, bonusType, reward, newBalance } on success, null on duplicate/error
  */
 export async function awardBonusWithCheck(userId, bonusType, referenceId = "global") {
   if (!userId || !bonusType) return null;
@@ -156,7 +157,62 @@ export async function awardBonusWithCheck(userId, bonusType, referenceId = "glob
   }
 
   console.log(`✅ Bonus awarded: ${bonusType} (+${reward} talents) | New balance: ${newBalance}`);
-  return newBalance;
+  return { awarded: true, bonusType, reward, newBalance };
+}
+
+/**
+ * Update consecutive perfect streak and award accuracy bonuses
+ * Awards bonuses at 5, 10, 15, 20, 25, 30+ consecutive 100 scores
+ */
+export async function updatePerfectStreak(userId, score) {
+  if (!userId || typeof score !== "number") return null;
+
+  // Fetch current streak
+  const { data: user, error: fetchError } = await supabase
+    .from("game_users")
+    .select("consecutive_perfects")
+    .eq("user_id", userId)
+    .single();
+
+  if (fetchError) {
+    console.error("❌ Failed to fetch streak:", fetchError);
+    return null;
+  }
+
+  const currentStreak = user.consecutive_perfects || 0;
+  let newStreak = 0;
+  let bonusAwarded = null;
+
+  if (score === 100) {
+    // Increment streak
+    newStreak = currentStreak + 1;
+
+    // Check for milestone bonuses (5, 10, 15, 20, 25, 30, etc.)
+    if (newStreak === 5) {
+      bonusAwarded = await awardBonusWithCheck(userId, "accuracy", `streak-${newStreak}`);
+    } else if (newStreak === 10) {
+      bonusAwarded = await awardBonusWithCheck(userId, "accuracy", `streak-${newStreak}`);
+    } else if (newStreak >= 15 && newStreak % 5 === 0) {
+      bonusAwarded = await awardBonusWithCheck(userId, "accuracy", `streak-${newStreak}`);
+    }
+  } else {
+    // Reset streak on non-perfect score
+    newStreak = 0;
+  }
+
+  // Update streak in database
+  const { error: updateError } = await supabase
+    .from("game_users")
+    .update({ consecutive_perfects: newStreak })
+    .eq("user_id", userId);
+
+  if (updateError) {
+    console.error("❌ Failed to update streak:", updateError);
+    return null;
+  }
+
+  console.log(`📊 Perfect streak updated: ${newStreak} (score: ${score})`);
+  return { streakCount: newStreak, bonusAwarded };
 }
 
 /**

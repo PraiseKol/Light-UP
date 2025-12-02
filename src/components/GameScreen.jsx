@@ -17,6 +17,7 @@ import ScriptureMatchMode from "@/modes/ScriptureMatchMode";
 import HolyShieldButton from "@/components/HolyShieldButton";
 import { playSound } from "@/utils/sound";
 import { awardBonus, awardBonusWithCheck } from "@/utils/talentUtils";
+import { toast } from "sonner";
 
 export default function GameScreen({
   level,
@@ -284,20 +285,44 @@ export default function GameScreen({
 
       if (allPerfect) {
         console.log("🏆 Awarding perfect phase bonus");
-        await awardBonusWithCheck(
+        const perfectPhaseResult = await awardBonusWithCheck(
           user.id,
           "perfect_phase",
           `phase-${level.phaseNumber}`
         );
+        
+        if (perfectPhaseResult?.awarded) {
+          toast.success("🏆 Perfect Phase Bonus! +10 Talents", {
+            duration: 4000,
+            style: {
+              background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+              color: "#000",
+              border: "2px solid #fff",
+              fontWeight: "bold"
+            }
+          });
+        }
       }
 
       if (scores.length === levelIds.length) {
         console.log("✅ Awarding phase completion bonus");
-        await awardBonusWithCheck(
+        const phaseCompleteResult = await awardBonusWithCheck(
           user.id,
           "phase_completion",
           `phase-${level.phaseNumber}`
         );
+        
+        if (phaseCompleteResult?.awarded) {
+          toast.success("✅ Phase Complete! +3 Talents", {
+            duration: 3000,
+            style: {
+              background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+              color: "#fff",
+              border: "2px solid #fff",
+              fontWeight: "bold"
+            }
+          });
+        }
       }
     } catch (err) {
       console.error("❌ Error checking perfect_phase:", err);
