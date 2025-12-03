@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { playSound } from "@/utils/sound";
-import { Lock } from "lucide-react";
+import { playSound, getVolume, setVolume } from "@/utils/sound";
+import { Lock, Volume2 } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { 
   subscribeToPushNotifications, 
@@ -40,6 +40,7 @@ export default function SettingsModal({
   const [loading, setLoading] = useState(false);
   const [effectsOn, setEffectsOn] = useState(gameUser?.effects_on ?? true);
   const [selectedAvatar, setSelectedAvatar] = useState(gameUser?.selected_avatar || 'avatar1');
+  const [volume, setVolumeState] = useState(getVolume() * 100); // 0-100 for slider
 
   const audioRef = useRef(null);
   const navigate = useNavigate();
@@ -153,20 +154,41 @@ export default function SettingsModal({
           </button>
         </div>
 
+        {/* Volume Control */}
+        <div className="flex flex-col border-t border-gray-200 pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-medium text-gray-800 flex items-center gap-2">
+              <Volume2 className="w-4 h-4" /> Volume
+            </label>
+            <span className="text-sm text-gray-600 font-semibold">{Math.round(volume)}%</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={volume}
+            onChange={(e) => {
+              const newVolume = parseInt(e.target.value);
+              setVolumeState(newVolume);
+              setVolume(newVolume / 100);
+              playSound("click", effectsOn); // Preview sound at new volume
+            }}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
+          />
+          <p className="text-xs text-gray-500 mt-1">Adjust game sound effects volume</p>
+        </div>
+
         {/* Sound Picker */}
         <div className="flex flex-col border-t border-gray-200 pt-4">
           <label className="text-sm font-medium mb-1 text-gray-800">
-            🔊 Sound
+            🎵 Background Music
           </label>
           <select
             className="border border-blue-300 px-3 py-2 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
             value={sound}
-            onChange={(e) => setSound(e.target.value)} // call setSound from props immediately
+            onChange={(e) => setSound(e.target.value)}
           >
             <option value="default">Coming Soon</option>
-            {/* <option value="shifts">Time for Shifts - Godswill Oyor</option>
-            <option value="peace">Sound of Peace - Joshua Mike-Bamiloye</option>
-            <option value="juba">Juba - Anendlessocean</option> */}
           </select>
 
           {/* Hidden audio player for preview */}

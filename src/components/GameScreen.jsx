@@ -292,6 +292,7 @@ export default function GameScreen({
         );
         
         if (perfectPhaseResult?.awarded) {
+          playSound("bonusAwarded", effectsOn);
           toast.success("🏆 Perfect Phase Bonus! +10 Talents", {
             duration: 4000,
             style: {
@@ -313,6 +314,7 @@ export default function GameScreen({
         );
         
         if (phaseCompleteResult?.awarded) {
+          playSound("bonusAwarded", effectsOn);
           toast.success("✅ Phase Complete! +3 Talents", {
             duration: 3000,
             style: {

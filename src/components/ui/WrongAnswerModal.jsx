@@ -1,8 +1,14 @@
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import { playSound } from "@/utils/sound";
 
 export default function WrongAnswerModal({ isOpen, onRetry, onBack, effectsOn, currentLives = 1 }) {
+  // Play modal open sound
+  useEffect(() => {
+    if (isOpen) {
+      playSound("error", effectsOn);
+    }
+  }, [isOpen, effectsOn]);
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog onClose={onBack || (() => {})} className="relative z-50">
