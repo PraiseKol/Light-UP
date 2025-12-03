@@ -1,8 +1,14 @@
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import { playSound } from "@/utils/sound";
 
 export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn, currentLives = 1 }) {
+  // Play time up sound
+  useEffect(() => {
+    if (isOpen) {
+      playSound("gameOver", effectsOn);
+    }
+  }, [isOpen, effectsOn]);
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog onClose={() => {}} className="relative z-50">

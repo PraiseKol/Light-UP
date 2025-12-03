@@ -1,5 +1,5 @@
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import { playSound } from "@/utils/sound";
 
 export default function RightAnswerModal({
@@ -10,6 +10,12 @@ export default function RightAnswerModal({
   score,
   effectsOn
 }) {
+  // Play modal open sound
+  useEffect(() => {
+    if (isOpen) {
+      playSound("levelUp", effectsOn);
+    }
+  }, [isOpen, effectsOn]);
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog onClose={onClose} className="relative z-10">

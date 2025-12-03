@@ -472,6 +472,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       
       // Show bonus toast if awarded
       if (bonusAwarded?.awarded) {
+        playSound("bonusAwarded", effectsOn);
         toast.success(`🎯 Accuracy Bonus! +${bonusAwarded.reward} Talents`, {
           duration: 4000,
           style: {

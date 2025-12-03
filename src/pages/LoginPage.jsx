@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Book, Trophy, Zap, Users } from "lucide-react";
+import { playSound } from "@/utils/sound";
 
 export default function LoginPage() {
   const { user, login } = useAuth();
@@ -105,7 +106,10 @@ export default function LoginPage() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={login}
+            onClick={() => {
+              playSound("click", true);
+              login();
+            }}
             className="w-full bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 px-6 rounded-xl shadow-[0_8px_0_#cbd5e1,0_4px_0_#ffffff_inset,0_15px_25px_rgba(0,0,0,0.3)] hover:shadow-[0_6px_0_#cbd5e1,0_3px_0_#ffffff_inset,0_12px_22px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#cbd5e1,0_1px_0_#ffffff_inset,0_6px_12px_rgba(0,0,0,0.5)] hover:translate-y-[-2px] active:translate-y-[6px] transition-all duration-150 flex items-center justify-center gap-3"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24">

@@ -1,7 +1,8 @@
 import Modal from "./ui/modal";
 import { useState } from "react";
+import { playSound } from "@/utils/sound";
 
-export default function LeaderboardModal({ 
+export default function LeaderboardModal({
   isOpen, 
   onClose, 
   totalLeaderboard = [], 
@@ -38,7 +39,10 @@ export default function LeaderboardModal({
         {/* Toggle between Overall, Weekly, and Monthly */}
         <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
           <button
-            onClick={() => setSelectedTab('overall')}
+            onClick={() => {
+              playSound("switch", true);
+              setSelectedTab('overall');
+            }}
             className={`flex-1 py-3 px-3 rounded-lg font-bold transition-all text-sm ${
               selectedTab === 'overall'
                 ? "candy-gradient text-white shadow-lg"
@@ -48,7 +52,10 @@ export default function LeaderboardModal({
             Overall Top 10
           </button>
           <button
-            onClick={() => setSelectedTab('weekly')}
+            onClick={() => {
+              playSound("switch", true);
+              setSelectedTab('weekly');
+            }}
             className={`flex-1 py-3 px-3 rounded-lg font-bold transition-all text-sm ${
               selectedTab === 'weekly'
                 ? "candy-gradient text-white shadow-lg"
@@ -63,7 +70,10 @@ export default function LeaderboardModal({
             )}
           </button>
           <button
-            onClick={() => setSelectedTab('monthly')}
+            onClick={() => {
+              playSound("switch", true);
+              setSelectedTab('monthly');
+            }}
             className={`flex-1 py-3 px-3 rounded-lg font-bold transition-all text-sm ${
               selectedTab === 'monthly'
                 ? "candy-gradient text-white shadow-lg"
