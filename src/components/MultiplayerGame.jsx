@@ -6,6 +6,8 @@ import { useMultiplayerStore } from "@/store/useMultiplayerStore";
 import { motion, AnimatePresence } from "framer-motion";
 import html2canvas from "html2canvas";
 import { playSound } from "@/utils/sound";
+import ReactConfetti from "react-confetti";
+import { Trophy, Share2, Home, ChevronDown, ChevronUp, Lightbulb, Crown, Timer, Sparkles } from "lucide-react";
 
 export default function MultiplayerGame({ effectsOn }) {
   const { gameId } = useParams();
@@ -21,11 +23,11 @@ export default function MultiplayerGame({ effectsOn }) {
   const [questionStartTime, setQuestionStartTime] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [textAnswer, setTextAnswer] = useState("");
-  const [placeholderHint, setPlaceholderHint] = useState(""); // NEW
-
+  const [placeholderHint, setPlaceholderHint] = useState("");
   const [playerId, setPlayerId] = useState(null);
-  const [lastAnswerStatus, setLastAnswerStatus] = useState(null); // NEW for bounce/shake
+  const [lastAnswerStatus, setLastAnswerStatus] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const countdownRef = useRef(null);
   const gameTimerRef = useRef(null);
@@ -39,6 +41,15 @@ export default function MultiplayerGame({ effectsOn }) {
     heavenly_match: 0,
   });
   const [allPowerupUsage, setAllPowerupUsage] = useState({});
+
+  // Generate twinkling stars
+  const stars = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 3}s`,
+    size: Math.random() * 2 + 1,
+  }));
 
   // --- Fetch initial game + players ---
   useEffect(() => {
@@ -174,7 +185,6 @@ export default function MultiplayerGame({ effectsOn }) {
   }, [gameId]);
 
   useEffect(() => {
-    // Reset hint when question changes
     setPlaceholderHint("");
   }, [currentQ?.id]);
 
@@ -217,7 +227,6 @@ export default function MultiplayerGame({ effectsOn }) {
     }
 
     const usageMap = {};
-
     data?.forEach((row) => {
       const player = row.player_id;
       const used = row.meta?.powerups_used || [];
@@ -238,8 +247,10 @@ export default function MultiplayerGame({ effectsOn }) {
 
   useEffect(() => {
     if (game?.status === "finished") {
-      playSound("gameOver", effectsOn); // 🔊 play only if effectsOn is true
-      fetchAllPowerupUsage(); // ✅ still runs on finish
+      playSound("gameOver", effectsOn);
+      setShowConfetti(true);
+      fetchAllPowerupUsage();
+      setTimeout(() => setShowConfetti(false), 8000);
     }
   }, [game?.status, effectsOn, gameId]);
 
@@ -272,7 +283,7 @@ export default function MultiplayerGame({ effectsOn }) {
     setCurrentQ(randomQ);
     setQuestionStartTime(Date.now());
     setTextAnswer("");
-    setLastAnswerStatus(null); // reset animation status
+    setLastAnswerStatus(null);
   };
 
   const getScoreForAnswerTime = (elapsedSec) => {
@@ -294,7 +305,12 @@ export default function MultiplayerGame({ effectsOn }) {
     const isCorrect =
       answer.toLowerCase().trim() === currentQ.answer.toLowerCase().trim();
     setLastAnswerStatus(isCorrect ? "correct" : "wrong");
-    if (isCorrect) earned = getScoreForAnswerTime(elapsed);
+    if (isCorrect) {
+      earned = getScoreForAnswerTime(elapsed);
+      playSound("success", effectsOn);
+    } else {
+      playSound("error", effectsOn);
+    }
 
     await supabase
       .from("multiplayer_answers")
@@ -346,18 +362,15 @@ export default function MultiplayerGame({ effectsOn }) {
     }
   };
 
-  const logPowerupUsage = async (type) => {
-    if (!gameId || !playerId) return;
-  };
-
   const handleUsePowerup = async (type) => {
     if (!canUsePowerup(type) || !currentQ) return;
-  
-    // ✅ Update inventory immediately in UI
+
+    playSound("powerUpUsed", effectsOn);
+
     const updatedInventory = { ...inventory };
     updatedInventory[type] = (updatedInventory[type] || 0) - 1;
     setInventory(updatedInventory);
-  
+
     try {
       await supabase
         .from("game_users")
@@ -366,10 +379,8 @@ export default function MultiplayerGame({ effectsOn }) {
     } catch (err) {
       console.error("Error updating inventory:", err);
     }
-  
-    // 🧩 Safe logging to multiplayer_answers.meta
+
     try {
-      // 1. Fetch fresh meta if row exists
       const { data: existing, error: fetchError } = await supabase
         .from("multiplayer_answers")
         .select("id, meta")
@@ -377,37 +388,34 @@ export default function MultiplayerGame({ effectsOn }) {
         .eq("player_id", playerId)
         .eq("question_id", currentQ.id)
         .maybeSingle();
-  
+
       if (fetchError) {
         console.error("Error fetching existing meta:", fetchError);
         return;
       }
-  
-      // 2. Merge power-ups without overwriting
+
       const prev = Array.isArray(existing?.meta?.powerups_used)
         ? existing.meta.powerups_used
         : [];
-  
-      const merged = Array.from(new Set([...prev, type])); // de-duplicate
-  
-      // 3. Upsert instead of separate insert/update (prevents 409 conflict)
+
+      const merged = Array.from(new Set([...prev, type]));
+
       await supabase
         .from("multiplayer_answers")
         .upsert(
           {
-            id: existing?.id, // if row exists, update it
+            id: existing?.id,
             game_id: gameId,
             player_id: playerId,
             question_id: currentQ.id,
             meta: { powerups_used: merged },
           },
-          { onConflict: "game_id,player_id,question_id" } // ensures uniqueness
+          { onConflict: "game_id,player_id,question_id" }
         );
     } catch (err) {
       console.error("Error logging power-up usage:", err);
     }
-  
-    // ✅ Power-up effect logic
+
     if (type === "divine_hint") {
       if (currentQ.mode === "word-fill") {
         const first = currentQ.answer[0];
@@ -420,41 +428,75 @@ export default function MultiplayerGame({ effectsOn }) {
         const wrongOpts = currentQ.options.filter(
           (opt) => opt !== currentQ.answer
         );
-        const toRemove = wrongOpts[0]; // remove just one
+        const toRemove = wrongOpts[0];
         const reducedOptions = currentQ.options.filter(
           (opt) => opt !== toRemove
         );
         setCurrentQ({ ...currentQ, options: reducedOptions });
       }
     }
-  
+
     if (type === "heavenly_match") {
-      handleAnswer(currentQ.answer); // auto-submit correct answer
+      handleAnswer(currentQ.answer);
     }
   };
-  
-  
-  
-  
+
+  const medal = (idx) => {
+    if (idx === 0) return "🥇";
+    if (idx === 1) return "🥈";
+    if (idx === 2) return "🥉";
+    return "";
+  };
+
+  const getMedalBg = (idx) => {
+    if (idx === 0) return "from-yellow-300 via-yellow-400 to-yellow-500";
+    if (idx === 1) return "from-gray-200 via-gray-300 to-gray-400";
+    if (idx === 2) return "from-orange-300 via-orange-400 to-orange-500";
+    return "from-gray-100 to-gray-200";
+  };
 
   // --- Pre-countdown screen ---
   if (preCountdown !== null && preCountdown > 0) {
     return (
-      <div className="flex items-center justify-center h-screen bg-black text-white">
+      <div className="flex items-center justify-center h-screen relative overflow-hidden bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900">
+        {/* Stars */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {stars.map((star) => (
+            <div
+              key={star.id}
+              className="absolute rounded-full bg-white animate-twinkle"
+              style={{
+                left: star.left,
+                top: star.top,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                animationDelay: star.delay,
+              }}
+            />
+          ))}
+        </div>
+
         <AnimatePresence mode="wait">
           <motion.div
             key={preCountdown}
             initial={{ scale: 0.5, opacity: 0 }}
-            animate={{
-              scale: 2,
-              opacity: 1,
-              color: preCountdown <= 3 ? "#ff0000" : "#ffffff",
-            }}
+            animate={{ scale: 1.5, opacity: 1 }}
             exit={{ scale: 0.5, opacity: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-[8rem] font-bold"
+            className="relative z-10"
           >
-            {preCountdown}
+            <div
+              className={`text-[10rem] font-black ${
+                preCountdown <= 3 ? "text-red-400" : "text-white"
+              } drop-shadow-[0_0_60px_rgba(255,255,255,0.5)]`}
+            >
+              {preCountdown}
+            </div>
+            <motion.div
+              className="absolute inset-0 rounded-full border-4 border-white/30"
+              animate={{ scale: [1, 2], opacity: [1, 0] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -462,102 +504,141 @@ export default function MultiplayerGame({ effectsOn }) {
   }
 
   // --- Finished screen ---
-  // Inside the finished state rendering section:
   if (game?.status === "finished") {
-    playSound("gameOver", effectsOn);
     const matchCode = game?.token || "N/A";
     const finishedAt = new Date().toLocaleString();
+    const winner = leaderboard[0];
 
-    const medal = (idx) => {
-      if (idx === 0) return "🥇";
-      if (idx === 1) return "🥈";
-      if (idx === 2) return "🥉";
-      return "";
-    };
-
-    //lets see
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-6">
-        {/* Trophy */}
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          className="text-6xl mb-4"
-        >
-          🏆
-        </motion.div>
+      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900 p-4">
+        {showConfetti && <ReactConfetti recycle={false} numberOfPieces={300} />}
 
-        {/* Title */}
-        <h2 className="text-4xl font-bold mb-2">Final Leaderboard</h2>
-        <p className="text-sm text-gray-400">
-          Match Code: {matchCode} • Finished: {finishedAt}
-        </p>
+        {/* Stars */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {stars.map((star) => (
+            <div
+              key={star.id}
+              className="absolute rounded-full bg-white animate-twinkle"
+              style={{
+                left: star.left,
+                top: star.top,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                animationDelay: star.delay,
+              }}
+            />
+          ))}
+        </div>
 
-        {/* Leaderboard Card */}
-        <motion.div
-          ref={leaderboardRef}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mt-6 w-full max-w-md backdrop-blur-lg bg-white/10 rounded-2xl p-4 shadow-lg border border-white/20"
-        >
-          <AnimatePresence>
-            {leaderboard.map((p, idx) => {
-              const isMe = p.user_id === user.id;
-              const powerups = allPowerupUsage[p.id] || {
-                divine_hint: 0,
-                heavenly_match: 0,
-              };
+        <div className="relative z-10 w-full max-w-md">
+          {/* Trophy */}
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", duration: 1 }}
+            className="flex justify-center mb-4"
+          >
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-[0_0_60px_rgba(251,191,36,0.6)] flex items-center justify-center">
+              <Trophy className="w-12 h-12 text-yellow-800" />
+            </div>
+          </motion.div>
 
-              return (
-                <motion.div
-                  key={p.id}
-                  layout
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className={`flex justify-between items-center p-3 rounded-xl mb-2 ${
-                    isMe
-                      ? "bg-gradient-to-r from-green-500/40 to-green-400/20 border border-green-400 shadow-lg"
-                      : "bg-white/5"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">{medal(idx) || idx + 1}.</span>
-                    <span className="font-medium">{p.player_name}</span>
-                    {isMe && (
-                      <span className="text-xs text-green-300">(You)</span>
-                    )}
-                  </div>
+          {/* Winner Announcement */}
+          {winner && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-center mb-4"
+            >
+              <p className="text-pink-300 font-bold text-sm">WINNER</p>
+              <h2 className="text-3xl font-black text-white flex items-center justify-center gap-2">
+                <Crown className="w-8 h-8 text-yellow-400" />
+                {winner.player_name}
+              </h2>
+              <p className="text-yellow-400 font-bold text-xl">{winner.score} pts</p>
+            </motion.div>
+          )}
 
-                  <div className="text-right text-sm leading-tight">
-                    <div className="text-yellow-300">
-                      💡 {powerups.divine_hint} | 👑 {powerups.heavenly_match}
+          {/* Match Info */}
+          <div className="text-center text-white/60 text-xs mb-4">
+            Match Code: {matchCode} • Finished: {finishedAt}
+          </div>
+
+          {/* Leaderboard Card */}
+          <motion.div
+            ref={leaderboardRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-white/95 backdrop-blur-xl rounded-2xl border-2 border-pink-300 shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] p-4"
+          >
+            <h3 className="text-center font-black text-gray-800 mb-3 flex items-center justify-center gap-2">
+              <Sparkles className="w-5 h-5 text-pink-500" />
+              Final Standings
+            </h3>
+            <AnimatePresence>
+              {leaderboard.map((p, idx) => {
+                const isMe = p.user_id === user.id;
+                const powerups = allPowerupUsage[p.id] || {
+                  divine_hint: 0,
+                  heavenly_match: 0,
+                };
+
+                return (
+                  <motion.div
+                    key={p.id}
+                    layout
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className={`flex justify-between items-center p-3 rounded-xl mb-2 ${
+                      isMe
+                        ? "bg-gradient-to-r from-green-100 to-green-200 border-2 border-green-400"
+                        : idx < 3
+                        ? `bg-gradient-to-r ${getMedalBg(idx)}`
+                        : "bg-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{medal(idx) || `${idx + 1}.`}</span>
+                      <div>
+                        <span className="font-bold text-gray-800">{p.player_name}</span>
+                        {isMe && (
+                          <span className="text-xs text-green-600 ml-1">(You)</span>
+                        )}
+                        <div className="text-xs text-gray-500">
+                          💡 {powerups.divine_hint} • 👑 {powerups.heavenly_match}
+                        </div>
+                      </div>
                     </div>
-                    <div className="font-semibold text-base">{p.score} pts</div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </motion.div>
+                    <div className="text-right">
+                      <span className="font-black text-lg text-gray-800">{p.score}</span>
+                      <span className="text-xs text-gray-500 ml-1">pts</span>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
 
-        {/* Buttons */}
-        <div className="mt-8 flex gap-4">
-          <button
-            onClick={() => navigate("/map")}
-            className="px-5 py-2 rounded-full bg-green-500 hover:bg-green-400 transition-colors shadow-lg"
-          >
-            Return to Map
-          </button>
-          <button
-            onClick={handleShare}
-            className="px-5 py-2 rounded-full bg-blue-500 hover:bg-blue-400 transition-colors shadow-lg"
-          >
-            Share
-          </button>
+          {/* Action Buttons */}
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={() => navigate("/map")}
+              className="flex-1 py-3 rounded-xl font-bold bg-gradient-to-b from-green-400 to-green-500 text-white shadow-[0_4px_0_#166534] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+            >
+              <Home className="w-5 h-5" />
+              Return
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex-1 py-3 rounded-xl font-bold bg-gradient-to-b from-blue-400 to-blue-500 text-white shadow-[0_4px_0_#1d4ed8] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+            >
+              <Share2 className="w-5 h-5" />
+              Share
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -565,42 +646,70 @@ export default function MultiplayerGame({ effectsOn }) {
 
   // --- In-progress screen ---
   if (game?.status === "in_progress") {
-    return (
-      <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
-        {/* Question Area */}
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
-          <div className="text-lg mb-2">⏳ Time Left: {gameTimer}s</div>
+    const timerWarning = gameTimer <= 10;
 
-          {/* <div className="text-xl font-bold mb-6">
-          Your Score: {players.find((p) => p.user_id === user.id)?.score || 0}
-        </div> */}
+    return (
+      <div className="flex flex-col md:flex-row min-h-screen relative overflow-hidden bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900">
+        {/* Stars */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {stars.map((star) => (
+            <div
+              key={star.id}
+              className="absolute rounded-full bg-white animate-twinkle"
+              style={{
+                left: star.left,
+                top: star.top,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                animationDelay: star.delay,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Question Area */}
+        <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 relative z-10">
+          {/* Timer */}
+          <div
+            className={`mb-4 px-6 py-2 rounded-full font-black text-lg flex items-center gap-2 ${
+              timerWarning
+                ? "bg-red-500 text-white animate-pulse"
+                : "bg-white/95 text-gray-800"
+            } shadow-lg`}
+          >
+            <Timer className="w-5 h-5" />
+            {gameTimer}s
+          </div>
+
           {currentQ ? (
             <motion.div
               key={currentQ.id}
-              className="w-full max-w-2xl text-center backdrop-blur-lg bg-white/5 p-6 rounded-2xl border border-white/20 shadow-lg"
+              className="w-full max-w-2xl bg-white/95 backdrop-blur-xl rounded-2xl border-2 border-pink-300 shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] p-6"
               initial={{ rotateY: 90, opacity: 0 }}
               animate={{
                 rotateY: 0,
                 opacity: 1,
                 scale:
                   lastAnswerStatus === "correct"
-                    ? [1, 1.1, 1]
+                    ? [1, 1.05, 1]
                     : lastAnswerStatus === "wrong"
-                    ? [1, 0.9, 1.05, 0.95, 1]
+                    ? [1, 0.95, 1.02, 0.98, 1]
                     : 1,
               }}
               transition={{ duration: 0.5 }}
             >
-              <h3 className="text-2xl font-bold mb-4">{currentQ.question}</h3>
-              {currentQ.mode === "trivia" ||
-              currentQ.mode === "scripture-match" ? (
+              <h3 className="text-xl md:text-2xl font-black text-gray-800 text-center mb-6">
+                {currentQ.question}
+              </h3>
+
+              {currentQ.mode === "trivia" || currentQ.mode === "scripture-match" ? (
                 <div className="grid gap-3">
                   {currentQ.options?.map((opt, i) => (
                     <button
                       key={i}
-                      className="p-3 rounded-xl bg-blue-500 hover:bg-blue-400 shadow-lg transition"
+                      className="p-4 rounded-xl font-bold bg-gradient-to-b from-blue-400 to-blue-500 text-white shadow-[0_4px_0_#1d4ed8] hover:from-blue-500 hover:to-blue-600 active:translate-y-1 active:shadow-none transition-all"
                       onClick={() => {
-                        playSound("optionSelect", effectsOn); // ✅ sound for picking
+                        playSound("optionSelect", effectsOn);
                         handleAnswer(opt);
                       }}
                     >
@@ -609,114 +718,128 @@ export default function MultiplayerGame({ effectsOn }) {
                   ))}
                 </div>
               ) : currentQ.mode === "word-fill" ? (
-                <div className="flex gap-2 justify-center">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="text"
                     value={textAnswer}
                     onChange={(e) => setTextAnswer(e.target.value)}
-                    placeholder={placeholderHint || "Your answer"} // ✅ updated
-                    className="border p-2 rounded-xl w-64 text-black"
+                    placeholder={placeholderHint || "Type your answer..."}
+                    className="flex-1 border-2 border-gray-200 p-4 rounded-xl text-gray-800 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-200 outline-none transition"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
-                        playSound("submitAnswer", effectsOn); // ✅ sound for submit
+                        playSound("submitAnswer", effectsOn);
                         handleAnswer(textAnswer);
                       }
                     }}
                     onFocus={() => setIsInputFocused(true)}
                     onBlur={() => setIsInputFocused(false)}
                   />
-
                   <button
                     onClick={() => {
-                      playSound("submitAnswer", effectsOn); // ✅ sound for submit
+                      playSound("submitAnswer", effectsOn);
                       handleAnswer(textAnswer);
                     }}
-                    className="px-4 py-2 bg-green-500 rounded-xl hover:bg-green-400 shadow-lg transition"
+                    className="px-6 py-4 bg-gradient-to-b from-green-400 to-green-500 text-white rounded-xl font-bold shadow-[0_4px_0_#166534] active:translate-y-1 active:shadow-none transition-all"
                   >
                     Submit
                   </button>
                 </div>
               ) : null}
 
-              {["trivia", "scripture-match", "word-fill"].includes(
-                currentQ.mode
-              ) && (
-                <div className="mt-4 flex gap-4 justify-center">
+              {/* Power-ups */}
+              {game?.allow_powerups && ["trivia", "scripture-match", "word-fill"].includes(currentQ.mode) && (
+                <div className="mt-6 flex gap-3 justify-center">
                   <button
-                    onClick={() => {
-                      playSound("powerUpUsed", effectsOn); // ✅ sound for power-up
-                      handleUsePowerup("divine_hint");
-                    }}
+                    onClick={() => handleUsePowerup("divine_hint")}
                     disabled={!canUsePowerup("divine_hint")}
-                    className="px-4 py-2 rounded-lg bg-purple-600 text-black disabled:bg-gray-600 hover:bg-purple-500 transition"
+                    className={`px-4 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${
+                      canUsePowerup("divine_hint")
+                        ? "bg-gradient-to-b from-purple-400 to-purple-500 text-white shadow-[0_4px_0_#7c3aed] active:translate-y-1 active:shadow-none"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
                   >
-                    💡 Divine Hint
+                    <Lightbulb className="w-5 h-5" />
+                    Hint ({inventory.divine_hint || 0})
                   </button>
-
                   <button
-                    onClick={() => {
-                      playSound("powerUpUsed", effectsOn); // ✅ sound for power-up
-                      handleUsePowerup("heavenly_match");
-                    }}
+                    onClick={() => handleUsePowerup("heavenly_match")}
                     disabled={!canUsePowerup("heavenly_match")}
-                    className="px-4 py-2 rounded-lg bg-yellow-400 text-black disabled:bg-gray-600 hover:bg-yellow-300 transition"
+                    className={`px-4 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${
+                      canUsePowerup("heavenly_match")
+                        ? "bg-gradient-to-b from-yellow-300 to-yellow-400 text-gray-800 shadow-[0_4px_0_#ca8a04] active:translate-y-1 active:shadow-none"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
                   >
-                    👑 Heavenly Match
+                    <Crown className="w-5 h-5" />
+                    Auto ({inventory.heavenly_match || 0})
                   </button>
                 </div>
               )}
             </motion.div>
           ) : (
-            <p className="text-gray-400 mt-4">
-              No more questions, waiting for game to end...
-            </p>
+            <div className="bg-white/95 backdrop-blur-xl rounded-2xl border-2 border-pink-300 shadow-lg px-8 py-6 text-center">
+              <p className="text-gray-600 font-medium">
+                No more questions available!
+              </p>
+              <p className="text-sm text-gray-400 mt-1">
+                Waiting for game to end...
+              </p>
+            </div>
           )}
         </div>
 
-        {/* Leaderboard Collapsible */}
+        {/* Leaderboard Sidebar */}
         <div
-          className={`transition-all duration-500 ease-in-out ${
-            showLeaderboard ? "w-full md:w-80" : "w-0 md:w-12"
-          } overflow-hidden bg-white/10 backdrop-blur-lg border-l border-white/20`}
+          className={`transition-all duration-300 ${
+            showLeaderboard ? "w-full md:w-80" : "w-full md:w-16"
+          } bg-white/10 backdrop-blur-lg border-l border-white/20 relative z-10`}
         >
-          <div className="flex justify-between items-center p-4">
-            <h2 className="text-lg font-semibold">Leaderboard</h2>
-            <button
-              className="text-sm px-2 py-1 bg-gray-700 rounded-lg hover:bg-gray-600"
-              onClick={() => setShowLeaderboard((prev) => !prev)}
-            >
-              {showLeaderboard ? "Hide" : "Show"}
-            </button>
-          </div>
-          <div className="p-4 overflow-y-auto">
-            <AnimatePresence>
-              {leaderboard.map((p, idx) => {
-                const isMe = p.user_id === user.id;
-                return (
-                  <motion.div
-                    key={p.id}
-                    layout
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={`p-2 rounded-xl mb-2 ${
-                      isMe
-                        ? "bg-gradient-to-r from-green-500/30 to-green-400/10 border border-green-400"
-                        : "bg-white/5"
-                    }`}
-                  >
-                    <span className="font-medium">
-                      {idx + 1}. {p.player_name}
-                    </span>
-                    <span className="float-right font-semibold">
-                      {p.score} pts
-                    </span>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
+          <button
+            className="w-full p-3 flex items-center justify-between bg-white/10 hover:bg-white/20 transition"
+            onClick={() => setShowLeaderboard((prev) => !prev)}
+          >
+            <span className="font-bold text-white flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-yellow-400" />
+              {showLeaderboard ? "Leaderboard" : ""}
+            </span>
+            {showLeaderboard ? (
+              <ChevronUp className="w-5 h-5 text-white" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-white" />
+            )}
+          </button>
+
+          {showLeaderboard && (
+            <div className="p-3 overflow-y-auto max-h-[60vh] md:max-h-[calc(100vh-60px)]">
+              <AnimatePresence>
+                {leaderboard.map((p, idx) => {
+                  const isMe = p.user_id === user.id;
+                  return (
+                    <motion.div
+                      key={p.id}
+                      layout
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`p-3 rounded-xl mb-2 ${
+                        isMe
+                          ? "bg-gradient-to-r from-green-400/30 to-green-500/20 border border-green-400"
+                          : "bg-white/10"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-white">
+                          {medal(idx) || `${idx + 1}.`} {p.player_name}
+                        </span>
+                        <span className="font-black text-yellow-400">
+                          {p.score}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -724,8 +847,30 @@ export default function MultiplayerGame({ effectsOn }) {
 
   // --- Waiting screen ---
   return (
-    <div className="flex items-center justify-center h-screen text-center">
-      <p className="text-xl font-semibold">⏳ Waiting for game to start...</p>
+    <div className="flex items-center justify-center h-screen relative overflow-hidden bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900">
+      {/* Stars */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {stars.map((star) => (
+          <div
+            key={star.id}
+            className="absolute rounded-full bg-white animate-twinkle"
+            style={{
+              left: star.left,
+              top: star.top,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              animationDelay: star.delay,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative z-10 bg-white/95 backdrop-blur-xl rounded-2xl border-2 border-pink-300 shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] px-8 py-6 text-center">
+        <div className="w-12 h-12 border-4 border-pink-300 border-t-pink-500 rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-xl font-black text-gray-800">
+          ⏳ Waiting for game to start...
+        </p>
+      </div>
     </div>
   );
 }

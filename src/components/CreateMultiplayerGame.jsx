@@ -4,7 +4,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/auth/AuthProvider";
 import { useMultiplayerStore } from "@/store/useMultiplayerStore";
 import { playSound } from "@/utils/sound";
-import MGlobalChat from "@/components/MGlobalChat"; // ✅ import chat
+import MGlobalChat from "@/components/MGlobalChat";
+import { ArrowLeft, Gamepad2, Clock, Sparkles, MessageCircle, X } from "lucide-react";
 
 export default function CreateMultiplayerGame({ effectsOn }) {
   const { user } = useAuth();
@@ -14,7 +15,7 @@ export default function CreateMultiplayerGame({ effectsOn }) {
   const [mode, setMode] = useState("1v1");
   const [duration, setDuration] = useState(60);
   const [loading, setLoading] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false); // ✅ chat toggle state
+  const [chatOpen, setChatOpen] = useState(false);
 
   const generateToken = () => crypto.randomUUID().split("-")[0];
 
@@ -84,116 +85,174 @@ export default function CreateMultiplayerGame({ effectsOn }) {
     }
   };
 
+  // Generate twinkling stars
+  const stars = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 3}s`,
+    size: Math.random() * 2 + 1,
+  }));
+
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-gray-900 via-gray-800 to-black p-6 gap-6">
-      {/* 🔹 Global Chat Section */}
-      <div className="w-full lg:w-1/3 order-2 lg:order-1 relative">
-        {/* 🔸 Mobile Toggle (floats above chat) */}
-        <div className="lg:hidden">
-          <button
-            onClick={() => setChatOpen(!chatOpen)}
-            className="absolute -top-14 right-1 w-50% px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition text-white z-50"
-          >
-            {chatOpen ? "Close Chat" : "Open Chat"}
-          </button>
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900">
+      {/* Animated Stars Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {stars.map((star) => (
+          <div
+            key={star.id}
+            className="absolute rounded-full bg-white animate-twinkle"
+            style={{
+              left: star.left,
+              top: star.top,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              animationDelay: star.delay,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="flex flex-col lg:flex-row p-4 md:p-6 gap-4 md:gap-6 relative z-10 flex-1">
+        {/* Chat Section (Desktop) */}
+        <div className="hidden lg:block w-1/3 order-1">
+          <div className="bg-white/95 backdrop-blur-xl rounded-2xl border-2 border-pink-300 shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] h-[calc(100vh-3rem)] overflow-hidden">
+            <div className="bg-gradient-to-r from-pink-400 to-purple-500 p-3 flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-white" />
+              <span className="font-bold text-white">Global Chat</span>
+            </div>
+            <div className="h-[calc(100%-52px)]">
+              <MGlobalChat user={user} />
+            </div>
+          </div>
         </div>
 
-        {/* 🔸 Chat Box */}
-        {chatOpen && (
-          <div className="mt-2 max-h-[300px] lg:max-h-none overflow-y-auto border border-white/20 rounded-lg relative z-40">
+        {/* Game Creation UI */}
+        <div className="flex-1 flex items-start lg:items-center justify-center order-2">
+          <div className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-2xl border-2 border-pink-300 shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] p-5 md:p-6">
+            {/* Back Button */}
+            <button
+              onClick={() => {
+                playSound("back", effectsOn);
+                navigate("/map");
+              }}
+              className="mb-4 px-4 py-2 bg-gradient-to-b from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 rounded-xl text-sm font-semibold text-gray-700 transition-all shadow-[0_3px_0_#9ca3af] active:translate-y-1 active:shadow-none flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Map
+            </button>
+
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 shadow-lg mb-3">
+                <Gamepad2 className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-800">
+                Create Multiplayer Game
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">Challenge your friends!</p>
+            </div>
+
+            {/* Mode Selection */}
+            <div className="mb-6">
+              <h3 className="font-bold mb-3 text-gray-700 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-pink-500" />
+                Select Mode
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {["1v1", "1v1v1", "1v1v1v1", "2v2"].map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => {
+                      setMode(m);
+                      playSound("select", effectsOn);
+                    }}
+                    className={`p-3 rounded-xl font-bold transition-all ${
+                      mode === m
+                        ? "bg-gradient-to-b from-pink-400 to-pink-500 text-white shadow-[0_4px_0_#be185d] scale-105"
+                        : "bg-gradient-to-b from-gray-100 to-gray-200 text-gray-700 shadow-[0_3px_0_#9ca3af] hover:from-pink-100 hover:to-pink-200"
+                    } active:translate-y-1 active:shadow-none`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Duration Selection */}
+            <div className="mb-6">
+              <h3 className="font-bold mb-3 text-gray-700 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-purple-500" />
+                Select Duration
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                {[60, 120, 180].map((sec) => (
+                  <button
+                    key={sec}
+                    onClick={() => {
+                      setDuration(sec);
+                      playSound("select", effectsOn);
+                    }}
+                    className={`p-3 rounded-xl font-bold transition-all ${
+                      duration === sec
+                        ? "bg-gradient-to-b from-green-400 to-green-500 text-white shadow-[0_4px_0_#166534] scale-105"
+                        : "bg-gradient-to-b from-gray-100 to-gray-200 text-gray-700 shadow-[0_3px_0_#9ca3af] hover:from-green-100 hover:to-green-200"
+                    } active:translate-y-1 active:shadow-none`}
+                  >
+                    {sec / 60} min
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Create Game Button */}
+            <button
+              onClick={handleCreateGame}
+              disabled={loading}
+              className={`w-full py-4 rounded-xl font-black text-lg transition-all ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed shadow-none"
+                  : "bg-gradient-to-b from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white shadow-[0_6px_0_#166534] active:translate-y-1 active:shadow-[0_2px_0_#166534]"
+              }`}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Creating...
+                </span>
+              ) : (
+                "🎮 Create Game"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Chat Toggle Button */}
+      <button
+        onClick={() => setChatOpen(!chatOpen)}
+        className="lg:hidden fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 text-white shadow-[0_4px_0_#7c3aed,0_8px_16px_rgba(124,58,237,0.4)] flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#7c3aed]"
+      >
+        {chatOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+      </button>
+
+      {/* Mobile Chat Overlay */}
+      {chatOpen && (
+        <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 h-[60vh] bg-white/95 backdrop-blur-xl rounded-t-3xl border-t-2 border-x-2 border-pink-300 shadow-[0_-8px_20px_rgba(190,24,93,0.3)]">
+          <div className="bg-gradient-to-r from-pink-400 to-purple-500 p-3 rounded-t-3xl flex items-center justify-between">
+            <span className="font-bold text-white flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Global Chat
+            </span>
+            <button onClick={() => setChatOpen(false)} className="text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="h-[calc(100%-52px)]">
             <MGlobalChat user={user} />
           </div>
-        )}
-
-        {/* 🔸 Desktop Toggle (stays below chat) */}
-        <div className="hidden lg:block mt-2">
-          <button
-            onClick={() => setChatOpen(!chatOpen)}
-            className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition text-white"
-          >
-            {chatOpen ? "Close Chat" : "Open Chat"}
-          </button>
         </div>
-      </div>
-
-      {/* 🔹 Game Creation UI */}
-      <div className="flex-1 flex items-center justify-center order-1 lg:order-2">
-        <div className="fixed top-0 max-w-md w-full bg-white/10 rounded-2xl shadow-lg p-6 border border-white/20 text-white">
-          {/* Back Button */}
-          <button
-            onClick={() => {
-              playSound("back", effectsOn);
-              navigate("/map");
-            }}
-            className="mb-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition"
-          >
-            ← Back
-          </button>
-
-          <h2 className="text-2xl font-bold text-center mb-6">
-            Create Multiplayer Game
-          </h2>
-
-          {/* Mode Selection */}
-          <div className="mb-6">
-            <h3 className="font-semibold mb-3 text-lg">Select Mode</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {["1v1", "1v1v1", "1v1v1v1", "2v2"].map((m) => (
-                <button
-                  key={m}
-                  onClick={() => {
-                    setMode(m);
-                    playSound("select", effectsOn);
-                  }}
-                  className={`p-3 rounded-lg font-medium border transition-all ${
-                    mode === m
-                      ? "bg-blue-500 text-white border-blue-400"
-                      : "bg-white/10 border-white/20 hover:bg-white/20"
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Duration Selection */}
-          <div className="mb-6">
-            <h3 className="font-semibold mb-3 text-lg">Select Duration</h3>
-            <div className="grid grid-cols-3 gap-3">
-              {[60, 120, 180].map((sec) => (
-                <button
-                  key={sec}
-                  onClick={() => {
-                    setDuration(sec);
-                    playSound("select", effectsOn);
-                  }}
-                  className={`p-3 rounded-lg font-medium border transition-all ${
-                    duration === sec
-                      ? "bg-green-500 text-white border-green-400"
-                      : "bg-white/10 border-white/20 hover:bg-white/20"
-                  }`}
-                >
-                  {sec / 60} min
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Create Game Button */}
-          <button
-            onClick={handleCreateGame}
-            disabled={loading}
-            className={`w-full py-3 rounded-lg font-semibold transition-all ${
-              loading
-                ? "bg-gray-500 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-400"
-            }`}
-          >
-            {loading ? "Creating..." : "Create Game"}
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
