@@ -25,8 +25,12 @@ export default function WrongAnswerModal({ isOpen, onRetry, onBack, effectsOn, c
         </Transition.Child>
 
         <div className="fixed inset-0 flex items-center justify-center p-3 md:p-4">
-          <Dialog.Panel className="w-full max-w-xs md:max-w-sm rounded-2xl bg-gradient-to-br from-red-50 via-pink-50 to-orange-50 border-2 border-red-300 p-6 shadow-[0_8px_0_#dc2626,0_12px_20px_rgba(220,38,38,0.4)] text-center space-y-3 md:space-y-4">
-            <Dialog.Title className="text-xl md:text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+          <Dialog.Panel className="w-full max-w-xs md:max-w-sm rounded-2xl bg-gradient-to-br from-cranberry/20 via-pink-50 to-red-50 border-2 border-cranberry p-6 shadow-[0_8px_0_#991b1b,0_12px_20px_rgba(153,27,27,0.4)] text-center space-y-3 md:space-y-4 relative overflow-hidden">
+            {/* Christmas decorations */}
+            <div className="absolute top-2 left-3 text-lg">🔔</div>
+            <div className="absolute top-2 right-3 text-lg">🔔</div>
+            
+            <Dialog.Title className="text-xl md:text-2xl font-bold bg-gradient-to-r from-cranberry to-christmasRed bg-clip-text text-transparent">
               ❌ Incorrect!
             </Dialog.Title>
             <Dialog.Description className="text-gray-600">

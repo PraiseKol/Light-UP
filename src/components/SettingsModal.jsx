@@ -115,11 +115,20 @@ export default function SettingsModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="relative bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-6 rounded-2xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] w-[90%] max-w-md border-2 border-pink-200">
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-yellow-100/10 to-transparent pointer-events-none" />
+      <div className="relative bg-gradient-to-br from-christmasGreen/10 via-white to-christmasRed/10 p-6 rounded-2xl shadow-[0_8px_0_#166534,0_12px_20px_rgba(22,101,52,0.4)] w-[90%] max-w-md border-2 border-christmasGreen/30 overflow-hidden">
+        {/* Christmas wreath decoration */}
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-4xl animate-ornament-swing">🎄</div>
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-christmasGold/5 to-transparent pointer-events-none" />
+        
+        {/* Snowflake pattern background */}
+        <div className="absolute inset-0 opacity-5 pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <span key={i} className="absolute text-2xl" style={{ top: `${20 + i * 10}%`, left: `${10 + (i % 3) * 35}%` }}>❄</span>
+          ))}
+        </div>
 
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-4 text-center">
-          ⚙️ Player Settings
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-christmasGreen to-christmasRed bg-clip-text text-transparent mb-4 text-center mt-4">
+          🎅 Player Settings
         </h2>
         <div className="text-center text-xs text-blue-900"><i>Refresh after saving to see changes </i> </div>
         {/* Player Name */}

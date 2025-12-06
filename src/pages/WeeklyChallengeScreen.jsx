@@ -484,7 +484,23 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a365d] via-[#2d3748] to-[#1a202c] relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#0c1445] via-[#1e3a5f] to-[#1b4332] relative overflow-hidden">
+      {/* Gentle snowfall */}
+      {[...Array(30)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute text-white/50 animate-snowfall pointer-events-none"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: '-10px',
+            fontSize: `${Math.random() * 8 + 4}px`,
+            animationDuration: `${Math.random() * 10 + 10}s`,
+            animationDelay: `${Math.random() * 5}s`,
+          }}
+        >
+          ❄
+        </div>
+      ))}
       {/* HUD */}
       <div className="sticky top-0 z-10 flex justify-between items-center px-6 py-4 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md shadow-[0_4px_0_#be185d] rounded-b-2xl border-b-2 border-pink-200">
         <div className="flex items-center gap-2 bg-white/90 px-4 py-2 rounded-full shadow-[0_3px_0_#f472b6]">

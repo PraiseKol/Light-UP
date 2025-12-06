@@ -32,12 +32,19 @@ export default function LeaderboardModal({
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="🏆 Leaderboards"
+      title="🎄 Leaderboards 🏆"
       className="max-w-2xl"
     >
-      <div className="space-y-4">
+      <div className="space-y-4 relative">
+        {/* Christmas decoration at top */}
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex gap-2">
+          <span className="text-xl animate-ornament-swing">🎄</span>
+          <span className="text-xl animate-ornament-swing" style={{ animationDelay: '0.3s' }}>⭐</span>
+          <span className="text-xl animate-ornament-swing" style={{ animationDelay: '0.6s' }}>🎄</span>
+        </div>
+        
         {/* Toggle between Overall, Weekly, and Monthly */}
-        <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+        <div className="flex gap-2 bg-gradient-to-r from-christmasGreen/20 to-christmasRed/20 p-1 rounded-xl mt-6">
           <button
             onClick={() => {
               playSound("switch", true);
@@ -97,10 +104,13 @@ export default function LeaderboardModal({
               
               // Medal colors for top 3
               const medalColor = 
-                rank === 1 ? "text-yellow-500" :
-                rank === 2 ? "text-gray-400" :
+                rank === 1 ? "text-christmasGold" :
+                rank === 2 ? "text-gray-300" :
                 rank === 3 ? "text-amber-600" :
                 "text-gray-500";
+              
+              // Christmas crown for #1
+              const showCrown = rank === 1;
 
               return (
                 <div
@@ -111,10 +121,16 @@ export default function LeaderboardModal({
                       : "bg-white hover:shadow-md"
                   }`}
                 >
-                  {/* Rank */}
-                  <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-black text-lg ${
-                    rank <= 3 ? "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white" : "bg-gray-200 text-gray-600"
+                  {/* Rank with Christmas styling */}
+                  <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-black text-lg relative ${
+                    rank === 1 ? "bg-gradient-to-br from-christmasGold to-yellow-600 text-white" :
+                    rank === 2 ? "bg-gradient-to-br from-gray-300 to-gray-400 text-white" :
+                    rank === 3 ? "bg-gradient-to-br from-amber-500 to-amber-700 text-white" :
+                    "bg-gray-200 text-gray-600"
                   }`}>
+                    {showCrown && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-lg">👑</span>
+                    )}
                     {rank <= 3 ? (
                       <span className={medalColor}>
                         {rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉"}

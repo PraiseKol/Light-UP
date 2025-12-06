@@ -357,11 +357,43 @@ export default function GameScreen({
     
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900 overflow-hidden relative">
-      {/* Animated twinkling stars */}
-      {[...Array(30)].map((_, i) => (
+    <div className="h-[100dvh] flex flex-col bg-gradient-to-b from-[#0c1445] via-[#1e3a5f] to-[#0d1b2a] overflow-hidden relative">
+      {/* Christmas lights border at top */}
+      <div className="absolute top-0 left-0 right-0 flex justify-around py-1 z-20">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            className="w-2 h-3 rounded-full animate-twinkle-lights"
+            style={{
+              backgroundColor: ['#ff0000', '#00ff00', '#ffff00', '#ff00ff'][i % 4],
+              boxShadow: `0 0 6px ${['#ff0000', '#00ff00', '#ffff00', '#ff00ff'][i % 4]}`,
+              animationDelay: `${i * 0.15}s`,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Gentle snowfall */}
+      {[...Array(20)].map((_, i) => (
         <div
           key={i}
+          className="absolute text-white/60 animate-snowfall pointer-events-none"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: '-10px',
+            fontSize: `${Math.random() * 6 + 4}px`,
+            animationDuration: `${Math.random() * 8 + 10}s`,
+            animationDelay: `${Math.random() * 5}s`,
+          }}
+        >
+          ❄
+        </div>
+      ))}
+      
+      {/* Twinkling stars */}
+      {[...Array(25)].map((_, i) => (
+        <div
+          key={`star-${i}`}
           className="absolute w-1 h-1 bg-white rounded-full animate-pulse pointer-events-none"
           style={{
             top: `${Math.random() * 100}%`,

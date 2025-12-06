@@ -25,8 +25,12 @@ export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn, 
         </Transition.Child>
 
         <div className="fixed inset-0 flex items-center justify-center p-3 md:p-4">
-          <Dialog.Panel className="w-full max-w-xs md:max-w-sm rounded-2xl bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 border-2 border-orange-300 p-6 shadow-[0_8px_0_#ea580c,0_12px_20px_rgba(234,88,12,0.4)] text-center space-y-3 md:space-y-4">
-            <Dialog.Title className="text-xl md:text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+          <Dialog.Panel className="w-full max-w-xs md:max-w-sm rounded-2xl bg-gradient-to-br from-frostBlue/30 via-white to-snowWhite border-2 border-frostBlue p-6 shadow-[0_8px_0_#3b82f6,0_12px_20px_rgba(59,130,246,0.4)] text-center space-y-3 md:space-y-4 relative overflow-hidden">
+            {/* Christmas decorations */}
+            <div className="absolute top-2 left-3 text-lg">❄️</div>
+            <div className="absolute top-2 right-3 text-lg">❄️</div>
+            
+            <Dialog.Title className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-frostBlue bg-clip-text text-transparent">
               ⏰ Time's Up!
             </Dialog.Title>
             <Dialog.Description className="text-gray-700">
