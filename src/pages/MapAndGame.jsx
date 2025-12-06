@@ -42,6 +42,7 @@ import {
   getWeeklyChallengeStatus,
   hasPlayedThisWeek,
 } from "@/utils/weeklyChallenge";
+import { getActivePopGameSession, getPlayerAttempts } from "@/lib/api/popGame";
 import avatar from "@/assets/avatar.png";
 
 // Avatar configuration matching SettingsModal
@@ -81,6 +82,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     fromPosition: null,
     toPosition: null,
   });
+  const [popGameActive, setPopGameActive] = useState(false);
+  const [popGameAttemptsLeft, setPopGameAttemptsLeft] = useState(0);
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
@@ -217,6 +220,36 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       setShowExplainerVideo(true);
     }
   }, [gameUser]);
+
+  // Check for active pop game session
+  useEffect(() => {
+    const checkPopGame = async () => {
+      if (!user?.id) return;
+      try {
+        const activeSession = await getActivePopGameSession();
+        if (activeSession) {
+          const attempts = await getPlayerAttempts(activeSession.id, user.id);
+          setPopGameActive(true);
+          setPopGameAttemptsLeft(3 - attempts.length);
+        } else {
+          setPopGameActive(false);
+          setPopGameAttemptsLeft(0);
+        }
+      } catch (err) {
+        console.error("Error checking pop game:", err);
+      }
+    };
+
+    checkPopGame();
+    
+    // Subscribe to pop game session updates
+    const channel = supabase
+      .channel('pop-game-status')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pop_game_sessions' }, checkPopGame)
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [user?.id]);
 
   const startLevel = async (level) => {
     if (!user || !level) return;
@@ -586,6 +619,27 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     <div className="relative w-full h-screen flex flex-col overflow-hidden">
       <PWAInstallPrompt />
       <MapBackground />
+
+      {/* Pop Game Red Bulb Indicator */}
+      {popGameActive && popGameAttemptsLeft > 0 && !selectedLevel && (
+        <button
+          onClick={() => {
+            playSound("optionSelect", effectsOn);
+            navigate("/pop-game");
+          }}
+          className="fixed left-3 top-1/3 z-50 flex flex-col items-center animate-bounce"
+        >
+          <div className="w-14 h-14 rounded-full bg-gradient-to-b from-red-400 via-red-500 to-red-700 shadow-[0_0_20px_rgba(239,68,68,0.8),0_4px_0_#991b1b] border-2 border-white/50 flex items-center justify-center ring-4 ring-red-300/50">
+            <span className="text-2xl">🎮</span>
+          </div>
+          <span className="text-[10px] font-bold text-white bg-red-600/90 px-2 py-0.5 rounded-full mt-1 shadow-lg">
+            TAP!
+          </span>
+          <span className="text-[9px] text-white/80 bg-black/50 px-1.5 py-0.5 rounded-full mt-0.5">
+            {popGameAttemptsLeft} left
+          </span>
+        </button>
+      )}
 
       {/* Fixed Top Header */}
       <header className="fixed top-0 left-0 right-0 z-50 candy-gradient py-2 lg:py-3 px-3 lg:px-4 shadow-[0_4px_20px_rgba(79,156,249,0.5)] border-b-4 border-white/30">
