@@ -14,7 +14,8 @@ const PopGameItem = ({ item, onPop }) => {
   
   const handleClick = (e) => {
     e.stopPropagation();
-    onPop(item.id, config.points);
+    const rect = e.currentTarget.getBoundingClientRect();
+    onPop(item.id, config.points, rect.left + rect.width / 2, rect.top);
   };
 
   return (
