@@ -133,6 +133,196 @@ export type Database = {
           },
         ]
       }
+      competition_answers: {
+        Row: {
+          answered_at: string | null
+          competition_id: string
+          id: string
+          is_correct: boolean | null
+          player_id: string
+          question_id: string
+          round_number: number
+          score: number | null
+        }
+        Insert: {
+          answered_at?: string | null
+          competition_id: string
+          id?: string
+          is_correct?: boolean | null
+          player_id: string
+          question_id: string
+          round_number: number
+          score?: number | null
+        }
+        Update: {
+          answered_at?: string | null
+          competition_id?: string
+          id?: string
+          is_correct?: boolean | null
+          player_id?: string
+          question_id?: string
+          round_number?: number
+          score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_answers_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_answers_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "competition_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_players: {
+        Row: {
+          competition_id: string
+          current_round_score: number | null
+          group_letter: string | null
+          id: string
+          is_qualified: boolean | null
+          joined_at: string | null
+          player_name: string | null
+          round_eliminated: number | null
+          selection_type: string | null
+          total_score: number | null
+          user_id: string
+        }
+        Insert: {
+          competition_id: string
+          current_round_score?: number | null
+          group_letter?: string | null
+          id?: string
+          is_qualified?: boolean | null
+          joined_at?: string | null
+          player_name?: string | null
+          round_eliminated?: number | null
+          selection_type?: string | null
+          total_score?: number | null
+          user_id: string
+        }
+        Update: {
+          competition_id?: string
+          current_round_score?: number | null
+          group_letter?: string | null
+          id?: string
+          is_qualified?: boolean | null
+          joined_at?: string | null
+          player_name?: string | null
+          round_eliminated?: number | null
+          selection_type?: string | null
+          total_score?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_players_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_rounds: {
+        Row: {
+          competition_id: string
+          ended_at: string | null
+          group_a_letter: string | null
+          group_a_score: number | null
+          group_b_letter: string | null
+          group_b_score: number | null
+          id: string
+          round_number: number
+          started_at: string | null
+          status: string | null
+          winning_group: string | null
+        }
+        Insert: {
+          competition_id: string
+          ended_at?: string | null
+          group_a_letter?: string | null
+          group_a_score?: number | null
+          group_b_letter?: string | null
+          group_b_score?: number | null
+          id?: string
+          round_number: number
+          started_at?: string | null
+          status?: string | null
+          winning_group?: string | null
+        }
+        Update: {
+          competition_id?: string
+          ended_at?: string | null
+          group_a_letter?: string | null
+          group_a_score?: number | null
+          group_b_letter?: string | null
+          group_b_score?: number | null
+          id?: string
+          round_number?: number
+          started_at?: string | null
+          status?: string | null
+          winning_group?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_rounds_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          current_round: number | null
+          id: string
+          round_ends_at: string | null
+          round_started_at: string | null
+          second_place_user_id: string | null
+          status: Database["public"]["Enums"]["competition_status"]
+          third_place_user_id: string | null
+          winner_user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_round?: number | null
+          id?: string
+          round_ends_at?: string | null
+          round_started_at?: string | null
+          second_place_user_id?: string | null
+          status?: Database["public"]["Enums"]["competition_status"]
+          third_place_user_id?: string | null
+          winner_user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_round?: number | null
+          id?: string
+          round_ends_at?: string | null
+          round_started_at?: string | null
+          second_place_user_id?: string | null
+          status?: Database["public"]["Enums"]["competition_status"]
+          third_place_user_id?: string | null
+          winner_user_id?: string | null
+        }
+        Relationships: []
+      }
       daily_streaks: {
         Row: {
           created_at: string | null
@@ -1125,7 +1315,13 @@ export type Database = {
       validate_invite_code: { Args: { code_input: string }; Returns: Json }
     }
     Enums: {
-      [_ in never]: never
+      competition_status:
+        | "waiting"
+        | "round_1"
+        | "round_2"
+        | "round_3"
+        | "final"
+        | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1252,6 +1448,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      competition_status: [
+        "waiting",
+        "round_1",
+        "round_2",
+        "round_3",
+        "final",
+        "completed",
+      ],
+    },
   },
 } as const
