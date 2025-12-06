@@ -3,19 +3,21 @@ import { useMemo } from "react";
 
 export default function MapBackground() {
   // Generate snowflakes with random properties
-  const snowflakes = useMemo(() => 
-    [...Array(50)].map((_, i) => ({
-      id: i,
-      left: `${Math.random() * 100}%`,
-      size: Math.random() * 10 + 4,
-      duration: Math.random() * 10 + 8,
-      delay: Math.random() * 8,
-      opacity: Math.random() * 0.7 + 0.3,
-    })), []
+  const snowflakes = useMemo(
+    () =>
+      [...Array(50)].map((_, i) => ({
+        id: i,
+        left: `${Math.random() * 100}%`,
+        size: Math.random() * 10 + 4,
+        duration: Math.random() * 10 + 8,
+        delay: Math.random() * 8,
+        opacity: Math.random() * 0.7 + 0.3,
+      })),
+    [],
   );
 
   // Christmas lights colors
-  const lightColors = ['#ff0000', '#00ff00', '#ffff00', '#ff00ff', '#00ffff', '#ff6600'];
+  const lightColors = ["#ff0000", "#00ff00", "#ffff00", "#ff00ff", "#00ffff", "#ff6600"];
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
@@ -63,18 +65,18 @@ export default function MapBackground() {
       </div>
 
       {/* Flying Reindeer */}
-      <motion.div 
+      <motion.div
         className="absolute top-[12%] text-3xl"
-        animate={{ 
-          x: ['-10%', '110%'],
-          y: [0, -20, 0, -15, 0]
+        animate={{
+          x: ["-10%", "110%"],
+          y: [0, -20, 0, -15, 0],
         }}
-        transition={{ 
+        transition={{
           x: { duration: 25, repeat: Infinity, ease: "linear" },
-          y: { duration: 3, repeat: Infinity }
+          y: { duration: 3, repeat: Infinity },
         }}
       >
-        🦌
+        🕊️
       </motion.div>
 
       {/* Falling Snowflakes */}
@@ -85,7 +87,7 @@ export default function MapBackground() {
             className="absolute text-white animate-snowfall"
             style={{
               left: flake.left,
-              top: '-20px',
+              top: "-20px",
               fontSize: `${flake.size}px`,
               animationDuration: `${flake.duration}s`,
               animationDelay: `${flake.delay}s`,
@@ -114,7 +116,9 @@ export default function MapBackground() {
           <rect x="125" y="45" width="45" height="55" fill="#1a2a1e" />
           <polygon points="147.5,15 120,45 175,45" fill="#1a2a1e" />
           <rect x="143" y="20" width="9" height="20" fill="#1a2a1e" />
-          <text x="145" y="35" fontSize="8" fill="#ffd700">✝</text>
+          <text x="145" y="35" fontSize="8" fill="#ffd700">
+            ✝
+          </text>
           <rect x="138" y="60" width="8" height="8" fill="#ffd700" opacity="0.8" />
           <rect x="155" y="60" width="8" height="8" fill="#ffd700" opacity="0.6" />
         </svg>
@@ -129,26 +133,46 @@ export default function MapBackground() {
           <rect x="25" y="75" width="10" height="10" fill="#5c4033" />
           {/* Tree lights */}
           <circle cx="25" cy="25" r="2" fill="#ff0000" className="animate-twinkle-lights" />
-          <circle cx="35" cy="30" r="2" fill="#ffff00" className="animate-twinkle-lights" style={{ animationDelay: '0.3s' }} />
-          <circle cx="20" cy="45" r="2" fill="#00ff00" className="animate-twinkle-lights" style={{ animationDelay: '0.6s' }} />
-          <circle cx="40" cy="50" r="2" fill="#ff00ff" className="animate-twinkle-lights" style={{ animationDelay: '0.9s' }} />
-          <circle cx="30" cy="65" r="2" fill="#00ffff" className="animate-twinkle-lights" style={{ animationDelay: '1.2s' }} />
+          <circle
+            cx="35"
+            cy="30"
+            r="2"
+            fill="#ffff00"
+            className="animate-twinkle-lights"
+            style={{ animationDelay: "0.3s" }}
+          />
+          <circle
+            cx="20"
+            cy="45"
+            r="2"
+            fill="#00ff00"
+            className="animate-twinkle-lights"
+            style={{ animationDelay: "0.6s" }}
+          />
+          <circle
+            cx="40"
+            cy="50"
+            r="2"
+            fill="#ff00ff"
+            className="animate-twinkle-lights"
+            style={{ animationDelay: "0.9s" }}
+          />
+          <circle
+            cx="30"
+            cy="65"
+            r="2"
+            fill="#00ffff"
+            className="animate-twinkle-lights"
+            style={{ animationDelay: "1.2s" }}
+          />
         </svg>
       </div>
 
       {/* Snow-covered rolling hills */}
       <div className="absolute bottom-0 left-0 right-0 h-[30%]">
-        <svg
-          className="absolute bottom-0 w-full h-full"
-          viewBox="0 0 1200 300"
-          preserveAspectRatio="none"
-        >
+        <svg className="absolute bottom-0 w-full h-full" viewBox="0 0 1200 300" preserveAspectRatio="none">
           {/* Back hill with snow cap */}
-          <path
-            d="M0,150 Q200,80 400,120 T800,100 L1200,140 L1200,300 L0,300 Z"
-            fill="#166534"
-            opacity="0.6"
-          />
+          <path d="M0,150 Q200,80 400,120 T800,100 L1200,140 L1200,300 L0,300 Z" fill="#166534" opacity="0.6" />
           <path
             d="M0,150 Q200,80 400,120 T800,100 L1200,140"
             fill="none"
@@ -157,18 +181,8 @@ export default function MapBackground() {
             opacity="0.4"
           />
           {/* Front hill with snow cap */}
-          <path
-            d="M0,180 Q300,120 600,160 T1200,180 L1200,300 L0,300 Z"
-            fill="#22c55e"
-            opacity="0.8"
-          />
-          <path
-            d="M0,180 Q300,120 600,160 T1200,180"
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="10"
-            opacity="0.6"
-          />
+          <path d="M0,180 Q300,120 600,160 T1200,180 L1200,300 L0,300 Z" fill="#22c55e" opacity="0.8" />
+          <path d="M0,180 Q300,120 600,160 T1200,180" fill="none" stroke="#ffffff" strokeWidth="10" opacity="0.6" />
         </svg>
       </div>
 
@@ -182,7 +196,7 @@ export default function MapBackground() {
       <div className="absolute bottom-0 right-[5%] w-20 h-7 bg-white/45 rounded-t-full blur-sm" />
 
       {/* Snowman */}
-      <motion.div 
+      <motion.div
         className="absolute bottom-[12%] right-[30%]"
         animate={{ rotate: [-2, 2, -2] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -191,7 +205,7 @@ export default function MapBackground() {
       </motion.div>
 
       {/* Second Snowman */}
-      <motion.div 
+      <motion.div
         className="absolute bottom-[14%] left-[25%]"
         animate={{ scale: [1, 1.05, 1] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -209,7 +223,7 @@ export default function MapBackground() {
       </div>
 
       {/* Animated Dove */}
-      <motion.div 
+      <motion.div
         className="absolute top-[18%] right-[15%] text-3xl opacity-70"
         animate={{ y: [0, -15, 0], rotate: [0, 8, -8, 0] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
@@ -218,7 +232,7 @@ export default function MapBackground() {
       </motion.div>
 
       {/* Glowing Cross with Christmas candle light effect */}
-      <motion.div 
+      <motion.div
         className="absolute top-[35%] left-[8%] text-4xl"
         animate={{ opacity: [0.4, 0.9, 0.4], scale: [1, 1.1, 1] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -227,7 +241,7 @@ export default function MapBackground() {
       </motion.div>
 
       {/* Animated Angel */}
-      <motion.div 
+      <motion.div
         className="absolute top-[55%] right-[10%] text-3xl opacity-60"
         animate={{ y: [-8, 8, -8] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -236,7 +250,7 @@ export default function MapBackground() {
       </motion.div>
 
       {/* Second Dove */}
-      <motion.div 
+      <motion.div
         className="absolute top-[70%] left-[15%] text-2xl opacity-50"
         animate={{ x: [-5, 5, -5], rotate: [-5, 5, -5] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
@@ -245,7 +259,7 @@ export default function MapBackground() {
       </motion.div>
 
       {/* Glowing Cross Bottom */}
-      <motion.div 
+      <motion.div
         className="absolute bottom-[35%] right-[18%] text-3xl"
         animate={{ opacity: [0.3, 0.7, 0.3] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
