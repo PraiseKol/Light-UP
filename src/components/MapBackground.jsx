@@ -175,6 +175,30 @@ export default function MapBackground() {
       {/* Snow ground overlay */}
       <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/30 to-transparent" />
 
+      {/* Snow drifts/piles */}
+      <div className="absolute bottom-0 left-[10%] w-24 h-8 bg-white/60 rounded-t-full blur-sm" />
+      <div className="absolute bottom-0 left-[35%] w-32 h-10 bg-white/50 rounded-t-full blur-sm" />
+      <div className="absolute bottom-0 right-[20%] w-28 h-9 bg-white/55 rounded-t-full blur-sm" />
+      <div className="absolute bottom-0 right-[5%] w-20 h-7 bg-white/45 rounded-t-full blur-sm" />
+
+      {/* Snowman */}
+      <motion.div 
+        className="absolute bottom-[12%] right-[30%]"
+        animate={{ rotate: [-2, 2, -2] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <div className="text-4xl">⛄</div>
+      </motion.div>
+
+      {/* Second Snowman */}
+      <motion.div 
+        className="absolute bottom-[14%] left-[25%]"
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <div className="text-3xl opacity-80">⛄</div>
+      </motion.div>
+
       {/* Nativity Scene silhouette */}
       <div className="absolute bottom-[25%] left-[40%] opacity-30">
         <svg width="100" height="60" viewBox="0 0 100 60" fill="none">

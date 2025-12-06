@@ -14,10 +14,11 @@ import {
 // Avatar configuration with unlock requirements
 const AVATARS = [
   { id: 'avatar1', name: 'Dove', emoji: '🕊️', unlockPhase: 0 },
-  { id: 'avatar2', name: 'Lamb', emoji: '🐑', unlockPhase: 0 },
+  { id: 'avatar2', name: 'Santa', emoji: '🎅', unlockPhase: 0 },
   { id: 'avatar3', name: 'Lion', emoji: '🦁', unlockPhase: 5 },
   { id: 'avatar4', name: 'Eagle', emoji: '🦅', unlockPhase: 10 },
   { id: 'avatar5', name: 'Crown', emoji: '👑', unlockPhase: 20 },
+  { id: 'avatar6', name: 'Christmas Tree', emoji: '🎄', unlockPhase: 0 },
 ];
 
 // const soundMap = {
@@ -207,7 +208,7 @@ export default function SettingsModal({
         {/* Avatar Selection */}
         <div className="border-t border-gray-200 pt-4 mt-4">
           <label className="text-sm font-medium mb-3 block text-gray-800">🎭 Choose Your Avatar</label>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-6 gap-2">
             {AVATARS.map(avatar => {
               const unlocked = isAvatarUnlocked(avatar.id);
               const isSelected = selectedAvatar === avatar.id;
