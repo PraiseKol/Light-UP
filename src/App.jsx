@@ -25,6 +25,8 @@ import AdminRoute from "@/components/AdminRoute";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import PaymentSuccess from "@/pages/PaymentSuccess";
+import CompetitionPage from "@/pages/CompetitionPage";
+import CompetitionViewerPage from "@/pages/CompetitionViewerPage";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react"; // ✅ Import Vercel Analytics
@@ -188,6 +190,17 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+
+        {/* Competition */}
+        <Route
+          path="/competition"
+          element={
+            <ProtectedRoute>
+              <CompetitionPage effectsOn={effectsOn} />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/competition/view" element={<CompetitionViewerPage />} />
 
         {/* Admin */}
         <Route path="/admin/login" element={<AdminLogin />} />

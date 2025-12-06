@@ -964,6 +964,22 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               </button>
             </Tooltip>
 
+            {/* Competition */}
+            <Tooltip content="Join the 24-player tournament">
+              <button
+                onClick={() => {
+                  playSound("optionSelect", effectsOn);
+                  navigate("/competition");
+                }}
+                className="relative"
+              >
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-red-300 via-red-400 to-red-600 shadow-[0_4px_0_#b91c1c,0_6px_10px_rgba(185,28,28,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#b91c1c] transition-all hover:scale-105">
+                  <span className="text-2xl">🏆</span>
+                </div>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Compete</span>
+              </button>
+            </Tooltip>
+
             {/* Events - Highlighted, Slightly Larger */}
             <Tooltip content={challengeAllowed ? "Play weekly challenge" : `Opens ${countdownText}`}>
               <button
@@ -1095,10 +1111,26 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               }}
               className="flex flex-col items-center gap-1"
             >
-              <div className="w-14 h-14 rounded-full bg-gradient-to-b from-purple-300 via-purple-400 to-purple-600 shadow-[0_4px_0_#6b21a8,0_6px_10px_rgba(107,33,168,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#6b21a8] transition-all">
-                <span className="text-2xl">🎮</span>
+              <div className="w-12 h-12 rounded-full bg-gradient-to-b from-purple-300 via-purple-400 to-purple-600 shadow-[0_4px_0_#6b21a8,0_6px_10px_rgba(107,33,168,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#6b21a8] transition-all">
+                <span className="text-xl">🎮</span>
               </div>
-              <span className="text-[10px] font-bold text-pink-900">Multi</span>
+              <span className="text-[9px] font-bold text-pink-900">Multi</span>
+            </button>
+          </Tooltip>
+
+          {/* Competition */}
+          <Tooltip content="24-player tournament">
+            <button
+              onClick={() => {
+                playSound("optionSelect", effectsOn);
+                navigate("/competition");
+              }}
+              className="flex flex-col items-center gap-1"
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-b from-red-300 via-red-400 to-red-600 shadow-[0_4px_0_#b91c1c,0_6px_10px_rgba(185,28,28,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#b91c1c] transition-all">
+                <span className="text-xl">🏆</span>
+              </div>
+              <span className="text-[9px] font-bold text-pink-900">Compete</span>
             </button>
           </Tooltip>
 
@@ -1111,10 +1143,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               }}
               className="flex flex-col items-center gap-1"
             >
-              <div className="w-14 h-14 rounded-full bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 shadow-[0_4px_0_#374151,0_6px_10px_rgba(55,65,81,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#374151] transition-all">
-                <span className="text-2xl">⋯</span>
+              <div className="w-12 h-12 rounded-full bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 shadow-[0_4px_0_#374151,0_6px_10px_rgba(55,65,81,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#374151] transition-all">
+                <span className="text-xl">⋯</span>
               </div>
-              <span className="text-[10px] font-bold text-pink-900">More</span>
+              <span className="text-[9px] font-bold text-pink-900">More</span>
             </button>
           </Tooltip>
         </div>
