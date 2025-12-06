@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 
 const GAME_DURATION = 30;
 const MAX_ATTEMPTS = 3;
+const COMBO_TIMEOUT = 1000; // 1 second to maintain combo
+const MAX_COMBO = 10;
 
 // Spawn rates based on rarity (lower points = more common)
 const ITEM_TYPES = [
@@ -24,6 +26,15 @@ const ITEM_TYPES = [
   { type: 'dove', weight: 13 },
   { type: 'cross', weight: 7 }
 ];
+
+const getComboMultiplier = (combo) => {
+  if (combo >= 10) return 2.5;
+  if (combo >= 7) return 2.0;
+  if (combo >= 5) return 1.75;
+  if (combo >= 3) return 1.5;
+  if (combo >= 2) return 1.25;
+  return 1;
+};
 
 const getRandomItemType = () => {
   const totalWeight = ITEM_TYPES.reduce((sum, item) => sum + item.weight, 0);
@@ -48,8 +59,12 @@ const PopGamePage = () => {
   const [items, setItems] = useState([]);
   const [playerName, setPlayerName] = useState('');
   const [bestScore, setBestScore] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [showComboPopup, setShowComboPopup] = useState(false);
+  const [lastPoints, setLastPoints] = useState({ points: 0, bonus: 0, x: 0, y: 0 });
   const itemIdRef = useRef(0);
   const gameAreaRef = useRef(null);
+  const comboTimerRef = useRef(null);
 
   // Load session and attempts
   useEffect(() => {
@@ -177,9 +192,36 @@ const PopGamePage = () => {
     saveScore();
   }, [gameState]);
 
-  const handlePop = useCallback((itemId, points) => {
+  const handlePop = useCallback((itemId, points, x, y) => {
     setItems(prev => prev.filter(item => item.id !== itemId));
-    setScore(prev => prev + points);
+    
+    // Clear existing combo timer
+    if (comboTimerRef.current) {
+      clearTimeout(comboTimerRef.current);
+    }
+    
+    // Calculate combo and bonus
+    setCombo(prev => {
+      const newCombo = Math.min(prev + 1, MAX_COMBO);
+      const multiplier = getComboMultiplier(newCombo);
+      const bonusPoints = Math.floor(points * multiplier) - points;
+      const totalPoints = points + bonusPoints;
+      
+      setScore(s => s + totalPoints);
+      
+      // Show popup with points info
+      setLastPoints({ points, bonus: bonusPoints, x, y });
+      setShowComboPopup(true);
+      setTimeout(() => setShowComboPopup(false), 300);
+      
+      // Reset combo after timeout
+      comboTimerRef.current = setTimeout(() => {
+        setCombo(0);
+      }, COMBO_TIMEOUT);
+      
+      return newCombo;
+    });
+    
     playSound('click');
   }, []);
 
@@ -187,6 +229,8 @@ const PopGamePage = () => {
     setScore(0);
     setTimeLeft(GAME_DURATION);
     setItems([]);
+    setCombo(0);
+    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     setGameState('playing');
     playSound('switch');
   };
@@ -277,9 +321,9 @@ const PopGamePage = () => {
         </div>
       </div>
 
-      {/* Score display during game */}
+      {/* Score and Combo display during game */}
       {gameState === 'playing' && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40">
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2">
           <motion.div 
             key={score}
             initial={{ scale: 1.2 }}
@@ -288,8 +332,51 @@ const PopGamePage = () => {
           >
             {score}
           </motion.div>
+          
+          {/* Combo indicator */}
+          {combo >= 2 && (
+            <motion.div
+              key={combo}
+              initial={{ scale: 1.3, y: -10 }}
+              animate={{ scale: 1, y: 0 }}
+              className={`px-4 py-1 rounded-full font-bold text-white shadow-lg ${
+                combo >= 10 ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-lg' :
+                combo >= 7 ? 'bg-gradient-to-r from-orange-500 to-red-500' :
+                combo >= 5 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                combo >= 3 ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
+                'bg-gradient-to-r from-blue-500 to-cyan-500'
+              }`}
+            >
+              {combo >= 10 ? '🔥 MAX COMBO! x2.5' :
+               combo >= 7 ? `🔥 COMBO x${combo}! (x2.0)` :
+               combo >= 5 ? `⚡ COMBO x${combo}! (x1.75)` :
+               combo >= 3 ? `✨ COMBO x${combo}! (x1.5)` :
+               `COMBO x${combo}! (x1.25)`}
+            </motion.div>
+          )}
         </div>
       )}
+
+      {/* Floating points popup */}
+      <AnimatePresence>
+        {showComboPopup && lastPoints.bonus > 0 && (
+          <motion.div
+            initial={{ opacity: 1, y: 0, scale: 1 }}
+            animate={{ opacity: 0, y: -50, scale: 1.2 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute z-50 pointer-events-none text-center"
+            style={{ left: lastPoints.x - 40, top: lastPoints.y - 30 }}
+          >
+            <div className="text-green-500 font-bold text-lg">
+              +{lastPoints.points + lastPoints.bonus}
+            </div>
+            <div className="text-amber-500 text-xs font-semibold">
+              (+{lastPoints.bonus} bonus!)
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Falling items */}
       <AnimatePresence>
@@ -313,7 +400,7 @@ const PopGamePage = () => {
             <h2 className="text-2xl font-bold text-gray-800 mb-2">🎮 Ready to Play?</h2>
             <p className="text-gray-600 mb-4">
               Tap falling items to collect points!<br/>
-              You have 30 seconds.
+              Chain taps for combo bonuses!
             </p>
             
             <div className="grid grid-cols-5 gap-2 mb-4 text-sm">
