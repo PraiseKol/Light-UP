@@ -9,7 +9,13 @@ import {
   completeCompetition,
   searchPlayers
 } from '@/lib/api/competition';
-import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, CheckCircle } from 'lucide-react';
+import {
+  startPopGameSession,
+  endPopGameSession,
+  getActivePopGameSession,
+  getAggregatedScores
+} from '@/lib/api/popGame';
+import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, CheckCircle, Gamepad2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CompetitionManager() {
@@ -21,6 +27,11 @@ export default function CompetitionManager() {
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState(null);
   const [roundTimeLeft, setRoundTimeLeft] = useState(null);
+  
+  // Pop Game state
+  const [popGameSession, setPopGameSession] = useState(null);
+  const [popGameScores, setPopGameScores] = useState([]);
+  const [selectedPopGamePlayers, setSelectedPopGamePlayers] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -61,6 +72,15 @@ export default function CompetitionManager() {
       const topPlayers = await fetchMonthlyTopPlayers(19);
       setMonthlyTopPlayers(topPlayers);
     }
+    
+    // Load pop game session
+    const popSession = await getActivePopGameSession();
+    setPopGameSession(popSession);
+    if (popSession) {
+      const scores = await getAggregatedScores(popSession.id);
+      setPopGameScores(scores);
+    }
+    
     setLoading(false);
   }
 
@@ -142,6 +162,47 @@ export default function CompetitionManager() {
     await completeCompetition(activeCompetition.id);
     toast.success('Competition completed!');
     loadData();
+  }
+
+  // Pop Game Functions
+  async function handleStartPopGame() {
+    const { data: { user } } = await supabase.auth.getUser();
+    const session = await startPopGameSession(user?.id);
+    if (session) {
+      toast.success('Pop Game started! Red bulb now visible on player maps.');
+      loadData();
+    } else {
+      toast.error('Failed to start Pop Game');
+    }
+  }
+
+  async function handleEndPopGame() {
+    if (!popGameSession) return;
+    await endPopGameSession(popGameSession.id);
+    toast.success('Pop Game ended!');
+    loadData();
+  }
+
+  function togglePopGamePlayerSelection(userId) {
+    setSelectedPopGamePlayers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : prev.length < 5 ? [...prev, userId] : prev
+    );
+  }
+
+  function addPopGamePlayersToCompetition() {
+    const playersToAdd = popGameScores
+      .filter(p => selectedPopGamePlayers.includes(p.user_id))
+      .map(p => ({
+        user_id: p.user_id,
+        player_name: p.player_name,
+        selection_type: 'pop_game'
+      }));
+    
+    setManualPlayers(prev => [...prev, ...playersToAdd]);
+    setSelectedPopGamePlayers([]);
+    toast.success(`Added ${playersToAdd.length} players from Pop Game`);
   }
 
   if (loading) {
@@ -297,6 +358,98 @@ export default function CompetitionManager() {
   // Create new competition view
   return (
     <div className="space-y-6">
+      {/* Pop Game Qualification Section */}
+      <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl p-6 border border-red-500/30">
+        <h2 className="text-xl font-bold text-red-400 flex items-center gap-2 mb-4">
+          <Gamepad2 className="w-6 h-6" />
+          Qualification Mini-Game (Pop Game)
+        </h2>
+
+        {!popGameSession ? (
+          <div className="text-center py-4">
+            <p className="text-white/70 mb-4">
+              Start the Pop Game to let players compete for the remaining 5 spots
+            </p>
+            <button
+              onClick={handleStartPopGame}
+              className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold rounded-xl hover:scale-105 transition-transform flex items-center gap-2 mx-auto"
+            >
+              <Play className="w-5 h-5" />
+              Start Pop Game
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-green-400 font-medium flex items-center gap-2">
+                <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+                Pop Game Active ({popGameScores.length} players have played)
+              </span>
+              <button
+                onClick={handleEndPopGame}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                End Pop Game
+              </button>
+            </div>
+
+            {popGameScores.length > 0 && (
+              <div className="bg-black/30 rounded-lg p-3 max-h-60 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-white/60 border-b border-white/10">
+                    <tr>
+                      <th className="text-left py-2 px-2">Select</th>
+                      <th className="text-left py-2 px-2">Player</th>
+                      <th className="text-center py-2 px-2">Att 1</th>
+                      <th className="text-center py-2 px-2">Att 2</th>
+                      <th className="text-center py-2 px-2">Att 3</th>
+                      <th className="text-center py-2 px-2 text-christmasGold">Best</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {popGameScores.map(player => (
+                      <tr key={player.user_id} className="border-b border-white/5 hover:bg-white/5">
+                        <td className="py-2 px-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedPopGamePlayers.includes(player.user_id)}
+                            onChange={() => togglePopGamePlayerSelection(player.user_id)}
+                            disabled={!selectedPopGamePlayers.includes(player.user_id) && selectedPopGamePlayers.length >= 5}
+                            className="w-4 h-4 rounded"
+                          />
+                        </td>
+                        <td className="py-2 px-2 text-white">{player.player_name}</td>
+                        <td className="py-2 px-2 text-center text-white/70">{player.attempts[1] ?? '-'}</td>
+                        <td className="py-2 px-2 text-center text-white/70">{player.attempts[2] ?? '-'}</td>
+                        <td className="py-2 px-2 text-center text-white/70">{player.attempts[3] ?? '-'}</td>
+                        <td className="py-2 px-2 text-center font-bold text-christmasGold">{player.best_score}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <span className="text-white/70">
+                Selected: {selectedPopGamePlayers.length}/5
+              </span>
+              <button
+                onClick={addPopGamePlayersToCompetition}
+                disabled={selectedPopGamePlayers.length === 0}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  selectedPopGamePlayers.length > 0
+                    ? 'bg-christmasGreen text-white hover:bg-green-600'
+                    : 'bg-gray-500/50 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Add Selected to Competition
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="bg-gradient-to-r from-christmasGreen/20 to-christmasRed/20 rounded-xl p-6 border border-christmasGold/30">
         <h2 className="text-xl font-bold text-christmasGold flex items-center gap-2 mb-4">
           <Trophy className="w-6 h-6" />

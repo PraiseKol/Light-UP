@@ -27,6 +27,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import CompetitionPage from "@/pages/CompetitionPage";
 import CompetitionViewerPage from "@/pages/CompetitionViewerPage";
+import PopGamePage from "@/pages/PopGamePage";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react"; // ✅ Import Vercel Analytics
@@ -201,6 +202,14 @@ function AppContent() {
           }
         />
         <Route path="/competition/view" element={<CompetitionViewerPage />} />
+        <Route
+          path="/pop-game"
+          element={
+            <ProtectedRoute>
+              <PopGamePage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Admin */}
         <Route path="/admin/login" element={<AdminLogin />} />

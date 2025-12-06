@@ -820,6 +820,71 @@ export type Database = {
           },
         ]
       }
+      pop_game_scores: {
+        Row: {
+          attempt_number: number
+          id: string
+          played_at: string | null
+          player_name: string | null
+          score: number
+          session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          attempt_number: number
+          id?: string
+          played_at?: string | null
+          player_name?: string | null
+          score?: number
+          session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          attempt_number?: number
+          id?: string
+          played_at?: string | null
+          player_name?: string | null
+          score?: number
+          session_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pop_game_scores_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "pop_game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pop_game_sessions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          ended_at: string | null
+          id: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       powerup_usage: {
         Row: {
           id: string | null
