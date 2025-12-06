@@ -119,9 +119,16 @@ export default function PowerUpStore({
 
       {/* Tab Contents */}
       {activeTab === "powerups" && (
-        <div className="p-4 sm:p-6 max-w-sm sm:max-w-2xl mx-auto bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 rounded-xl sm:rounded-2xl shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] border-2 border-pink-200">
-          <h2 className="text-4xs sm:text-2xl font-extrabold mb-2 sm:mb-3 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent text-center">
-            💫 Power-Up Store
+        <div className="p-4 sm:p-6 max-w-sm sm:max-w-2xl mx-auto bg-gradient-to-br from-christmasGreen/10 via-white to-christmasRed/10 rounded-xl sm:rounded-2xl shadow-[0_8px_0_#166534,0_12px_20px_rgba(22,101,52,0.4)] border-2 border-christmasGreen/30 relative overflow-hidden">
+          {/* Christmas ribbon decoration */}
+          <div className="absolute top-0 right-0 w-20 h-20 overflow-hidden">
+            <div className="absolute top-3 -right-6 bg-christmasRed text-white text-xs font-bold py-1 px-8 rotate-45 shadow-md">
+              🎁
+            </div>
+          </div>
+          
+          <h2 className="text-4xs sm:text-2xl font-extrabold mb-2 sm:mb-3 bg-gradient-to-r from-christmasGreen to-christmasRed bg-clip-text text-transparent text-center">
+            🎁 Power-Up Store
           </h2>
           <p className="text-center text-[8px] sm:text-sm text-gray-500 mb-1 sm:mb-6">
             Exchange your talents for divine advantages (bonuses).
@@ -135,11 +142,14 @@ export default function PowerUpStore({
           </div>
 
           <div className="space-y-1 md:space-y-3">
-            {powerUps.map((pu) => (
+            {powerUps.map((pu, index) => (
               <div
                 key={pu.key}
-                className="flex justify-between items-center bg-blue-50 border border-blue-200 p-2 sm:p-4 rounded-lg sm:rounded-xl shadow-sm"
+                className="flex justify-between items-center bg-gradient-to-r from-christmasGreen/5 to-christmasRed/5 border border-christmasGreen/30 p-2 sm:p-4 rounded-lg sm:rounded-xl shadow-sm relative overflow-hidden"
               >
+                {/* Gift box ribbon effect */}
+                <div className="absolute top-0 left-1/2 w-1 h-full bg-christmasRed/20" />
+                <div className="absolute top-1/2 left-0 w-full h-1 bg-christmasRed/20" />
                 <div className="flex flex-col gap-1">
                   <div className="text-[11px] md:text-lg font-semibold text-blue-900 flex items-center gap-1 md:gap-2">
                     <span className="text-base sm:text-xl">{pu.icon}</span>{" "}

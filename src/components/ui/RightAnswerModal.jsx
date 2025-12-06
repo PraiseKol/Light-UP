@@ -32,14 +32,14 @@ export default function RightAnswerModal({
         </Transition.Child>
 
         <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="w-full max-w-sm rounded-2xl bg-gradient-to-br from-green-50 via-white to-yellow-50 p-5 sm:p-6 shadow-2xl text-center space-y-3 sm:space-y-4 border-4 border-green-300 animate-scale-in relative overflow-hidden">
-            {/* Decorative stars */}
-            <div className="absolute top-2 left-2 text-2xl animate-spin-slow">⭐</div>
-            <div className="absolute top-2 right-2 text-2xl animate-spin-slow animation-delay-300">⭐</div>
-            <div className="absolute bottom-2 left-4 text-xl animate-bounce animation-delay-500">✨</div>
-            <div className="absolute bottom-2 right-4 text-xl animate-bounce animation-delay-700">✨</div>
+          <Dialog.Panel className="w-full max-w-sm rounded-2xl bg-gradient-to-br from-christmasGreen/20 via-white to-christmasGold/20 p-5 sm:p-6 shadow-2xl text-center space-y-3 sm:space-y-4 border-4 border-christmasGreen animate-scale-in relative overflow-hidden">
+            {/* Christmas decorations */}
+            <div className="absolute top-2 left-2 text-2xl animate-ornament-swing">🎄</div>
+            <div className="absolute top-2 right-2 text-2xl animate-ornament-swing animation-delay-300">⭐</div>
+            <div className="absolute bottom-2 left-4 text-xl animate-bounce animation-delay-500">❄️</div>
+            <div className="absolute bottom-2 right-4 text-xl animate-bounce animation-delay-700">🔔</div>
             
-            <div className="text-5xl sm:text-6xl animate-bounce mb-2">🎉</div>
+            <div className="text-5xl sm:text-6xl animate-bounce mb-2">🎁</div>
             
             <Dialog.Title className="text-2xl sm:text-3xl font-black text-transparent bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text drop-shadow-lg">
               Correct!
