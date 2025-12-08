@@ -864,6 +864,7 @@ export type Database = {
           created_by: string | null
           ended_at: string | null
           id: string
+          max_attempts: number
           started_at: string | null
           status: string
         }
@@ -872,6 +873,7 @@ export type Database = {
           created_by?: string | null
           ended_at?: string | null
           id?: string
+          max_attempts?: number
           started_at?: string | null
           status?: string
         }
@@ -880,6 +882,7 @@ export type Database = {
           created_by?: string | null
           ended_at?: string | null
           id?: string
+          max_attempts?: number
           started_at?: string | null
           status?: string
         }

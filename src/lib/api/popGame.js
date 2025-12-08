@@ -55,8 +55,8 @@ export const getAllSessionScores = async (sessionId) => {
   return data || [];
 };
 
-// Start pop game session (admin)
-export const startPopGameSession = async (adminId) => {
+// Start pop game session (admin) with configurable max attempts
+export const startPopGameSession = async (adminId, maxAttempts = 3) => {
   // First deactivate any existing active sessions
   await supabase
     .from('pop_game_sessions')
@@ -68,7 +68,8 @@ export const startPopGameSession = async (adminId) => {
     .insert({
       status: 'active',
       started_at: new Date().toISOString(),
-      created_by: adminId
+      created_by: adminId,
+      max_attempts: maxAttempts
     })
     .select()
     .single();
