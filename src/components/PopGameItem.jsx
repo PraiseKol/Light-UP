@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
 const ITEM_CONFIG = {
@@ -10,13 +10,22 @@ const ITEM_CONFIG = {
 };
 
 const PopGameItem = ({ item, onPop }) => {
+  const [isPopped, setIsPopped] = useState(false);
   const config = ITEM_CONFIG[item.type];
   
-  const handleClick = (e) => {
+  const handleInteraction = (e) => {
+    e.preventDefault();
     e.stopPropagation();
+    
+    // Prevent double-tap issues
+    if (isPopped) return;
+    setIsPopped(true);
+    
     const rect = e.currentTarget.getBoundingClientRect();
     onPop(item.id, config.points, rect.left + rect.width / 2, rect.top);
   };
+
+  if (isPopped) return null;
 
   return (
     <motion.div
@@ -32,24 +41,35 @@ const PopGameItem = ({ item, onPop }) => {
         rotate: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
         opacity: { duration: 0.3 }
       }}
-      onClick={handleClick}
-      className="absolute cursor-pointer select-none"
-      style={{ left: item.x }}
+      onPointerDown={handleInteraction}
+      onTouchStart={handleInteraction}
+      className="absolute cursor-pointer select-none touch-none"
+      style={{ 
+        left: item.x,
+        zIndex: 50
+      }}
     >
-      <div className={`
-        w-14 h-14 sm:w-16 sm:h-16 rounded-full 
-        bg-gradient-to-br ${config.color}
-        flex items-center justify-center
-        shadow-lg shadow-black/30
-        border-2 border-white/50
-        hover:scale-110 active:scale-90
-        transition-transform duration-100
-      `}>
-        <span className="text-2xl sm:text-3xl">{config.emoji}</span>
-      </div>
-      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 
-        text-xs font-bold text-white bg-black/50 px-1.5 rounded-full">
-        +{config.points}
+      {/* Larger invisible hit area for easier tapping */}
+      <div className="relative">
+        <div 
+          className="absolute -inset-4 sm:-inset-3"
+          aria-hidden="true"
+        />
+        <div className={`
+          w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full 
+          bg-gradient-to-br ${config.color}
+          flex items-center justify-center
+          shadow-lg shadow-black/30
+          border-2 border-white/50
+          transition-transform duration-75
+          active:scale-90
+        `}>
+          <span className="text-3xl sm:text-4xl pointer-events-none">{config.emoji}</span>
+        </div>
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 
+          text-xs font-bold text-white bg-black/50 px-1.5 rounded-full pointer-events-none">
+          +{config.points}
+        </div>
       </div>
     </motion.div>
   );

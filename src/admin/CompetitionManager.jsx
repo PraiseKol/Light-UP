@@ -32,6 +32,7 @@ export default function CompetitionManager() {
   const [popGameSession, setPopGameSession] = useState(null);
   const [popGameScores, setPopGameScores] = useState([]);
   const [selectedPopGamePlayers, setSelectedPopGamePlayers] = useState([]);
+  const [popGameMaxAttempts, setPopGameMaxAttempts] = useState(3);
 
   useEffect(() => {
     loadData();
@@ -167,9 +168,9 @@ export default function CompetitionManager() {
   // Pop Game Functions
   async function handleStartPopGame() {
     const { data: { user } } = await supabase.auth.getUser();
-    const session = await startPopGameSession(user?.id);
+    const session = await startPopGameSession(user?.id, popGameMaxAttempts);
     if (session) {
-      toast.success('Pop Game started! Red bulb now visible on player maps.');
+      toast.success(`Pop Game started with ${popGameMaxAttempts} attempts! Red bulb now visible on player maps.`);
       loadData();
     } else {
       toast.error('Failed to start Pop Game');
@@ -370,12 +371,23 @@ export default function CompetitionManager() {
             <p className="text-white/70 mb-4">
               Start the Pop Game to let players compete for the remaining 5 spots
             </p>
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <label className="text-white/70">Max Attempts:</label>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={popGameMaxAttempts}
+                onChange={(e) => setPopGameMaxAttempts(Math.min(10, Math.max(1, parseInt(e.target.value) || 3)))}
+                className="w-20 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-center"
+              />
+            </div>
             <button
               onClick={handleStartPopGame}
               className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold rounded-xl hover:scale-105 transition-transform flex items-center gap-2 mx-auto"
             >
               <Play className="w-5 h-5" />
-              Start Pop Game
+              Start Pop Game ({popGameMaxAttempts} attempts)
             </button>
           </div>
         ) : (

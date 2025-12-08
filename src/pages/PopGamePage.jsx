@@ -14,7 +14,6 @@ import { playSound } from '../utils/sound';
 import { toast } from 'sonner';
 
 const GAME_DURATION = 30;
-const MAX_ATTEMPTS = 3;
 const COMBO_TIMEOUT = 1000; // 1 second to maintain combo
 const MAX_COMBO = 10;
 
@@ -62,9 +61,11 @@ const PopGamePage = () => {
   const [combo, setCombo] = useState(0);
   const [showComboPopup, setShowComboPopup] = useState(false);
   const [lastPoints, setLastPoints] = useState({ points: 0, bonus: 0, x: 0, y: 0 });
+  const [maxAttempts, setMaxAttempts] = useState(3);
   const itemIdRef = useRef(0);
   const gameAreaRef = useRef(null);
   const comboTimerRef = useRef(null);
+  const poppedItemsRef = useRef(new Set());
 
   // Load session and attempts
   useEffect(() => {
@@ -89,6 +90,7 @@ const PopGamePage = () => {
           return;
         }
         setSession_(activeSession);
+        setMaxAttempts(activeSession.max_attempts || 3);
 
         // Get player attempts
         const playerAttempts = await getPlayerAttempts(activeSession.id, session.user.id);
@@ -99,7 +101,7 @@ const PopGamePage = () => {
         const best = playerAttempts.reduce((max, a) => Math.max(max, a.score), 0);
         setBestScore(best);
 
-        if (playerAttempts.length >= MAX_ATTEMPTS) {
+        if (playerAttempts.length >= (activeSession.max_attempts || 3)) {
           setGameState('no_attempts');
         } else {
           setGameState('ready');
@@ -193,6 +195,8 @@ const PopGamePage = () => {
   }, [gameState]);
 
   const handlePop = useCallback((itemId, points, x, y) => {
+    if (poppedItemsRef.current.has(itemId)) return;
+    poppedItemsRef.current.add(itemId);
     setItems(prev => prev.filter(item => item.id !== itemId));
     
     // Clear existing combo timer
@@ -230,13 +234,14 @@ const PopGamePage = () => {
     setTimeLeft(GAME_DURATION);
     setItems([]);
     setCombo(0);
+    poppedItemsRef.current.clear();
     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     setGameState('playing');
     playSound('switch');
   };
 
   const playAgain = () => {
-    if (currentAttempt >= MAX_ATTEMPTS) {
+    if (currentAttempt >= maxAttempts) {
       setGameState('no_attempts');
       return;
     }
@@ -258,7 +263,7 @@ const PopGamePage = () => {
       <div className="min-h-[100dvh] bg-gradient-to-b from-[#0c1445] via-[#1e3a5f] to-[#0d1b2a] flex flex-col items-center justify-center p-4">
         <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-white/20 text-center max-w-md">
           <h2 className="text-2xl font-bold text-white mb-4">No More Attempts!</h2>
-          <p className="text-white/70 mb-4">You've used all 3 attempts.</p>
+          <p className="text-white/70 mb-4">You've used all {maxAttempts} attempts.</p>
           <div className="text-4xl font-bold text-amber-400 mb-6">
             Best Score: {bestScore}
           </div>
@@ -308,7 +313,7 @@ const PopGamePage = () => {
         <div className="text-center">
           <div className="text-white font-bold text-lg">Free Fall Pop</div>
           <div className="text-white/70 text-sm">
-            Attempt {currentAttempt}/{MAX_ATTEMPTS}
+            Attempt {currentAttempt}/{maxAttempts}
           </div>
         </div>
 
@@ -427,7 +432,7 @@ const PopGamePage = () => {
             </div>
 
             <div className="text-sm text-gray-500 mb-4">
-              Attempts remaining: {MAX_ATTEMPTS - currentAttempt + 1}
+              Attempts remaining: {maxAttempts - currentAttempt + 1}
             </div>
 
             <button
@@ -470,13 +475,13 @@ const PopGamePage = () => {
             </div>
 
             <div className="space-y-3">
-              {currentAttempt < MAX_ATTEMPTS && (
+              {currentAttempt < maxAttempts && (
                 <button
                   onClick={playAgain}
                   className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 
                     text-white font-bold rounded-xl shadow-lg"
                 >
-                  Play Again ({MAX_ATTEMPTS - currentAttempt} left)
+                  Play Again ({maxAttempts - currentAttempt} left)
                 </button>
               )}
               <button

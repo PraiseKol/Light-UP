@@ -230,7 +230,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         if (activeSession) {
           const attempts = await getPlayerAttempts(activeSession.id, user.id);
           setPopGameActive(true);
-          setPopGameAttemptsLeft(3 - attempts.length);
+          setPopGameAttemptsLeft((activeSession.max_attempts || 3) - attempts.length);
         } else {
           setPopGameActive(false);
           setPopGameAttemptsLeft(0);
