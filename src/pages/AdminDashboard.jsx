@@ -18,6 +18,7 @@ import CompetitionManager from "@/admin/CompetitionManager";
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("main");
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -29,8 +30,13 @@ export default function AdminDashboard() {
         .eq("user_id", user.id)
         .single();
 
-      if (!error && data?.role === "super_admin") {
-        setIsSuperAdmin(true);
+      if (!error && data?.role) {
+        if (data.role === "super_admin") {
+          setIsSuperAdmin(true);
+          setIsAdmin(true);
+        } else if (data.role === "admin") {
+          setIsAdmin(true);
+        }
       }
     };
     fetchRole();
@@ -45,13 +51,13 @@ export default function AdminDashboard() {
       case "multiplayer":
         return <MultiplayerQuizManager />;
       case "feedback":
-        return isSuperAdmin ? <FeedbackManager /> : null;
+        return isAdmin ? <FeedbackManager /> : null;
       case "leaderboard":
         return isSuperAdmin ? <LeaderboardManager /> : null;
       case "finance":
         return isSuperAdmin ? <FinanceManager /> : null;
       case "competition":
-        return isSuperAdmin ? <CompetitionManager /> : null;
+        return isAdmin ? <CompetitionManager /> : null;
       case "analytics":
         return isSuperAdmin ? <AnalyticsDashboard /> : null;
       default:
@@ -95,10 +101,10 @@ export default function AdminDashboard() {
           {tabButton("main", "Main Game Quiz")}
           {tabButton("weekly", "Weekly Quiz")}
           {tabButton("multiplayer", "Multiplayer Quiz")}
-          {tabButton("feedback", "Feedback", isSuperAdmin)}
+          {tabButton("feedback", "Feedback", isAdmin)}
           {tabButton("leaderboard", "Leaderboards", isSuperAdmin)}
           {tabButton("finance", "Finance", isSuperAdmin)}
-          {tabButton("competition", "Competition", isSuperAdmin)}
+          {tabButton("competition", "Competition", isAdmin)}
           {tabButton("analytics", "Analytics", isSuperAdmin)}
         </div>
 
