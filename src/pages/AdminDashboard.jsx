@@ -51,13 +51,13 @@ export default function AdminDashboard() {
       case "multiplayer":
         return <MultiplayerQuizManager />;
       case "feedback":
-        return isAdmin ? <FeedbackManager /> : null;
+        return <FeedbackManager />;
       case "leaderboard":
         return isSuperAdmin ? <LeaderboardManager /> : null;
       case "finance":
         return isSuperAdmin ? <FinanceManager /> : null;
       case "competition":
-        return isAdmin ? <CompetitionManager /> : null;
+        return <CompetitionManager />;
       case "analytics":
         return isSuperAdmin ? <AnalyticsDashboard /> : null;
       default:
@@ -101,10 +101,10 @@ export default function AdminDashboard() {
           {tabButton("main", "Main Game Quiz")}
           {tabButton("weekly", "Weekly Quiz")}
           {tabButton("multiplayer", "Multiplayer Quiz")}
-          {tabButton("feedback", "Feedback", isAdmin)}
+          {tabButton("feedback", "Feedback")}
           {tabButton("leaderboard", "Leaderboards", isSuperAdmin)}
           {tabButton("finance", "Finance", isSuperAdmin)}
-          {tabButton("competition", "Competition", isAdmin)}
+          {tabButton("competition", "Competition")}
           {tabButton("analytics", "Analytics", isSuperAdmin)}
         </div>
 
