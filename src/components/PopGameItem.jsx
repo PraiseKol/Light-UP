@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
 const ITEM_CONFIG = {
-  heart: { emoji: '❤️', points: 5, color: 'from-red-400 to-pink-500' },
-  santa: { emoji: '🎅', points: 5, color: 'from-red-500 to-red-700' },
-  lamp: { emoji: '🪔', points: 10, color: 'from-amber-400 to-orange-500' },
-  dove: { emoji: '🕊️', points: 15, color: 'from-white to-gray-200' },
-  cross: { emoji: '✝️', points: 20, color: 'from-yellow-300 to-amber-500' }
+  heart: { emoji: '❤️', points: 5, color: 'from-red-400 to-pink-500', isTimeBonus: false },
+  santa: { emoji: '🎅', points: 5, color: 'from-red-500 to-red-700', isTimeBonus: false },
+  lamp: { emoji: '🪔', points: 10, color: 'from-amber-400 to-orange-500', isTimeBonus: false },
+  dove: { emoji: '🕊️', points: 15, color: 'from-white to-gray-200', isTimeBonus: false },
+  cross: { emoji: '✝️', points: 20, color: 'from-yellow-300 to-amber-500', isTimeBonus: false },
+  crown: { emoji: '👑', points: 0, color: 'from-yellow-400 via-amber-300 to-yellow-500', isTimeBonus: true }
 };
 
 const PopGameItem = ({ item, onPop }) => {
@@ -22,10 +23,12 @@ const PopGameItem = ({ item, onPop }) => {
     setIsPopped(true);
     
     const rect = e.currentTarget.getBoundingClientRect();
-    onPop(item.id, config.points, rect.left + rect.width / 2, rect.top);
+    onPop(item.id, config.points, rect.left + rect.width / 2, rect.top, config.isTimeBonus);
   };
 
   if (isPopped) return null;
+
+  const isCrown = item.type === 'crown';
 
   return (
     <motion.div
@@ -46,7 +49,7 @@ const PopGameItem = ({ item, onPop }) => {
       className="absolute cursor-pointer select-none touch-none"
       style={{ 
         left: item.x,
-        zIndex: 50
+        zIndex: isCrown ? 60 : 50
       }}
     >
       {/* Larger invisible hit area for easier tapping */}
@@ -63,12 +66,16 @@ const PopGameItem = ({ item, onPop }) => {
           border-2 border-white/50
           transition-transform duration-75
           active:scale-90
+          ${isCrown ? 'animate-pulse ring-4 ring-yellow-300/60' : ''}
         `}>
-          <span className="text-3xl sm:text-4xl pointer-events-none">{config.emoji}</span>
+          <span className={`pointer-events-none ${isCrown ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'}`}>
+            {config.emoji}
+          </span>
         </div>
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 
-          text-xs font-bold text-white bg-black/50 px-1.5 rounded-full pointer-events-none">
-          +{config.points}
+        <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 
+          text-xs font-bold text-white px-1.5 rounded-full pointer-events-none
+          ${isCrown ? 'bg-yellow-600/80' : 'bg-black/50'}`}>
+          {isCrown ? '+10s' : `+${config.points}`}
         </div>
       </div>
     </motion.div>

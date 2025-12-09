@@ -14,8 +14,8 @@ import { playSound } from '../utils/sound';
 import { toast } from 'sonner';
 
 const GAME_DURATION = 30;
-const COMBO_TIMEOUT = 1000; // 1 second to maintain combo
-const MAX_COMBO = 10;
+const COMBO_TIMEOUT = 750; // 0.75 seconds to maintain combo
+const MAX_COMBO = 25; // For reaching 7.5x multiplier
 
 // Spawn rates based on rarity (lower points = more common)
 const ITEM_TYPES = [
@@ -26,16 +26,59 @@ const ITEM_TYPES = [
   { type: 'cross', weight: 7 }
 ];
 
+// Crown is ultra rare - ~1% base chance, may not appear in a round
+const CROWN_SPAWN_CHANCE = 0.01;
+
 const getComboMultiplier = (combo) => {
-  if (combo >= 10) return 2.5;
-  if (combo >= 7) return 2.0;
-  if (combo >= 5) return 1.75;
+  if (combo >= 25) return 7.5;
+  if (combo >= 20) return 6.0;
+  if (combo >= 15) return 4.5;
+  if (combo >= 12) return 3.5;
+  if (combo >= 10) return 3.0;
+  if (combo >= 7) return 2.5;
+  if (combo >= 5) return 2.0;
   if (combo >= 3) return 1.5;
   if (combo >= 2) return 1.25;
   return 1;
 };
 
+// Dynamic spawn rate based on combo (faster spawns at higher combos)
+const getSpawnInterval = (combo) => {
+  if (combo >= 20) return 200;
+  if (combo >= 15) return 250;
+  if (combo >= 10) return 300;
+  if (combo >= 7) return 350;
+  if (combo >= 5) return 400;
+  if (combo >= 3) return 450;
+  return 500;
+};
+
+// Dynamic fall speed based on combo (faster falls at higher combos)
+const getFallSpeed = (combo) => {
+  const baseMin = 2.5;
+  const baseMax = 4.0;
+  const speedBoost = Math.min(combo * 0.1, 1.5); // Up to 1.5s faster
+  return {
+    min: Math.max(baseMin - speedBoost, 1.2),
+    max: Math.max(baseMax - speedBoost, 2.0)
+  };
+};
+
+// Number of items to spawn per interval based on combo
+const getSpawnCount = (combo) => {
+  if (combo >= 20) return 4;
+  if (combo >= 15) return 3;
+  if (combo >= 10) return 2;
+  if (combo >= 5) return 2;
+  return 1;
+};
+
 const getRandomItemType = () => {
+  // Ultra rare crown check first
+  if (Math.random() < CROWN_SPAWN_CHANCE) {
+    return 'crown';
+  }
+  
   const totalWeight = ITEM_TYPES.reduce((sum, item) => sum + item.weight, 0);
   let random = Math.random() * totalWeight;
   
@@ -116,23 +159,42 @@ const PopGamePage = () => {
     loadData();
   }, [session, navigate]);
 
-  // Spawn items during gameplay
+  // Spawn items during gameplay with dynamic rates
   useEffect(() => {
     if (gameState !== 'playing') return;
 
-    const spawnInterval = setInterval(() => {
-      const gameWidth = gameAreaRef.current?.clientWidth || 300;
-      const newItem = {
-        id: itemIdRef.current++,
-        type: getRandomItemType(),
-        x: Math.random() * (gameWidth - 80) + 20,
-        speed: 2.5 + Math.random() * 1.5 // 2.5-4 seconds to fall
-      };
-      setItems(prev => [...prev, newItem]);
-    }, 600); // Spawn every 600ms
+    let spawnTimer = null;
+    
+    const scheduleNextSpawn = () => {
+      const interval = getSpawnInterval(combo);
+      spawnTimer = setTimeout(() => {
+        const gameWidth = gameAreaRef.current?.clientWidth || 300;
+        const spawnCount = getSpawnCount(combo);
+        const { min, max } = getFallSpeed(combo);
+        
+        setItems(prev => {
+          const newItems = [];
+          for (let i = 0; i < spawnCount; i++) {
+            newItems.push({
+              id: itemIdRef.current++,
+              type: getRandomItemType(),
+              x: Math.random() * (gameWidth - 80) + 20,
+              speed: min + Math.random() * (max - min)
+            });
+          }
+          return [...prev, ...newItems];
+        });
+        
+        scheduleNextSpawn();
+      }, interval);
+    };
+    
+    scheduleNextSpawn();
 
-    return () => clearInterval(spawnInterval);
-  }, [gameState]);
+    return () => {
+      if (spawnTimer) clearTimeout(spawnTimer);
+    };
+  }, [gameState, combo]);
 
   // Timer
   useEffect(() => {
@@ -194,7 +256,7 @@ const PopGamePage = () => {
     saveScore();
   }, [gameState]);
 
-  const handlePop = useCallback((itemId, points, x, y) => {
+  const handlePop = useCallback((itemId, points, x, y, isTimeBonus = false) => {
     if (poppedItemsRef.current.has(itemId)) return;
     poppedItemsRef.current.add(itemId);
     setItems(prev => prev.filter(item => item.id !== itemId));
@@ -202,6 +264,25 @@ const PopGamePage = () => {
     // Clear existing combo timer
     if (comboTimerRef.current) {
       clearTimeout(comboTimerRef.current);
+    }
+    
+    // Handle time bonus (crown)
+    if (isTimeBonus) {
+      setTimeLeft(prev => prev + 10);
+      setLastPoints({ points: 0, bonus: 0, x, y, isTime: true });
+      setShowComboPopup(true);
+      setTimeout(() => setShowComboPopup(false), 500);
+      playSound('powerUp');
+      
+      // Still continue combo for crown
+      setCombo(prev => {
+        const newCombo = Math.min(prev + 1, MAX_COMBO);
+        comboTimerRef.current = setTimeout(() => {
+          setCombo(0);
+        }, COMBO_TIMEOUT);
+        return newCombo;
+      });
+      return;
     }
     
     // Calculate combo and bonus
@@ -214,7 +295,7 @@ const PopGamePage = () => {
       setScore(s => s + totalPoints);
       
       // Show popup with points info
-      setLastPoints({ points, bonus: bonusPoints, x, y });
+      setLastPoints({ points, bonus: bonusPoints, x, y, isTime: false });
       setShowComboPopup(true);
       setTimeout(() => setShowComboPopup(false), 300);
       
@@ -345,16 +426,23 @@ const PopGamePage = () => {
               initial={{ scale: 1.3, y: -10 }}
               animate={{ scale: 1, y: 0 }}
               className={`px-4 py-1 rounded-full font-bold text-white shadow-lg ${
-                combo >= 10 ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-lg' :
-                combo >= 7 ? 'bg-gradient-to-r from-orange-500 to-red-500' :
-                combo >= 5 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
-                combo >= 3 ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
-                'bg-gradient-to-r from-blue-500 to-cyan-500'
+                combo >= 25 ? 'bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 text-xl animate-pulse' :
+                combo >= 20 ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-lg' :
+                combo >= 15 ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-lg' :
+                combo >= 10 ? 'bg-gradient-to-r from-orange-500 to-red-500' :
+                combo >= 7 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                combo >= 5 ? 'bg-gradient-to-r from-green-500 to-emerald-500' :
+                combo >= 3 ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
+                'bg-gradient-to-r from-blue-400 to-blue-600'
               }`}
             >
-              {combo >= 10 ? '🔥 MAX COMBO! x2.5' :
-               combo >= 7 ? `🔥 COMBO x${combo}! (x2.0)` :
-               combo >= 5 ? `⚡ COMBO x${combo}! (x1.75)` :
+              {combo >= 25 ? '👑 LEGENDARY! x7.5' :
+               combo >= 20 ? `🔥🔥 INSANE! x6.0` :
+               combo >= 15 ? `🔥 ON FIRE! x4.5` :
+               combo >= 12 ? `🔥 BLAZING! x3.5` :
+               combo >= 10 ? `⚡ SUPER! x3.0` :
+               combo >= 7 ? `⚡ COMBO x${combo}! (x2.5)` :
+               combo >= 5 ? `✨ COMBO x${combo}! (x2.0)` :
                combo >= 3 ? `✨ COMBO x${combo}! (x1.5)` :
                `COMBO x${combo}! (x1.25)`}
             </motion.div>
@@ -364,7 +452,7 @@ const PopGamePage = () => {
 
       {/* Floating points popup */}
       <AnimatePresence>
-        {showComboPopup && lastPoints.bonus > 0 && (
+        {showComboPopup && (lastPoints.bonus > 0 || lastPoints.isTime) && (
           <motion.div
             initial={{ opacity: 1, y: 0, scale: 1 }}
             animate={{ opacity: 0, y: -50, scale: 1.2 }}
@@ -373,12 +461,20 @@ const PopGamePage = () => {
             className="absolute z-50 pointer-events-none text-center"
             style={{ left: lastPoints.x - 40, top: lastPoints.y - 30 }}
           >
-            <div className="text-green-500 font-bold text-lg">
-              +{lastPoints.points + lastPoints.bonus}
-            </div>
-            <div className="text-amber-500 text-xs font-semibold">
-              (+{lastPoints.bonus} bonus!)
-            </div>
+            {lastPoints.isTime ? (
+              <div className="text-yellow-400 font-bold text-xl">
+                ⏰ +10 SEC!
+              </div>
+            ) : (
+              <>
+                <div className="text-green-500 font-bold text-lg">
+                  +{lastPoints.points + lastPoints.bonus}
+                </div>
+                <div className="text-amber-500 text-xs font-semibold">
+                  (+{lastPoints.bonus} bonus!)
+                </div>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -408,27 +504,35 @@ const PopGamePage = () => {
               Chain taps for combo bonuses!
             </p>
             
-            <div className="grid grid-cols-5 gap-2 mb-4 text-sm">
+            <div className="grid grid-cols-6 gap-1.5 mb-4 text-sm">
               <div className="text-center">
-                <div className="text-2xl">❤️</div>
-                <div className="text-gray-500">+5</div>
+                <div className="text-xl">❤️</div>
+                <div className="text-gray-500 text-xs">+5</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl">🎅</div>
-                <div className="text-gray-500">+5</div>
+                <div className="text-xl">🎅</div>
+                <div className="text-gray-500 text-xs">+5</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl">🪔</div>
-                <div className="text-gray-500">+10</div>
+                <div className="text-xl">🪔</div>
+                <div className="text-gray-500 text-xs">+10</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl">🕊️</div>
-                <div className="text-gray-500">+15</div>
+                <div className="text-xl">🕊️</div>
+                <div className="text-gray-500 text-xs">+15</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl">✝️</div>
-                <div className="text-gray-500">+20</div>
+                <div className="text-xl">✝️</div>
+                <div className="text-gray-500 text-xs">+20</div>
               </div>
+              <div className="text-center">
+                <div className="text-xl">👑</div>
+                <div className="text-gray-500 text-xs">+10s</div>
+              </div>
+            </div>
+            
+            <div className="text-xs text-amber-600 mb-3">
+              ⚡ Higher combos = faster spawns & speed!
             </div>
 
             <div className="text-sm text-gray-500 mb-4">
