@@ -42,37 +42,36 @@ const getComboMultiplier = (combo) => {
   return 1;
 };
 
-// Dynamic spawn rate based on elapsed time (faster spawns as game progresses)
+// Dynamic spawn rate based on elapsed time (slower, more manageable spawns)
 const getSpawnInterval = (elapsedTime) => {
-  // Every 2 seconds, spawn gets faster
-  const phase = Math.floor(elapsedTime / 2);
-  const baseInterval = 350; // Start faster
-  const minInterval = 150;
-  return Math.max(baseInterval - (phase * 15), minInterval);
+  // Every 3 seconds, spawn gets slightly faster
+  const phase = Math.floor(elapsedTime / 3);
+  const baseInterval = 600; // Start slower
+  const minInterval = 350;
+  return Math.max(baseInterval - (phase * 25), minInterval);
 };
 
-// Dynamic fall speed based on elapsed time (faster falls as game progresses)
+// Dynamic fall speed based on elapsed time (increases every 3 seconds)
 const getFallSpeed = (elapsedTime) => {
-  // Every 2 seconds, items fall faster
-  const phase = Math.floor(elapsedTime / 2);
-  const baseMin = 2.0;
-  const baseMax = 3.5;
-  const speedBoost = Math.min(phase * 0.1, 1.3); // Up to 1.3s faster
+  // Every 3 seconds, items fall faster
+  const phase = Math.floor(elapsedTime / 3);
+  const baseMin = 3.0;
+  const baseMax = 4.5;
+  const speedBoost = Math.min(phase * 0.15, 1.5); // Up to 1.5s faster
   return {
-    min: Math.max(baseMin - speedBoost, 0.8),
-    max: Math.max(baseMax - speedBoost, 1.5)
+    min: Math.max(baseMin - speedBoost, 1.2),
+    max: Math.max(baseMax - speedBoost, 2.0)
   };
 };
 
 // Number of items to spawn per interval based on elapsed time
 const getSpawnCount = (elapsedTime) => {
-  const phase = Math.floor(elapsedTime / 2);
-  if (phase >= 12) return 5; // 24+ seconds
-  if (phase >= 10) return 4; // 20+ seconds
-  if (phase >= 7) return 4;  // 14+ seconds
-  if (phase >= 5) return 3;  // 10+ seconds
-  if (phase >= 3) return 3;  // 6+ seconds
-  return 2; // Start with 2 items
+  const phase = Math.floor(elapsedTime / 3);
+  if (phase >= 8) return 3;  // 24+ seconds
+  if (phase >= 6) return 3;  // 18+ seconds
+  if (phase >= 4) return 2;  // 12+ seconds
+  if (phase >= 2) return 2;  // 6+ seconds
+  return 1; // Start with 1 item
 };
 
 const getRandomItemType = () => {
@@ -219,18 +218,36 @@ const PopGamePage = () => {
     return () => clearInterval(timer);
   }, [gameState]);
 
-  // Clean up fallen items
+  // Clean up fallen items and reset combo when items are missed
   useEffect(() => {
     if (gameState !== 'playing') return;
 
     const cleanupInterval = setInterval(() => {
-      setItems(prev => prev.filter(item => {
-        const element = document.getElementById(`item-${item.id}`);
-        if (!element) return true;
-        const rect = element.getBoundingClientRect();
-        return rect.top < window.innerHeight + 100;
-      }));
-    }, 1000);
+      setItems(prev => {
+        let itemMissed = false;
+        const filtered = prev.filter(item => {
+          const element = document.getElementById(`item-${item.id}`);
+          if (!element) return true;
+          const rect = element.getBoundingClientRect();
+          const isVisible = rect.top < window.innerHeight + 100;
+          if (!isVisible && !poppedItemsRef.current.has(item.id)) {
+            itemMissed = true;
+          }
+          return isVisible;
+        });
+        
+        // Reset combo if an item was missed (fell off screen without being clicked)
+        if (itemMissed) {
+          setCombo(0);
+          if (comboTimerRef.current) {
+            clearTimeout(comboTimerRef.current);
+            comboTimerRef.current = null;
+          }
+        }
+        
+        return filtered;
+      });
+    }, 500);
 
     return () => clearInterval(cleanupInterval);
   }, [gameState]);
