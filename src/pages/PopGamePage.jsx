@@ -105,6 +105,7 @@ const PopGamePage = () => {
   const [showComboPopup, setShowComboPopup] = useState(false);
   const [lastPoints, setLastPoints] = useState({ points: 0, bonus: 0, x: 0, y: 0 });
   const [maxAttempts, setMaxAttempts] = useState(3);
+  const [effectsOn, setEffectsOn] = useState(true);
   const itemIdRef = useRef(0);
   const gameAreaRef = useRef(null);
   const comboTimerRef = useRef(null);
@@ -116,14 +117,15 @@ const PopGamePage = () => {
       if (!session?.user?.id) return;
 
       try {
-        // Get player name
+        // Get player name and effects preference
         const { data: userData } = await supabase
           .from('game_users')
-          .select('player_name')
+          .select('player_name, effects_on')
           .eq('user_id', session.user.id)
           .single();
         
         setPlayerName(userData?.player_name || 'Player');
+        setEffectsOn(userData?.effects_on !== false);
 
         // Get active session
         const activeSession = await getActivePopGameSession();
@@ -247,7 +249,7 @@ const PopGamePage = () => {
           setBestScore(score);
         }
         
-        playSound('levelUp');
+        playSound('levelUp', effectsOn);
       } catch (error) {
         console.error('Error saving score:', error);
       }
@@ -274,7 +276,7 @@ const PopGamePage = () => {
       setLastPoints({ points: 0, bonus: 0, x, y, isTime: true });
       setShowComboPopup(true);
       setTimeout(() => setShowComboPopup(false), 500);
-      playSound('powerUp');
+      playSound('powerUp', effectsOn);
       
       // Still continue combo for crown
       setCombo(prev => {
@@ -309,8 +311,8 @@ const PopGamePage = () => {
       return newCombo;
     });
     
-    playSound('click');
-  }, [gameState, timeLeft]);
+    playSound('click', effectsOn);
+  }, [gameState, timeLeft, effectsOn]);
 
   const startGame = () => {
     setScore(0);
@@ -320,7 +322,7 @@ const PopGamePage = () => {
     poppedItemsRef.current.clear();
     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     setGameState('playing');
-    playSound('switch');
+    playSound('switch', effectsOn);
   };
 
   const playAgain = () => {
