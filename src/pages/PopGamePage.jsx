@@ -42,35 +42,37 @@ const getComboMultiplier = (combo) => {
   return 1;
 };
 
-// Dynamic spawn rate based on combo (faster spawns at higher combos)
-const getSpawnInterval = (combo) => {
-  if (combo >= 20) return 200;
-  if (combo >= 15) return 250;
-  if (combo >= 10) return 300;
-  if (combo >= 7) return 350;
-  if (combo >= 5) return 400;
-  if (combo >= 3) return 450;
-  return 500;
+// Dynamic spawn rate based on elapsed time (faster spawns as game progresses)
+const getSpawnInterval = (elapsedTime) => {
+  // Every 2 seconds, spawn gets faster
+  const phase = Math.floor(elapsedTime / 2);
+  const baseInterval = 350; // Start faster
+  const minInterval = 150;
+  return Math.max(baseInterval - (phase * 15), minInterval);
 };
 
-// Dynamic fall speed based on combo (faster falls at higher combos)
-const getFallSpeed = (combo) => {
-  const baseMin = 2.5;
-  const baseMax = 4.0;
-  const speedBoost = Math.min(combo * 0.1, 1.5); // Up to 1.5s faster
+// Dynamic fall speed based on elapsed time (faster falls as game progresses)
+const getFallSpeed = (elapsedTime) => {
+  // Every 2 seconds, items fall faster
+  const phase = Math.floor(elapsedTime / 2);
+  const baseMin = 2.0;
+  const baseMax = 3.5;
+  const speedBoost = Math.min(phase * 0.1, 1.3); // Up to 1.3s faster
   return {
-    min: Math.max(baseMin - speedBoost, 1.2),
-    max: Math.max(baseMax - speedBoost, 2.0)
+    min: Math.max(baseMin - speedBoost, 0.8),
+    max: Math.max(baseMax - speedBoost, 1.5)
   };
 };
 
-// Number of items to spawn per interval based on combo
-const getSpawnCount = (combo) => {
-  if (combo >= 20) return 4;
-  if (combo >= 15) return 3;
-  if (combo >= 10) return 2;
-  if (combo >= 5) return 2;
-  return 1;
+// Number of items to spawn per interval based on elapsed time
+const getSpawnCount = (elapsedTime) => {
+  const phase = Math.floor(elapsedTime / 2);
+  if (phase >= 12) return 5; // 24+ seconds
+  if (phase >= 10) return 4; // 20+ seconds
+  if (phase >= 7) return 4;  // 14+ seconds
+  if (phase >= 5) return 3;  // 10+ seconds
+  if (phase >= 3) return 3;  // 6+ seconds
+  return 2; // Start with 2 items
 };
 
 const getRandomItemType = () => {
@@ -161,18 +163,20 @@ const PopGamePage = () => {
     loadData();
   }, [session, navigate]);
 
-  // Spawn items during gameplay with dynamic rates
+  // Spawn items during gameplay with time-based dynamic rates
   useEffect(() => {
     if (gameState !== 'playing') return;
 
     let spawnTimer = null;
     
     const scheduleNextSpawn = () => {
-      const interval = getSpawnInterval(combo);
+      const elapsedTime = GAME_DURATION - timeLeft;
+      const interval = getSpawnInterval(elapsedTime);
       spawnTimer = setTimeout(() => {
         const gameWidth = gameAreaRef.current?.clientWidth || 300;
-        const spawnCount = getSpawnCount(combo);
-        const { min, max } = getFallSpeed(combo);
+        const currentElapsed = GAME_DURATION - timeLeft;
+        const spawnCount = getSpawnCount(currentElapsed);
+        const { min, max } = getFallSpeed(currentElapsed);
         
         setItems(prev => {
           const newItems = [];
@@ -196,7 +200,7 @@ const PopGamePage = () => {
     return () => {
       if (spawnTimer) clearTimeout(spawnTimer);
     };
-  }, [gameState, combo]);
+  }, [gameState, timeLeft]);
 
   // Timer
   useEffect(() => {
