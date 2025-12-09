@@ -257,6 +257,8 @@ const PopGamePage = () => {
   }, [gameState]);
 
   const handlePop = useCallback((itemId, points, x, y, isTimeBonus = false) => {
+    // Prevent clicks after game ends
+    if (gameState !== 'playing' || timeLeft <= 0) return;
     if (poppedItemsRef.current.has(itemId)) return;
     poppedItemsRef.current.add(itemId);
     setItems(prev => prev.filter(item => item.id !== itemId));
@@ -308,7 +310,7 @@ const PopGamePage = () => {
     });
     
     playSound('click');
-  }, []);
+  }, [gameState, timeLeft]);
 
   const startGame = () => {
     setScore(0);
