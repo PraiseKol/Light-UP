@@ -641,6 +641,25 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         </button>
       )}
 
+      {/* Faith Runner Yellow Orb - Always Visible */}
+      {!selectedLevel && (
+        <button
+          onClick={() => {
+            playSound("optionSelect", effectsOn);
+            navigate("/faith-runner");
+          }}
+          className="fixed left-3 z-50 flex flex-col items-center hover:scale-110 transition-transform"
+          style={{ top: 'calc(33.33% + 90px)' }}
+        >
+          <div className="w-14 h-14 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-500 to-amber-600 shadow-[0_0_20px_rgba(245,158,11,0.8),0_4px_0_#b45309] border-2 border-white/50 flex items-center justify-center ring-4 ring-yellow-300/50 animate-pulse">
+            <span className="text-2xl">🏃</span>
+          </div>
+          <span className="text-[10px] font-bold text-white bg-amber-600/90 px-2 py-0.5 rounded-full mt-1 shadow-lg">
+            Faith Run
+          </span>
+        </button>
+      )}
+
       {/* Fixed Top Header */}
       <header className="fixed top-0 left-0 right-0 z-50 candy-gradient py-2 lg:py-3 px-3 lg:px-4 shadow-[0_4px_20px_rgba(79,156,249,0.5)] border-b-4 border-white/30">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
