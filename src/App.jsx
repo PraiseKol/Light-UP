@@ -28,6 +28,7 @@ import PaymentSuccess from "@/pages/PaymentSuccess";
 import CompetitionPage from "@/pages/CompetitionPage";
 import CompetitionViewerPage from "@/pages/CompetitionViewerPage";
 import PopGamePage from "@/pages/PopGamePage";
+import FaithRunnerPage from "@/pages/FaithRunnerPage";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react"; // ✅ Import Vercel Analytics
@@ -207,6 +208,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <PopGamePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/faith-runner"
+          element={
+            <ProtectedRoute>
+              <FaithRunnerPage effectsOn={effectsOn} />
             </ProtectedRoute>
           }
         />
