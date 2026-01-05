@@ -15,8 +15,10 @@ import {
   getActivePopGameSession,
   getAggregatedScores
 } from '@/lib/api/popGame';
-import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, CheckCircle, Gamepad2 } from 'lucide-react';
+import { getScriptureMatchActive, setScriptureMatchActive } from '@/lib/api/scriptureMatch';
+import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, CheckCircle, Gamepad2, Puzzle } from 'lucide-react';
 import { toast } from 'sonner';
+import { Switch } from '@/components/ui/Switch';
 
 export default function CompetitionManager() {
   const [activeCompetition, setActiveCompetition] = useState(null);
@@ -33,6 +35,9 @@ export default function CompetitionManager() {
   const [popGameScores, setPopGameScores] = useState([]);
   const [selectedPopGamePlayers, setSelectedPopGamePlayers] = useState([]);
   const [popGameMaxAttempts, setPopGameMaxAttempts] = useState(3);
+  
+  // Scripture Match state
+  const [scriptureMatchActive, setScriptureMatchActiveState] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -82,7 +87,22 @@ export default function CompetitionManager() {
       setPopGameScores(scores);
     }
     
+    // Load Scripture Match visibility
+    const scriptureActive = await getScriptureMatchActive();
+    setScriptureMatchActiveState(scriptureActive);
+    
     setLoading(false);
+  }
+
+  async function handleToggleScriptureMatch(checked) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const success = await setScriptureMatchActive(checked, user?.id);
+    if (success) {
+      setScriptureMatchActiveState(checked);
+      toast.success(checked ? 'Scripture Match enabled! Yellow orb now visible.' : 'Scripture Match disabled.');
+    } else {
+      toast.error('Failed to update Scripture Match visibility');
+    }
   }
 
   async function handleSearch() {
@@ -359,6 +379,25 @@ export default function CompetitionManager() {
   // Create new competition view
   return (
     <div className="space-y-6">
+      {/* Scripture Match Toggle Section */}
+      <div className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-xl p-6 border border-yellow-500/30">
+        <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2 mb-4">
+          <Puzzle className="w-6 h-6" />
+          Scripture Memory Match
+        </h2>
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-white font-medium">Yellow Orb Visibility</p>
+            <p className="text-white/60 text-sm">Toggle to show/hide the game button on player maps</p>
+          </div>
+          <Switch
+            checked={scriptureMatchActive}
+            onCheckedChange={handleToggleScriptureMatch}
+          />
+        </div>
+      </div>
+
       {/* Pop Game Qualification Section */}
       <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl p-6 border border-red-500/30">
         <h2 className="text-xl font-bold text-red-400 flex items-center gap-2 mb-4">
