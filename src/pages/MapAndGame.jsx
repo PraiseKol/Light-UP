@@ -43,6 +43,7 @@ import {
   hasPlayedThisWeek,
 } from "@/utils/weeklyChallenge";
 import { getActivePopGameSession, getPlayerAttempts } from "@/lib/api/popGame";
+import { getScriptureMatchActive } from "@/lib/api/scriptureMatch";
 import avatar from "@/assets/avatar.png";
 
 // Avatar configuration matching SettingsModal
@@ -84,6 +85,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   });
   const [popGameActive, setPopGameActive] = useState(false);
   const [popGameAttemptsLeft, setPopGameAttemptsLeft] = useState(0);
+  const [scriptureMatchActive, setScriptureMatchActive] = useState(false);
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
@@ -250,6 +252,28 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
     return () => supabase.removeChannel(channel);
   }, [user?.id]);
+
+  // Check for Scripture Match visibility
+  useEffect(() => {
+    const checkScriptureMatch = async () => {
+      try {
+        const isActive = await getScriptureMatchActive();
+        setScriptureMatchActive(isActive);
+      } catch (err) {
+        console.error("Error checking scripture match:", err);
+      }
+    };
+
+    checkScriptureMatch();
+    
+    // Subscribe to mini game settings updates
+    const channel = supabase
+      .channel('scripture-match-status')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mini_game_settings' }, checkScriptureMatch)
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, []);
 
   const startLevel = async (level) => {
     if (!user || !level) return;
@@ -641,21 +665,21 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         </button>
       )}
 
-      {/* Faith Runner Yellow Orb - Always Visible */}
-      {!selectedLevel && (
+      {/* Scripture Match Yellow Orb - Admin Controlled Visibility */}
+      {!selectedLevel && scriptureMatchActive && (
         <button
           onClick={() => {
             playSound("optionSelect", effectsOn);
-            navigate("/faith-runner");
+            navigate("/scripture-match");
           }}
           className="fixed left-3 z-50 flex flex-col items-center hover:scale-110 transition-transform"
           style={{ top: 'calc(33.33% + 90px)' }}
         >
           <div className="w-14 h-14 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-500 to-amber-600 shadow-[0_0_20px_rgba(245,158,11,0.8),0_4px_0_#b45309] border-2 border-white/50 flex items-center justify-center ring-4 ring-yellow-300/50 animate-pulse">
-            <span className="text-2xl">🏃</span>
+            <span className="text-2xl">🧩</span>
           </div>
           <span className="text-[10px] font-bold text-white bg-amber-600/90 px-2 py-0.5 rounded-full mt-1 shadow-lg">
-            Faith Run
+            Scripture
           </span>
         </button>
       )}

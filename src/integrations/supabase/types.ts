@@ -402,87 +402,6 @@ export type Database = {
           },
         ]
       }
-      faith_runner_runs: {
-        Row: {
-          distance: number
-          ended_at: string | null
-          environment: string | null
-          id: string
-          light_orbs_collected: number | null
-          obstacles_avoided: number | null
-          power_ups_used: number | null
-          scrolls_collected: number | null
-          user_id: string
-        }
-        Insert: {
-          distance: number
-          ended_at?: string | null
-          environment?: string | null
-          id?: string
-          light_orbs_collected?: number | null
-          obstacles_avoided?: number | null
-          power_ups_used?: number | null
-          scrolls_collected?: number | null
-          user_id: string
-        }
-        Update: {
-          distance?: number
-          ended_at?: string | null
-          environment?: string | null
-          id?: string
-          light_orbs_collected?: number | null
-          obstacles_avoided?: number | null
-          power_ups_used?: number | null
-          scrolls_collected?: number | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      faith_runner_stats: {
-        Row: {
-          created_at: string | null
-          high_score: number | null
-          id: string
-          power_up_levels: Json | null
-          selected_character: string | null
-          total_distance: number | null
-          total_runs: number | null
-          total_scrolls: number | null
-          unlocked_characters: string[] | null
-          unlocked_environments: string[] | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          high_score?: number | null
-          id?: string
-          power_up_levels?: Json | null
-          selected_character?: string | null
-          total_distance?: number | null
-          total_runs?: number | null
-          total_scrolls?: number | null
-          unlocked_characters?: string[] | null
-          unlocked_environments?: string[] | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          high_score?: number | null
-          id?: string
-          power_up_levels?: Json | null
-          selected_character?: string | null
-          total_distance?: number | null
-          total_runs?: number | null
-          total_scrolls?: number | null
-          unlocked_characters?: string[] | null
-          unlocked_environments?: string[] | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       feedback: {
         Row: {
           created_at: string
@@ -1441,29 +1360,6 @@ export type Database = {
           play_count: number
         }[]
       }
-      get_or_create_faith_runner_stats: {
-        Args: { p_user_id: string }
-        Returns: {
-          created_at: string | null
-          high_score: number | null
-          id: string
-          power_up_levels: Json | null
-          selected_character: string | null
-          total_distance: number | null
-          total_runs: number | null
-          total_scrolls: number | null
-          unlocked_characters: string[] | null
-          unlocked_environments: string[] | null
-          updated_at: string | null
-          user_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "faith_runner_stats"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       get_retention_rate: { Args: never; Returns: number }
       increment_all_lives: { Args: { extra_lives: number }; Returns: undefined }
       increment_all_talents: {
@@ -1477,37 +1373,6 @@ export type Database = {
       populate_multiplayer_questions: {
         Args: { p_match_id: string }
         Returns: undefined
-      }
-      save_faith_runner_run: {
-        Args: {
-          p_distance: number
-          p_environment?: string
-          p_light_orbs?: number
-          p_obstacles_avoided?: number
-          p_power_ups_used?: number
-          p_scrolls: number
-          p_user_id: string
-        }
-        Returns: {
-          created_at: string | null
-          high_score: number | null
-          id: string
-          power_up_levels: Json | null
-          selected_character: string | null
-          total_distance: number | null
-          total_runs: number | null
-          total_scrolls: number | null
-          unlocked_characters: string[] | null
-          unlocked_environments: string[] | null
-          updated_at: string | null
-          user_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "faith_runner_stats"
-          isOneToOne: true
-          isSetofReturn: false
-        }
       }
       set_week_start_date: { Args: never; Returns: string }
       use_invite_code: { Args: { code_input: string }; Returns: Json }
