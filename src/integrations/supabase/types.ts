@@ -1087,6 +1087,78 @@ export type Database = {
         }
         Relationships: []
       }
+      scripture_match_games: {
+        Row: {
+          id: string
+          level: number
+          match_type: string | null
+          moves: number
+          played_at: string | null
+          score: number
+          time_ms: number
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          level: number
+          match_type?: string | null
+          moves: number
+          played_at?: string | null
+          score: number
+          time_ms: number
+          user_id: string
+        }
+        Update: {
+          id?: string
+          level?: number
+          match_type?: string | null
+          moves?: number
+          played_at?: string | null
+          score?: number
+          time_ms?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scripture_match_stats: {
+        Row: {
+          created_at: string | null
+          current_level: number | null
+          fastest_completion_ms: number | null
+          high_score: number | null
+          id: string
+          total_games: number | null
+          total_matches: number | null
+          unlocked_levels: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_level?: number | null
+          fastest_completion_ms?: number | null
+          high_score?: number | null
+          id?: string
+          total_games?: number | null
+          total_matches?: number | null
+          unlocked_levels?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_level?: number | null
+          fastest_completion_ms?: number | null
+          high_score?: number | null
+          id?: string
+          total_games?: number | null
+          total_matches?: number | null
+          unlocked_levels?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       scriptures: {
         Row: {
           created_at: string | null

@@ -29,7 +29,7 @@ const MainMenu = ({
         </motion.button>
         
         <div className="text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold text-amber-800">Scripture Match</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-amber-800">Memory Challenge</h1>
           <p className="text-amber-600 text-sm">Memory Puzzle Game</p>
         </div>
 
