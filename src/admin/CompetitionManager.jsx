@@ -234,6 +234,27 @@ export default function CompetitionManager() {
     );
   }
 
+  // Scripture Match Toggle - Always visible
+  const ScriptureMatchToggle = () => (
+    <div className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-xl p-6 border border-yellow-500/30">
+      <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2 mb-4">
+        <Puzzle className="w-6 h-6" />
+        Scripture Memory Match
+      </h2>
+      
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-white font-medium">Yellow Orb Visibility</p>
+          <p className="text-white/60 text-sm">Toggle to show/hide the game button on player maps</p>
+        </div>
+        <Switch
+          checked={scriptureMatchActive}
+          onChange={handleToggleScriptureMatch}
+        />
+      </div>
+    </div>
+  );
+
   // Active competition view
   if (activeCompetition) {
     const currentRound = activeCompetition.competition_rounds?.find(
@@ -242,6 +263,7 @@ export default function CompetitionManager() {
 
     return (
       <div className="space-y-6">
+        <ScriptureMatchToggle />
         <div className="bg-gradient-to-r from-christmasGreen/20 to-christmasRed/20 rounded-xl p-6 border border-christmasGold/30">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-christmasGold flex items-center gap-2">
@@ -379,24 +401,7 @@ export default function CompetitionManager() {
   // Create new competition view
   return (
     <div className="space-y-6">
-      {/* Scripture Match Toggle Section */}
-      <div className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-xl p-6 border border-yellow-500/30">
-        <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2 mb-4">
-          <Puzzle className="w-6 h-6" />
-          Scripture Memory Match
-        </h2>
-        
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-white font-medium">Yellow Orb Visibility</p>
-            <p className="text-white/60 text-sm">Toggle to show/hide the game button on player maps</p>
-          </div>
-          <Switch
-            checked={scriptureMatchActive}
-            onChange={handleToggleScriptureMatch}
-          />
-        </div>
-      </div>
+      <ScriptureMatchToggle />
 
       {/* Pop Game Qualification Section */}
       <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl p-6 border border-red-500/30">
