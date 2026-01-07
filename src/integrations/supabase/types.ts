@@ -617,6 +617,27 @@ export type Database = {
           },
         ]
       }
+      mini_game_settings: {
+        Row: {
+          game_key: string
+          is_active: boolean
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          game_key: string
+          is_active?: boolean
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          game_key?: string
+          is_active?: boolean
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       multiplayer_answers: {
         Row: {
           answered_at: string | null
