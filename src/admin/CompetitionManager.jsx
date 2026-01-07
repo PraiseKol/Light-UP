@@ -18,7 +18,7 @@ import {
 import { getScriptureMatchActive, setScriptureMatchActive } from '@/lib/api/scriptureMatch';
 import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, CheckCircle, Gamepad2, Puzzle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Switch } from '@/components/ui/Switch';
+import Switch from '@/components/ui/Switch';
 
 export default function CompetitionManager() {
   const [activeCompetition, setActiveCompetition] = useState(null);
@@ -393,7 +393,7 @@ export default function CompetitionManager() {
           </div>
           <Switch
             checked={scriptureMatchActive}
-            onCheckedChange={handleToggleScriptureMatch}
+            onChange={handleToggleScriptureMatch}
           />
         </div>
       </div>
