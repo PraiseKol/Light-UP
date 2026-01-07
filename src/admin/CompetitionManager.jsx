@@ -239,7 +239,7 @@ export default function CompetitionManager() {
     <div className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-xl p-6 border border-yellow-500/30">
       <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2 mb-4">
         <Puzzle className="w-6 h-6" />
-        Scripture Memory Match
+        Memory Challenge
       </h2>
       
       <div className="flex items-center justify-between">
