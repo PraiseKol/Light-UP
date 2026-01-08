@@ -132,6 +132,22 @@ export const COMPLETION_SCRIPTURES = [
   { text: 'Commit your work to the Lord, and your plans will be established.', ref: 'Proverbs 16:3' }
 ];
 
+// Get human-readable hint for match type
+export const getMatchTypeHint = (matchType) => {
+  switch (matchType) {
+    case 'symbol_symbol':
+      return { icon: '😊➡️😊', text: 'Match identical symbols together' };
+    case 'verse_pair':
+      return { icon: '📖➡️📖', text: 'Match verse first half to second half' };
+    case 'symbol_verse':
+      return { icon: '😊➡️📖', text: 'Match symbol to its related verse' };
+    case 'mixed':
+      return { icon: '🎭', text: 'Mixed: symbols and verse pairs combined' };
+    default:
+      return { icon: '❓', text: 'Find matching pairs' };
+  }
+};
+
 // Level configurations
 export const LEVELS = [
   { level: 1, gridCols: 2, gridRows: 2, cards: 4, matchType: 'symbol_symbol', timeLimit: null },
