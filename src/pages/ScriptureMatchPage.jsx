@@ -2,19 +2,25 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@supabase/auth-helpers-react';
+import toast from 'react-hot-toast';
 
 import { getOrCreateStats, saveGame } from '@/lib/api/scriptureMatch';
-import { generateCards, LEVELS } from '@/data/scriptureMatchData';
+import { generateCards, LEVELS, getMatchTypeHint } from '@/data/scriptureMatchData';
 import { playSound } from '@/utils/sound';
+import { useGameUser } from '@/hooks/useGameUser';
+import { loseLife } from '@/utils/loseLife';
+import { supabase } from '@/lib/supabaseClient';
 
 import MainMenu from '@/components/memory/MainMenu';
 import GameBoard from '@/components/memory/GameBoard';
 import GameHUD from '@/components/memory/GameHUD';
 import LevelCompleteModal from '@/components/memory/LevelCompleteModal';
+import HolyShieldButton from '@/components/HolyShieldButton';
 
 const ScriptureMatchPage = ({ effectsOn = true }) => {
   const navigate = useNavigate();
   const user = useUser();
+  const { gameUser, loading: loadingGameUser, refetch } = useGameUser(user?.id);
   
   // Game states: menu, playing, paused, complete, gameover
   const [gameState, setGameState] = useState('menu');
@@ -30,6 +36,7 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [score, setScore] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [shieldWasActive, setShieldWasActive] = useState(false);
   
   // Timer ref
   const timerRef = useRef(null);
@@ -86,8 +93,35 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
     }
   }, [timeElapsed, currentLevel, gameState]);
 
+  // Check if shield is active
+  const isShieldActive = gameUser?.holy_shield_until && 
+    new Date(gameUser.holy_shield_until).getTime() > Date.now();
+
+  // Deduct powerup from inventory
+  const deductPowerup = async (key) => {
+    if (!user?.id || !gameUser?.powerups_inventory?.[key]) return;
+    
+    await supabase
+      .from('game_users')
+      .update({
+        powerups_inventory: {
+          ...gameUser.powerups_inventory,
+          [key]: Math.max(0, (gameUser.powerups_inventory[key] ?? 0) - 1)
+        }
+      })
+      .eq('user_id', user.id);
+    
+    await refetch();
+  };
+
   // Start a new game at a specific level
   const startGame = useCallback((level) => {
+    // Check if user has lives
+    if (gameUser && gameUser.lives <= 0) {
+      toast.error("No lives left! Wait for regeneration.");
+      return;
+    }
+    
     const newCards = generateCards(level);
     setCards(newCards);
     setCurrentLevel(level);
@@ -97,10 +131,11 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
     setTimeElapsed(0);
     setScore(0);
     setIsProcessing(false);
+    setShieldWasActive(false);
     setGameState('playing');
     
     if (effectsOn) playSound('select');
-  }, [effectsOn]);
+  }, [effectsOn, gameUser]);
 
   // Handle card click
   const handleCardClick = useCallback((card) => {
@@ -191,10 +226,85 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
   };
 
   // Handle game over (time ran out)
-  const handleGameOver = () => {
+  const handleGameOver = async () => {
     setGameState('gameover');
     if (effectsOn) playSound('game-over');
+    
+    // Check if Holy Shield is active
+    const shieldActive = gameUser?.holy_shield_until && 
+      new Date(gameUser.holy_shield_until).getTime() > Date.now();
+    
+    if (shieldActive) {
+      setShieldWasActive(true);
+      toast.success("🛡️ Holy Shield protected you!");
+    } else if (user?.id && gameUser?.lives > 0) {
+      // Lose a life
+      await loseLife(user.id, gameUser.lives);
+      await refetch();
+      if (effectsOn) playSound('life-lost');
+    }
   };
+
+  // Divine Hint - reveal and match one pair
+  const handleDivineHint = useCallback(() => {
+    const hintCount = gameUser?.powerups_inventory?.divine_hint || 0;
+    if (hintCount <= 0) {
+      toast.error("No Divine Hints available!");
+      return;
+    }
+    if (gameState !== 'playing' || isProcessing) return;
+    
+    // Find an unmatched pair
+    const unmatchedCards = cards.filter(c => !matchedPairs.includes(c.pairId));
+    if (unmatchedCards.length < 2) return;
+    
+    // Get a pair (find two cards with same pairId)
+    const firstCard = unmatchedCards[0];
+    const secondCard = unmatchedCards.find(c => c.pairId === firstCard.pairId && c.id !== firstCard.id);
+    
+    if (!firstCard || !secondCard) return;
+    
+    setIsProcessing(true);
+    
+    // Reveal them temporarily
+    setFlippedCards([firstCard, secondCard]);
+    if (effectsOn) playSound('divine-hint');
+    
+    // After delay, mark as matched
+    setTimeout(() => {
+      setMatchedPairs(prev => [...prev, firstCard.pairId]);
+      setFlippedCards([]);
+      setIsProcessing(false);
+      setMoves(prev => prev + 1);
+    }, 1500);
+    
+    // Deduct from inventory
+    deductPowerup('divine_hint');
+    toast.success("🧩 Divine Hint revealed a pair!");
+  }, [gameUser, gameState, isProcessing, cards, matchedPairs, effectsOn]);
+
+  // Grace Period - add 15 seconds
+  const handleGracePeriod = useCallback(() => {
+    const graceCount = gameUser?.powerups_inventory?.grace_period || 0;
+    if (graceCount <= 0) {
+      toast.error("No Grace Period available!");
+      return;
+    }
+    if (gameState !== 'playing') return;
+    
+    const levelConfig = LEVELS.find(l => l.level === currentLevel);
+    if (!levelConfig?.timeLimit) {
+      toast.info("No time limit on this level!");
+      return;
+    }
+    
+    // Add 15 seconds by reducing timeElapsed
+    setTimeElapsed(prev => Math.max(0, prev - 15000));
+    if (effectsOn) playSound('grace-period');
+    toast.success("⏳ +15 seconds added!");
+    
+    deductPowerup('grace_period');
+  }, [gameUser, gameState, currentLevel, effectsOn]);
 
   // Handle pause
   const handlePause = () => setGameState('paused');
@@ -226,7 +336,7 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
     setGameState('menu');
   };
 
-  if (loading) {
+  if (loading || loadingGameUser) {
     return (
       <div className="fixed inset-0 bg-gradient-to-b from-amber-100 to-yellow-200 flex items-center justify-center">
         <motion.div
@@ -242,6 +352,7 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
 
   const levelConfig = LEVELS.find(l => l.level === currentLevel);
   const totalPairs = cards.length / 2;
+  const matchTypeHint = levelConfig ? getMatchTypeHint(levelConfig.matchType) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-100 via-orange-50 to-yellow-100">
@@ -261,7 +372,7 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="min-h-screen pt-20 pb-8"
+            className="min-h-screen pt-20 pb-24"
           >
             <GameHUD
               level={currentLevel}
@@ -271,6 +382,9 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
               timeElapsed={timeElapsed}
               timeLimit={levelConfig?.timeLimit}
               isPaused={gameState === 'paused'}
+              lives={gameUser?.lives}
+              isShieldActive={isShieldActive}
+              matchTypeHint={matchTypeHint}
               onPause={handlePause}
               onResume={handleResume}
               onBack={handleBack}
@@ -284,6 +398,40 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
               disabled={isProcessing || gameState === 'paused'}
               level={currentLevel}
             />
+
+            {/* Power-up Bar */}
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-200 via-orange-200 to-yellow-200 border-t-2 border-amber-300 p-2 safe-area-pb">
+              <div className="flex justify-around items-center max-w-md mx-auto">
+                {/* Divine Hint Button */}
+                <button
+                  onClick={handleDivineHint}
+                  disabled={!gameUser?.powerups_inventory?.divine_hint || isProcessing}
+                  className="flex flex-col items-center px-3 py-2 rounded-xl bg-blue-400 disabled:bg-gray-300 text-white font-bold transition-all hover:scale-105 active:scale-95"
+                >
+                  <span className="text-lg">🧩</span>
+                  <span className="text-[10px]">Hint x{gameUser?.powerups_inventory?.divine_hint || 0}</span>
+                </button>
+                
+                {/* Grace Period Button - only on timed levels */}
+                {levelConfig?.timeLimit && (
+                  <button
+                    onClick={handleGracePeriod}
+                    disabled={!gameUser?.powerups_inventory?.grace_period}
+                    className="flex flex-col items-center px-3 py-2 rounded-xl bg-purple-400 disabled:bg-gray-300 text-white font-bold transition-all hover:scale-105 active:scale-95"
+                  >
+                    <span className="text-lg">⏳</span>
+                    <span className="text-[10px]">+15s x{gameUser?.powerups_inventory?.grace_period || 0}</span>
+                  </button>
+                )}
+                
+                {/* Holy Shield Button */}
+                <HolyShieldButton 
+                  gameUser={gameUser} 
+                  refetch={refetch} 
+                  effectsOn={effectsOn} 
+                />
+              </div>
+            </div>
 
             {/* Pause Overlay */}
             <AnimatePresence>
@@ -330,6 +478,14 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
               <h2 className="text-2xl font-bold text-amber-800 mb-2">Time's Up!</h2>
               <p className="text-amber-600 mb-4">You ran out of time on Level {currentLevel}</p>
               
+              {/* Shield protection message */}
+              {shieldWasActive && (
+                <div className="bg-yellow-100 text-yellow-800 rounded-lg px-3 py-2 mb-4 flex items-center justify-center gap-2">
+                  <span>🛡️</span>
+                  <span>Holy Shield protected you from losing a life!</span>
+                </div>
+              )}
+              
               <div className="bg-amber-50 rounded-xl p-3 mb-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-amber-700">Matched</span>
@@ -338,6 +494,10 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
                 <div className="flex justify-between text-sm">
                   <span className="text-amber-700">Moves</span>
                   <span className="font-bold text-amber-900">{moves}</span>
+                </div>
+                <div className="flex justify-between text-sm mt-2 pt-2 border-t border-amber-200">
+                  <span className="text-amber-700">Lives remaining</span>
+                  <span className="font-bold text-red-600">❤️ {gameUser?.lives ?? 0}</span>
                 </div>
               </div>
               
@@ -350,9 +510,10 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
                 </button>
                 <button
                   onClick={() => startGame(currentLevel)}
-                  className="flex-1 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors"
+                  disabled={gameUser?.lives <= 0}
+                  className="flex-1 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
                 >
-                  Try Again
+                  {gameUser?.lives <= 0 ? 'No Lives' : 'Try Again'}
                 </button>
               </div>
             </div>

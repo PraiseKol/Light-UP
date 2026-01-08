@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Lock } from 'lucide-react';
-import { LEVELS } from '@/data/scriptureMatchData';
+import { LEVELS, getMatchTypeHint } from '@/data/scriptureMatchData';
 
 const MainMenu = ({
   stats,
@@ -60,39 +60,43 @@ const MainMenu = ({
           <h2 className="text-lg font-bold text-amber-800 mb-4 text-center">Select Level</h2>
           
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-            {LEVELS.map((levelConfig) => {
-              const isUnlocked = levelConfig.level <= unlockedLevels;
-              const isCompleted = stats?.current_level > levelConfig.level;
-              
-              return (
-                <motion.button
-                  key={levelConfig.level}
-                  whileHover={isUnlocked ? { scale: 1.05 } : {}}
-                  whileTap={isUnlocked ? { scale: 0.95 } : {}}
-                  onClick={() => isUnlocked && onSelectLevel(levelConfig.level)}
-                  disabled={!isUnlocked}
-                  className={`aspect-square rounded-xl shadow-lg flex flex-col items-center justify-center transition-all ${
-                    isUnlocked
-                      ? isCompleted
-                        ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white'
-                        : 'bg-gradient-to-br from-amber-400 to-yellow-500 text-white hover:from-amber-500 hover:to-yellow-600'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {isUnlocked ? (
-                    <>
-                      <span className="text-2xl font-bold">{levelConfig.level}</span>
-                      <span className="text-[10px] opacity-80">
-                        {levelConfig.cards} cards
-                      </span>
-                      {isCompleted && <span className="text-sm">⭐</span>}
-                    </>
-                  ) : (
-                    <Lock className="w-6 h-6" />
-                  )}
-                </motion.button>
-              );
-            })}
+                {LEVELS.map((levelConfig) => {
+                  const isUnlocked = levelConfig.level <= unlockedLevels;
+                  const isCompleted = stats?.current_level > levelConfig.level;
+                  const hint = getMatchTypeHint(levelConfig.matchType);
+                  
+                  return (
+                    <motion.button
+                      key={levelConfig.level}
+                      whileHover={isUnlocked ? { scale: 1.05 } : {}}
+                      whileTap={isUnlocked ? { scale: 0.95 } : {}}
+                      onClick={() => isUnlocked && onSelectLevel(levelConfig.level)}
+                      disabled={!isUnlocked}
+                      className={`aspect-square rounded-xl shadow-lg flex flex-col items-center justify-center transition-all ${
+                        isUnlocked
+                          ? isCompleted
+                            ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white'
+                            : 'bg-gradient-to-br from-amber-400 to-yellow-500 text-white hover:from-amber-500 hover:to-yellow-600'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      {isUnlocked ? (
+                        <>
+                          <span className="text-2xl font-bold">{levelConfig.level}</span>
+                          <span className="text-[10px] opacity-80">
+                            {hint.icon}
+                          </span>
+                          {levelConfig.timeLimit && (
+                            <span className="text-[8px] opacity-70">⏱️ {levelConfig.timeLimit}s</span>
+                          )}
+                          {isCompleted && <span className="text-sm">⭐</span>}
+                        </>
+                      ) : (
+                        <Lock className="w-6 h-6" />
+                      )}
+                    </motion.button>
+                  );
+                })}
           </div>
 
           {/* Match Type Legend */}
