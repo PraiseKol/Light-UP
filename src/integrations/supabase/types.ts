@@ -841,6 +841,30 @@ export type Database = {
           },
         ]
       }
+      pop_game_best_scores: {
+        Row: {
+          achieved_at: string | null
+          id: string
+          rank: number
+          score: number
+          user_id: string
+        }
+        Insert: {
+          achieved_at?: string | null
+          id?: string
+          rank: number
+          score: number
+          user_id: string
+        }
+        Update: {
+          achieved_at?: string | null
+          id?: string
+          rank?: number
+          score?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       pop_game_scores: {
         Row: {
           attempt_number: number
