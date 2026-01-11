@@ -13,7 +13,9 @@ import {
   startPopGameSession,
   endPopGameSession,
   getActivePopGameSession,
-  getAggregatedScores
+  getAggregatedScores,
+  getPopGameActive,
+  setPopGameActive
 } from '@/lib/api/popGame';
 import { getScriptureMatchActive, setScriptureMatchActive } from '@/lib/api/scriptureMatch';
 import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, CheckCircle, Gamepad2, Puzzle } from 'lucide-react';
@@ -38,6 +40,9 @@ export default function CompetitionManager() {
   
   // Scripture Match state
   const [scriptureMatchActive, setScriptureMatchActiveState] = useState(false);
+  
+  // Pop Game visibility state (independent of session)
+  const [popGameVisibility, setPopGameVisibility] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -91,6 +96,10 @@ export default function CompetitionManager() {
     const scriptureActive = await getScriptureMatchActive();
     setScriptureMatchActiveState(scriptureActive);
     
+    // Load Pop Game visibility
+    const popActive = await getPopGameActive();
+    setPopGameVisibility(popActive);
+    
     setLoading(false);
   }
 
@@ -102,6 +111,17 @@ export default function CompetitionManager() {
       toast.success(checked ? 'Scripture Match enabled! Yellow orb now visible.' : 'Scripture Match disabled.');
     } else {
       toast.error('Failed to update Scripture Match visibility');
+    }
+  }
+
+  async function handleTogglePopGame(checked) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const success = await setPopGameActive(checked, user?.id);
+    if (success) {
+      setPopGameVisibility(checked);
+      toast.success(checked ? 'Pop Game enabled! Red orb now visible on player maps.' : 'Pop Game disabled.');
+    } else {
+      toast.error('Failed to update Pop Game visibility');
     }
   }
 
@@ -255,6 +275,27 @@ export default function CompetitionManager() {
     </div>
   );
 
+  // Pop Game Toggle - Always visible (independent of competition sessions)
+  const PopGameToggle = () => (
+    <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl p-6 border border-red-500/30">
+      <h2 className="text-xl font-bold text-red-400 flex items-center gap-2 mb-4">
+        <Gamepad2 className="w-6 h-6" />
+        Free Fall Pop Game
+      </h2>
+      
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-white font-medium">Red Orb Visibility</p>
+          <p className="text-white/60 text-sm">Players can play anytime. Top 3 best scores are tracked permanently.</p>
+        </div>
+        <Switch
+          checked={popGameVisibility}
+          onChange={handleTogglePopGame}
+        />
+      </div>
+    </div>
+  );
+
   // Active competition view
   if (activeCompetition) {
     const currentRound = activeCompetition.competition_rounds?.find(
@@ -264,6 +305,7 @@ export default function CompetitionManager() {
     return (
       <div className="space-y-6">
         <ScriptureMatchToggle />
+        <PopGameToggle />
         <div className="bg-gradient-to-r from-christmasGreen/20 to-christmasRed/20 rounded-xl p-6 border border-christmasGold/30">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-christmasGold flex items-center gap-2">
@@ -402,6 +444,7 @@ export default function CompetitionManager() {
   return (
     <div className="space-y-6">
       <ScriptureMatchToggle />
+      <PopGameToggle />
 
       {/* Pop Game Qualification Section */}
       <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl p-6 border border-red-500/30">

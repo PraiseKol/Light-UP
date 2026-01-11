@@ -2,16 +2,19 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessionContext } from '@supabase/auth-helpers-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Shield, Clock, Sparkles } from 'lucide-react';
 import PopGameItem from '../components/PopGameItem';
 import { 
-  getActivePopGameSession, 
-  getPlayerAttempts, 
-  recordPopGameScore 
+  getPopGameActive,
+  getPlayerBestScores, 
+  updatePlayerBestScores 
 } from '../lib/api/popGame';
 import { supabase } from '../lib/supabaseClient';
 import { playSound } from '../utils/sound';
 import { toast } from 'sonner';
+import { useGameUser } from '../hooks/useGameUser';
+import { loseLife } from '../utils/loseLife';
+import HolyShieldButton from '../components/HolyShieldButton';
 
 const GAME_DURATION = 30;
 const COMBO_TIMEOUT = 750; // 0.75 seconds to maintain combo
@@ -27,7 +30,8 @@ const ITEM_TYPES = [
 ];
 
 // Crown is ultra rare - ~1% base chance, may not appear in a round
-const CROWN_SPAWN_CHANCE = 0.01;
+const CROWN_SPAWN_CHANCE_NORMAL = 0.01;
+const CROWN_SPAWN_CHANCE_DIVINE = 0.02; // Double when Divine Hint is active
 
 const getComboMultiplier = (combo) => {
   if (combo >= 25) return 7.5;
@@ -44,20 +48,18 @@ const getComboMultiplier = (combo) => {
 
 // Dynamic spawn rate based on elapsed time (slower, more manageable spawns)
 const getSpawnInterval = (elapsedTime) => {
-  // Every 3 seconds, spawn gets slightly faster
   const phase = Math.floor(elapsedTime / 3);
-  const baseInterval = 600; // Start slower
+  const baseInterval = 600;
   const minInterval = 350;
   return Math.max(baseInterval - (phase * 25), minInterval);
 };
 
 // Dynamic fall speed based on elapsed time (increases every 3 seconds)
 const getFallSpeed = (elapsedTime) => {
-  // Every 3 seconds, items fall faster
   const phase = Math.floor(elapsedTime / 3);
   const baseMin = 3.0;
   const baseMax = 4.5;
-  const speedBoost = Math.min(phase * 0.15, 1.5); // Up to 1.5s faster
+  const speedBoost = Math.min(phase * 0.15, 1.5);
   return {
     min: Math.max(baseMin - speedBoost, 1.2),
     max: Math.max(baseMax - speedBoost, 2.0)
@@ -67,91 +69,96 @@ const getFallSpeed = (elapsedTime) => {
 // Number of items to spawn per interval based on elapsed time
 const getSpawnCount = (elapsedTime) => {
   const phase = Math.floor(elapsedTime / 3);
-  if (phase >= 8) return 3;  // 24+ seconds
-  if (phase >= 6) return 3;  // 18+ seconds
-  if (phase >= 4) return 2;  // 12+ seconds
-  if (phase >= 2) return 2;  // 6+ seconds
-  return 1; // Start with 1 item
-};
-
-const getRandomItemType = () => {
-  // Ultra rare crown check first
-  if (Math.random() < CROWN_SPAWN_CHANCE) {
-    return 'crown';
-  }
-  
-  const totalWeight = ITEM_TYPES.reduce((sum, item) => sum + item.weight, 0);
-  let random = Math.random() * totalWeight;
-  
-  for (const item of ITEM_TYPES) {
-    random -= item.weight;
-    if (random <= 0) return item.type;
-  }
-  return 'heart';
+  if (phase >= 8) return 3;
+  if (phase >= 6) return 3;
+  if (phase >= 4) return 2;
+  if (phase >= 2) return 2;
+  return 1;
 };
 
 const PopGamePage = () => {
   const navigate = useNavigate();
   const { session } = useSessionContext();
+  const { gameUser, loading: loadingGameUser, refetch } = useGameUser(session?.user?.id);
+  
   const [gameState, setGameState] = useState('loading'); // loading, ready, playing, finished
-  const [session_, setSession_] = useState(null);
-  const [attempts, setAttempts] = useState([]);
-  const [currentAttempt, setCurrentAttempt] = useState(1);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [items, setItems] = useState([]);
   const [playerName, setPlayerName] = useState('');
-  const [bestScore, setBestScore] = useState(0);
+  const [bestScores, setBestScores] = useState([]);
   const [combo, setCombo] = useState(0);
   const [showComboPopup, setShowComboPopup] = useState(false);
   const [lastPoints, setLastPoints] = useState({ points: 0, bonus: 0, x: 0, y: 0 });
-  const [maxAttempts, setMaxAttempts] = useState(3);
   const [effectsOn, setEffectsOn] = useState(true);
+  
+  // Power-up states
+  const [divineHintActive, setDivineHintActive] = useState(false);
+  const [gracePeriodUsed, setGracePeriodUsed] = useState(false);
+  const [shieldProtected, setShieldProtected] = useState(false);
+  
   const itemIdRef = useRef(0);
   const gameAreaRef = useRef(null);
   const comboTimerRef = useRef(null);
   const poppedItemsRef = useRef(new Set());
 
-  // Load session and attempts
+  // Get crown spawn chance based on Divine Hint
+  const getCrownSpawnChance = useCallback(() => {
+    return divineHintActive ? CROWN_SPAWN_CHANCE_DIVINE : CROWN_SPAWN_CHANCE_NORMAL;
+  }, [divineHintActive]);
+
+  const getRandomItemType = useCallback(() => {
+    // Ultra rare crown check first (doubled if Divine Hint active)
+    if (Math.random() < getCrownSpawnChance()) {
+      return 'crown';
+    }
+    
+    const totalWeight = ITEM_TYPES.reduce((sum, item) => sum + item.weight, 0);
+    let random = Math.random() * totalWeight;
+    
+    for (const item of ITEM_TYPES) {
+      random -= item.weight;
+      if (random <= 0) return item.type;
+    }
+    return 'heart';
+  }, [getCrownSpawnChance]);
+
+  // Load data - no session requirement, just check if pop game is enabled
   useEffect(() => {
     const loadData = async () => {
       if (!session?.user?.id) return;
 
       try {
-        // Get player name and effects preference
+        // Check if pop game is enabled
+        const isActive = await getPopGameActive();
+        if (!isActive) {
+          toast.error('Pop Game is not currently active');
+          navigate('/');
+          return;
+        }
+
+        // Get player data
         const { data: userData } = await supabase
           .from('game_users')
-          .select('player_name, effects_on')
+          .select('player_name, effects_on, lives')
           .eq('user_id', session.user.id)
           .single();
         
         setPlayerName(userData?.player_name || 'Player');
         setEffectsOn(userData?.effects_on !== false);
 
-        // Get active session
-        const activeSession = await getActivePopGameSession();
-        if (!activeSession) {
-          toast.error('No active pop game session');
+        // Check lives
+        if (userData?.lives <= 0) {
+          toast.error('No lives remaining!');
           navigate('/');
           return;
         }
-        setSession_(activeSession);
-        setMaxAttempts(activeSession.max_attempts || 3);
 
-        // Get player attempts
-        const playerAttempts = await getPlayerAttempts(activeSession.id, session.user.id);
-        setAttempts(playerAttempts);
-        setCurrentAttempt(playerAttempts.length + 1);
-        
-        // Calculate best score
-        const best = playerAttempts.reduce((max, a) => Math.max(max, a.score), 0);
-        setBestScore(best);
+        // Get best scores
+        const scores = await getPlayerBestScores(session.user.id);
+        setBestScores(scores);
 
-        if (playerAttempts.length >= (activeSession.max_attempts || 3)) {
-          setGameState('no_attempts');
-        } else {
-          setGameState('ready');
-        }
+        setGameState('ready');
       } catch (error) {
         console.error('Error loading pop game:', error);
         toast.error('Failed to load game');
@@ -159,8 +166,10 @@ const PopGamePage = () => {
       }
     };
 
-    loadData();
-  }, [session, navigate]);
+    if (!loadingGameUser) {
+      loadData();
+    }
+  }, [session, navigate, loadingGameUser]);
 
   // Spawn items during gameplay with time-based dynamic rates
   useEffect(() => {
@@ -199,7 +208,7 @@ const PopGamePage = () => {
     return () => {
       if (spawnTimer) clearTimeout(spawnTimer);
     };
-  }, [gameState, timeLeft]);
+  }, [gameState, timeLeft, getRandomItemType]);
 
   // Timer
   useEffect(() => {
@@ -236,7 +245,6 @@ const PopGamePage = () => {
           return isVisible;
         });
         
-        // Reset combo if an item was missed (fell off screen without being clicked)
         if (itemMissed) {
           setCombo(0);
           if (comboTimerRef.current) {
@@ -252,22 +260,32 @@ const PopGamePage = () => {
     return () => clearInterval(cleanupInterval);
   }, [gameState]);
 
-  // Save score when finished
+  // Save score and handle life loss when finished
   useEffect(() => {
-    if (gameState !== 'finished' || !session_) return;
+    if (gameState !== 'finished' || !session?.user?.id) return;
 
-    const saveScore = async () => {
+    const handleGameEnd = async () => {
       try {
-        await recordPopGameScore(
-          session_.id,
-          session.user.id,
-          playerName,
-          currentAttempt,
-          score
-        );
+        // Save to best scores
+        const isNewBest = await updatePlayerBestScores(session.user.id, score);
+        if (isNewBest) {
+          const updatedScores = await getPlayerBestScores(session.user.id);
+          setBestScores(updatedScores);
+        }
         
-        if (score > bestScore) {
-          setBestScore(score);
+        // Check Holy Shield
+        const isShieldActive = gameUser?.holy_shield_until && 
+          new Date(gameUser.holy_shield_until).getTime() > Date.now();
+        
+        if (isShieldActive) {
+          setShieldProtected(true);
+          toast.success("🛡️ Holy Shield protected you from losing a life!");
+        } else if (gameUser?.lives > 0) {
+          // Lose a life
+          await loseLife(session.user.id, gameUser.lives);
+          await refetch();
+          playSound('life-lost', effectsOn);
+          toast.error("❤️ -1 life");
         }
         
         playSound('levelUp', effectsOn);
@@ -276,22 +294,61 @@ const PopGamePage = () => {
       }
     };
 
-    saveScore();
-  }, [gameState]);
+    handleGameEnd();
+  }, [gameState, session?.user?.id, score, gameUser, refetch, effectsOn]);
+
+  // Deduct power-up helper
+  const deductPowerup = async (key) => {
+    if (!session?.user?.id || !gameUser?.powerups_inventory?.[key]) return;
+    
+    await supabase
+      .from('game_users')
+      .update({
+        powerups_inventory: {
+          ...gameUser.powerups_inventory,
+          [key]: Math.max(0, (gameUser.powerups_inventory[key] ?? 0) - 1)
+        }
+      })
+      .eq('user_id', session.user.id);
+    
+    await refetch();
+  };
+
+  // Grace Period handler (+5 seconds)
+  const handleGracePeriod = async () => {
+    if (!gameUser?.powerups_inventory?.grace_period) return;
+    if (gameState !== 'playing' || gracePeriodUsed) return;
+    
+    setTimeLeft(prev => prev + 5);
+    playSound('grace-period', effectsOn);
+    toast.success("⏳ +5 seconds added!");
+    
+    await deductPowerup('grace_period');
+    setGracePeriodUsed(true);
+  };
+
+  // Divine Hint handler (double crown chance)
+  const handleDivineHint = async () => {
+    if (!gameUser?.powerups_inventory?.divine_hint) return;
+    if (gameState !== 'playing' || divineHintActive) return;
+    
+    setDivineHintActive(true);
+    playSound('divine-hint', effectsOn);
+    toast.success("👑 Crown chance doubled for this round!");
+    
+    await deductPowerup('divine_hint');
+  };
 
   const handlePop = useCallback((itemId, points, x, y, isTimeBonus = false) => {
-    // Prevent clicks after game ends
     if (gameState !== 'playing' || timeLeft <= 0) return;
     if (poppedItemsRef.current.has(itemId)) return;
     poppedItemsRef.current.add(itemId);
     setItems(prev => prev.filter(item => item.id !== itemId));
     
-    // Clear existing combo timer
     if (comboTimerRef.current) {
       clearTimeout(comboTimerRef.current);
     }
     
-    // Handle time bonus (crown)
     if (isTimeBonus) {
       setTimeLeft(prev => prev + 10);
       setLastPoints({ points: 0, bonus: 0, x, y, isTime: true });
@@ -299,7 +356,6 @@ const PopGamePage = () => {
       setTimeout(() => setShowComboPopup(false), 500);
       playSound('powerUp', effectsOn);
       
-      // Still continue combo for crown
       setCombo(prev => {
         const newCombo = Math.min(prev + 1, MAX_COMBO);
         comboTimerRef.current = setTimeout(() => {
@@ -310,7 +366,6 @@ const PopGamePage = () => {
       return;
     }
     
-    // Calculate combo and bonus
     setCombo(prev => {
       const newCombo = Math.min(prev + 1, MAX_COMBO);
       const multiplier = getComboMultiplier(newCombo);
@@ -319,12 +374,10 @@ const PopGamePage = () => {
       
       setScore(s => s + totalPoints);
       
-      // Show popup with points info
       setLastPoints({ points, bonus: bonusPoints, x, y, isTime: false });
       setShowComboPopup(true);
       setTimeout(() => setShowComboPopup(false), 300);
       
-      // Reset combo after timeout
       comboTimerRef.current = setTimeout(() => {
         setCombo(0);
       }, COMBO_TIMEOUT);
@@ -340,46 +393,30 @@ const PopGamePage = () => {
     setTimeLeft(GAME_DURATION);
     setItems([]);
     setCombo(0);
+    setDivineHintActive(false);
+    setGracePeriodUsed(false);
+    setShieldProtected(false);
     poppedItemsRef.current.clear();
     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     setGameState('playing');
     playSound('switch', effectsOn);
   };
 
-  const playAgain = () => {
-    if (currentAttempt >= maxAttempts) {
-      setGameState('no_attempts');
+  const playAgain = async () => {
+    // Refresh game user to check lives
+    await refetch();
+    if (gameUser?.lives <= 0) {
+      toast.error('No lives remaining!');
       return;
     }
-    setCurrentAttempt(prev => prev + 1);
     setGameState('ready');
   };
 
   // Render different states
-  if (gameState === 'loading') {
+  if (gameState === 'loading' || loadingGameUser) {
     return (
       <div className="min-h-[100dvh] bg-gradient-to-b from-[#0c1445] via-[#1e3a5f] to-[#0d1b2a] flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  if (gameState === 'no_attempts') {
-    return (
-      <div className="min-h-[100dvh] bg-gradient-to-b from-[#0c1445] via-[#1e3a5f] to-[#0d1b2a] flex flex-col items-center justify-center p-4">
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-white/20 text-center max-w-md">
-          <h2 className="text-2xl font-bold text-white mb-4">No More Attempts!</h2>
-          <p className="text-white/70 mb-4">You've used all {maxAttempts} attempts.</p>
-          <div className="text-4xl font-bold text-amber-400 mb-6">
-            Best Score: {bestScore}
-          </div>
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full font-bold shadow-lg"
-          >
-            Back to Map
-          </button>
-        </div>
       </div>
     );
   }
@@ -418,8 +455,8 @@ const PopGamePage = () => {
         
         <div className="text-center">
           <div className="text-white font-bold text-lg">Free Fall Pop</div>
-          <div className="text-white/70 text-sm">
-            Attempt {currentAttempt}/{maxAttempts}
+          <div className="text-white/70 text-sm flex items-center justify-center gap-2">
+            <span>❤️ {gameUser?.lives ?? 0}</span>
           </div>
         </div>
 
@@ -472,6 +509,51 @@ const PopGamePage = () => {
                `COMBO x${combo}! (x1.25)`}
             </motion.div>
           )}
+
+          {/* Divine Hint indicator */}
+          {divineHintActive && (
+            <div className="px-3 py-1 rounded-full bg-yellow-500 text-white text-sm font-bold animate-pulse">
+              👑 2x Crown Chance Active!
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Power-up bar during gameplay */}
+      {gameState === 'playing' && gameUser && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-sm p-3 flex justify-around items-center gap-2">
+          {/* Grace Period */}
+          <button
+            onClick={handleGracePeriod}
+            disabled={!gameUser.powerups_inventory?.grace_period || gracePeriodUsed}
+            className={`flex flex-col items-center px-3 py-2 rounded-xl text-white text-sm transition-all ${
+              gameUser.powerups_inventory?.grace_period && !gracePeriodUsed
+                ? 'bg-purple-500 hover:bg-purple-600 active:scale-95'
+                : 'bg-gray-500/50 opacity-50'
+            }`}
+          >
+            <Clock className="w-5 h-5" />
+            <span className="text-xs">+5s</span>
+            <span className="text-[10px]">x{gameUser.powerups_inventory?.grace_period || 0}</span>
+          </button>
+          
+          {/* Divine Hint */}
+          <button
+            onClick={handleDivineHint}
+            disabled={!gameUser.powerups_inventory?.divine_hint || divineHintActive}
+            className={`flex flex-col items-center px-3 py-2 rounded-xl text-white text-sm transition-all ${
+              gameUser.powerups_inventory?.divine_hint && !divineHintActive
+                ? 'bg-yellow-500 hover:bg-yellow-600 active:scale-95'
+                : 'bg-gray-500/50 opacity-50'
+            }`}
+          >
+            <Sparkles className="w-5 h-5" />
+            <span className="text-xs">2x👑</span>
+            <span className="text-[10px]">x{gameUser.powerups_inventory?.divine_hint || 0}</span>
+          </button>
+          
+          {/* Holy Shield */}
+          <HolyShieldButton gameUser={gameUser} refetch={refetch} effectsOn={effectsOn} />
         </div>
       )}
 
@@ -560,18 +642,38 @@ const PopGamePage = () => {
               ⚡ Higher combos = faster spawns & speed!
             </div>
 
-            <div className="text-sm text-gray-500 mb-4">
-              Attempts remaining: {maxAttempts - currentAttempt + 1}
+            {/* Best Scores */}
+            {bestScores.length > 0 && (
+              <div className="bg-amber-50 rounded-lg p-3 mb-4">
+                <h3 className="font-bold text-amber-800 mb-2">🏆 Your Top 3</h3>
+                <div className="flex justify-center gap-4">
+                  {bestScores.map((s, i) => (
+                    <div key={i} className="text-center">
+                      <div className="text-lg">{['🥇', '🥈', '🥉'][i]}</div>
+                      <div className="font-bold text-amber-700">{s.score}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="text-sm text-gray-500 mb-4 flex items-center justify-center gap-2">
+              <span>❤️ {gameUser?.lives ?? 0} lives</span>
+              <span className="text-gray-300">|</span>
+              <span className="text-red-500">-1 life per game</span>
             </div>
 
             <button
               onClick={startGame}
-              className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 
-                text-white text-xl font-bold rounded-2xl shadow-lg
-                hover:from-green-600 hover:to-emerald-700 
-                active:scale-95 transition-transform"
+              disabled={!gameUser || gameUser.lives <= 0}
+              className={`w-full py-4 text-white text-xl font-bold rounded-2xl shadow-lg
+                transition-transform ${
+                  gameUser?.lives > 0 
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 active:scale-95'
+                    : 'bg-gray-400 cursor-not-allowed'
+                }`}
             >
-              Start Game!
+              {gameUser?.lives > 0 ? 'Start Game!' : 'No Lives Left'}
             </button>
           </motion.div>
         </div>
@@ -593,26 +695,55 @@ const PopGamePage = () => {
             </div>
             <p className="text-gray-500 mb-2">points earned</p>
 
-            {score > bestScore - score && score > 0 && (
+            {bestScores.length > 0 && score >= bestScores[0]?.score && (
               <div className="text-green-600 font-bold mb-4">
                 🏆 New Best Score!
               </div>
             )}
 
-            <div className="text-gray-600 mb-6">
-              Best Score: <span className="font-bold text-amber-600">{Math.max(bestScore, score)}</span>
+            {/* Top 3 Best Scores */}
+            {bestScores.length > 0 && (
+              <div className="bg-amber-50 rounded-lg p-3 mb-4">
+                <h3 className="font-bold text-amber-800 mb-2">🏆 Your Top 3</h3>
+                <div className="flex justify-center gap-4">
+                  {bestScores.map((s, i) => (
+                    <div key={i} className="text-center">
+                      <div className="text-lg">{['🥇', '🥈', '🥉'][i]}</div>
+                      <div className={`font-bold ${s.score === score ? 'text-green-600' : 'text-amber-700'}`}>
+                        {s.score}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Shield/Life Status */}
+            {shieldProtected && (
+              <div className="bg-yellow-100 text-yellow-800 rounded-lg px-3 py-2 mb-4 flex items-center justify-center gap-2">
+                <Shield className="w-5 h-5" />
+                Holy Shield protected you!
+              </div>
+            )}
+
+            {/* Lives Remaining */}
+            <div className="flex items-center justify-center gap-2 mb-4 text-gray-600">
+              <span>Lives remaining:</span>
+              <span className="font-bold text-red-500">❤️ {gameUser?.lives ?? 0}</span>
             </div>
 
             <div className="space-y-3">
-              {currentAttempt < maxAttempts && (
-                <button
-                  onClick={playAgain}
-                  className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 
-                    text-white font-bold rounded-xl shadow-lg"
-                >
-                  Play Again ({maxAttempts - currentAttempt} left)
-                </button>
-              )}
+              <button
+                onClick={playAgain}
+                disabled={!gameUser || gameUser.lives <= 0}
+                className={`w-full py-3 font-bold rounded-xl shadow-lg ${
+                  gameUser?.lives > 0
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
+                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                }`}
+              >
+                {gameUser?.lives > 0 ? 'Play Again' : 'No Lives Left'}
+              </button>
               <button
                 onClick={() => navigate('/')}
                 className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 

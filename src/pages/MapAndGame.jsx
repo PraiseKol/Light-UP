@@ -42,7 +42,7 @@ import {
   getWeeklyChallengeStatus,
   hasPlayedThisWeek,
 } from "@/utils/weeklyChallenge";
-import { getActivePopGameSession, getPlayerAttempts } from "@/lib/api/popGame";
+import { getPopGameActive } from "@/lib/api/popGame";
 import { getScriptureMatchActive } from "@/lib/api/scriptureMatch";
 import avatar from "@/assets/avatar.png";
 
@@ -84,7 +84,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     toPosition: null,
   });
   const [popGameActive, setPopGameActive] = useState(false);
-  const [popGameAttemptsLeft, setPopGameAttemptsLeft] = useState(0);
   const [scriptureMatchActive, setScriptureMatchActive] = useState(false);
 
   const { user } = useAuth();
@@ -223,20 +222,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     }
   }, [gameUser]);
 
-  // Check for active pop game session
+  // Check for Pop Game visibility (setting-based, not session-based)
   useEffect(() => {
     const checkPopGame = async () => {
-      if (!user?.id) return;
       try {
-        const activeSession = await getActivePopGameSession();
-        if (activeSession) {
-          const attempts = await getPlayerAttempts(activeSession.id, user.id);
-          setPopGameActive(true);
-          setPopGameAttemptsLeft((activeSession.max_attempts || 3) - attempts.length);
-        } else {
-          setPopGameActive(false);
-          setPopGameAttemptsLeft(0);
-        }
+        const isActive = await getPopGameActive();
+        setPopGameActive(isActive);
       } catch (err) {
         console.error("Error checking pop game:", err);
       }
@@ -244,14 +235,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
     checkPopGame();
     
-    // Subscribe to pop game session updates
+    // Subscribe to mini game settings updates for pop game
     const channel = supabase
-      .channel('pop-game-status')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pop_game_sessions' }, checkPopGame)
+      .channel('pop-game-visibility')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mini_game_settings' }, checkPopGame)
       .subscribe();
 
     return () => supabase.removeChannel(channel);
-  }, [user?.id]);
+  }, []);
 
   // Check for Scripture Match visibility
   useEffect(() => {
