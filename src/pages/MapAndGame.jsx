@@ -635,42 +635,40 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       <PWAInstallPrompt />
       <MapBackground />
 
-      {/* Pop Game Red Bulb Indicator */}
-      {popGameActive && popGameAttemptsLeft > 0 && !selectedLevel && (
+      {/* Pop Game Red Orb - Admin Controlled Visibility (positioned above Memory Challenge) */}
+      {popGameActive && !selectedLevel && (
         <button
           onClick={() => {
             playSound("optionSelect", effectsOn);
             navigate("/pop-game");
           }}
-          className="fixed left-3 top-1/3 z-50 flex flex-col items-center animate-bounce"
+          className="fixed left-2 sm:left-3 z-50 flex flex-col items-center animate-bounce"
+          style={{ top: 'calc(30% - 10px)' }}
         >
-          <div className="w-14 h-14 rounded-full bg-gradient-to-b from-red-400 via-red-500 to-red-700 shadow-[0_0_20px_rgba(239,68,68,0.8),0_4px_0_#991b1b] border-2 border-white/50 flex items-center justify-center ring-4 ring-red-300/50">
-            <span className="text-2xl">🎮</span>
+          <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-b from-red-400 via-red-500 to-red-700 shadow-[0_0_20px_rgba(239,68,68,0.8),0_4px_0_#991b1b] border-2 border-white/50 flex items-center justify-center ring-4 ring-red-300/50">
+            <span className="text-xl sm:text-2xl lg:text-3xl">🎮</span>
           </div>
-          <span className="text-[10px] font-bold text-white bg-red-600/90 px-2 py-0.5 rounded-full mt-1 shadow-lg">
-            TAP!
-          </span>
-          <span className="text-[9px] text-white/80 bg-black/50 px-1.5 py-0.5 rounded-full mt-0.5">
-            {popGameAttemptsLeft} left
+          <span className="text-[9px] sm:text-[10px] font-bold text-white bg-red-600/90 px-1.5 sm:px-2 py-0.5 rounded-full mt-1 shadow-lg">
+            Free Fall
           </span>
         </button>
       )}
 
-      {/* Scripture Match Yellow Orb - Admin Controlled Visibility */}
+      {/* Scripture Match Yellow Orb - Admin Controlled Visibility (positioned below Pop Game) */}
       {!selectedLevel && scriptureMatchActive && (
         <button
           onClick={() => {
             playSound("optionSelect", effectsOn);
             navigate("/scripture-match");
           }}
-          className="fixed left-3 z-50 flex flex-col items-center hover:scale-110 transition-transform"
-          style={{ top: 'calc(33.33% + 90px)' }}
+          className="fixed left-2 sm:left-3 z-50 flex flex-col items-center hover:scale-110 transition-transform"
+          style={{ top: 'calc(30% + 70px)' }}
         >
-          <div className="w-14 h-14 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-500 to-amber-600 shadow-[0_0_20px_rgba(245,158,11,0.8),0_4px_0_#b45309] border-2 border-white/50 flex items-center justify-center ring-4 ring-yellow-300/50 animate-pulse">
-            <span className="text-2xl">🧩</span>
+          <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-500 to-amber-600 shadow-[0_0_20px_rgba(245,158,11,0.8),0_4px_0_#b45309] border-2 border-white/50 flex items-center justify-center ring-4 ring-yellow-300/50 animate-pulse">
+            <span className="text-xl sm:text-2xl lg:text-3xl">🧩</span>
           </div>
-          <span className="text-[10px] font-bold text-white bg-amber-600/90 px-2 py-0.5 rounded-full mt-1 shadow-lg">
-            Scripture
+          <span className="text-[9px] sm:text-[10px] font-bold text-white bg-amber-600/90 px-1.5 sm:px-2 py-0.5 rounded-full mt-1 shadow-lg">
+            Memory
           </span>
         </button>
       )}
