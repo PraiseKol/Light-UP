@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
 const ITEM_CONFIG = {
-  heart: { emoji: '❤️', points: 5, color: 'from-red-400 to-pink-500', isTimeBonus: false },
-  santa: { emoji: '🎅', points: 5, color: 'from-red-500 to-red-700', isTimeBonus: false },
-  lamp: { emoji: '🪔', points: 10, color: 'from-amber-400 to-orange-500', isTimeBonus: false },
-  dove: { emoji: '🕊️', points: 15, color: 'from-white to-gray-200', isTimeBonus: false },
-  cross: { emoji: '✝️', points: 20, color: 'from-yellow-300 to-amber-500', isTimeBonus: false },
-  crown: { emoji: '👑', points: 0, color: 'from-yellow-400 via-amber-300 to-yellow-500', isTimeBonus: true }
+  heart: { emoji: '❤️', points: 5, color: 'from-red-400 to-pink-500', isTimeBonus: false, isBomb: false },
+  santa: { emoji: '🎅', points: 5, color: 'from-red-500 to-red-700', isTimeBonus: false, isBomb: false },
+  lamp: { emoji: '🪔', points: 10, color: 'from-amber-400 to-orange-500', isTimeBonus: false, isBomb: false },
+  dove: { emoji: '🕊️', points: 15, color: 'from-white to-gray-200', isTimeBonus: false, isBomb: false },
+  cross: { emoji: '✝️', points: 20, color: 'from-yellow-300 to-amber-500', isTimeBonus: false, isBomb: false },
+  crown: { emoji: '👑', points: 0, color: 'from-yellow-400 via-amber-300 to-yellow-500', isTimeBonus: true, isBomb: false },
+  bomb: { emoji: '💣', points: 0, color: 'from-gray-700 via-gray-800 to-black', isTimeBonus: false, isBomb: true }
 };
 
 const PopGameItem = ({ item, onPop }) => {
@@ -23,25 +24,27 @@ const PopGameItem = ({ item, onPop }) => {
     setIsPopped(true);
     
     const rect = e.currentTarget.getBoundingClientRect();
-    onPop(item.id, config.points, rect.left + rect.width / 2, rect.top, config.isTimeBonus);
+    onPop(item.id, config.points, rect.left + rect.width / 2, rect.top, config.isTimeBonus, config.isBomb);
   };
 
   if (isPopped) return null;
 
   const isCrown = item.type === 'crown';
+  const isBomb = item.type === 'bomb';
 
   return (
     <motion.div
+      id={`item-${item.id}`}
       initial={{ y: -60, opacity: 0, rotate: 0 }}
       animate={{ 
         y: window.innerHeight + 60, 
         opacity: 1,
-        rotate: [0, 10, -10, 5, -5, 0]
+        rotate: isBomb ? [0, -5, 5, -5, 5, 0] : [0, 10, -10, 5, -5, 0]
       }}
       exit={{ scale: 1.5, opacity: 0 }}
       transition={{ 
         y: { duration: item.speed, ease: 'linear' },
-        rotate: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+        rotate: { duration: isBomb ? 0.3 : 2, repeat: Infinity, ease: 'easeInOut' },
         opacity: { duration: 0.3 }
       }}
       onPointerDown={handleInteraction}
@@ -49,7 +52,7 @@ const PopGameItem = ({ item, onPop }) => {
       className="absolute cursor-pointer select-none touch-none"
       style={{ 
         left: item.x,
-        zIndex: isCrown ? 60 : 50
+        zIndex: isBomb ? 70 : isCrown ? 60 : 50
       }}
     >
       {/* Larger invisible hit area for easier tapping */}
@@ -63,19 +66,20 @@ const PopGameItem = ({ item, onPop }) => {
           bg-gradient-to-br ${config.color}
           flex items-center justify-center
           shadow-lg shadow-black/30
-          border-2 border-white/50
+          border-2 ${isBomb ? 'border-red-500/80' : 'border-white/50'}
           transition-transform duration-75
           active:scale-90
           ${isCrown ? 'animate-pulse ring-4 ring-yellow-300/60' : ''}
+          ${isBomb ? 'ring-4 ring-red-500/70 animate-pulse' : ''}
         `}>
-          <span className={`pointer-events-none ${isCrown ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'}`}>
+          <span className={`pointer-events-none ${isCrown || isBomb ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'}`}>
             {config.emoji}
           </span>
         </div>
         <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 
           text-xs font-bold text-white px-1.5 rounded-full pointer-events-none
-          ${isCrown ? 'bg-yellow-600/80' : 'bg-black/50'}`}>
-          {isCrown ? '+10s' : `+${config.points}`}
+          ${isBomb ? 'bg-red-600/90' : isCrown ? 'bg-yellow-600/80' : 'bg-black/50'}`}>
+          {isBomb ? 'AVOID!' : isCrown ? '+10s' : `+${config.points}`}
         </div>
       </div>
     </motion.div>
