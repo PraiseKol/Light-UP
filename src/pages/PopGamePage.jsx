@@ -26,8 +26,12 @@ const ITEM_TYPES = [
   { type: 'santa', weight: 25 },
   { type: 'lamp', weight: 20 },
   { type: 'dove', weight: 13 },
-  { type: 'cross', weight: 7 }
+  { type: 'cross', weight: 7 },
+  { type: 'bomb', weight: 5 }
 ];
+
+// Bomb spawn chance - independent of regular items
+const BOMB_SPAWN_CHANCE = 0.05; // 5% chance
 
 // Crown is ultra rare - ~1% base chance, may not appear in a round
 const CROWN_SPAWN_CHANCE_NORMAL = 0.01;
@@ -260,7 +264,7 @@ const PopGamePage = () => {
     return () => clearInterval(cleanupInterval);
   }, [gameState]);
 
-  // Save score and handle life loss when finished
+  // Save score when finished (NO life loss on time-out - lives are only lost on bomb hits)
   useEffect(() => {
     if (gameState !== 'finished' || !session?.user?.id) return;
 
@@ -273,20 +277,8 @@ const PopGamePage = () => {
           setBestScores(updatedScores);
         }
         
-        // Check Holy Shield
-        const isShieldActive = gameUser?.holy_shield_until && 
-          new Date(gameUser.holy_shield_until).getTime() > Date.now();
-        
-        if (isShieldActive) {
-          setShieldProtected(true);
-          toast.success("🛡️ Holy Shield protected you from losing a life!");
-        } else if (gameUser?.lives > 0) {
-          // Lose a life
-          await loseLife(session.user.id, gameUser.lives);
-          await refetch();
-          playSound('life-lost', effectsOn);
-          toast.error("❤️ -1 life");
-        }
+        // Refresh user data to get updated lives (in case bomb was hit)
+        await refetch();
         
         playSound('levelUp', effectsOn);
       } catch (error) {
@@ -295,7 +287,7 @@ const PopGamePage = () => {
     };
 
     handleGameEnd();
-  }, [gameState, session?.user?.id, score, gameUser, refetch, effectsOn]);
+  }, [gameState, session?.user?.id, score, refetch, effectsOn]);
 
   // Deduct power-up helper
   const deductPowerup = async (key) => {
@@ -339,11 +331,48 @@ const PopGamePage = () => {
     await deductPowerup('divine_hint');
   };
 
-  const handlePop = useCallback((itemId, points, x, y, isTimeBonus = false) => {
+  const handlePop = useCallback(async (itemId, points, x, y, isTimeBonus = false, isBomb = false) => {
     if (gameState !== 'playing' || timeLeft <= 0) return;
     if (poppedItemsRef.current.has(itemId)) return;
     poppedItemsRef.current.add(itemId);
     setItems(prev => prev.filter(item => item.id !== itemId));
+    
+    // Handle BOMB hit - lose life + 25% score penalty
+    if (isBomb) {
+      // Reset combo on bomb hit
+      setCombo(0);
+      if (comboTimerRef.current) {
+        clearTimeout(comboTimerRef.current);
+        comboTimerRef.current = null;
+      }
+      
+      // 25% score penalty
+      setScore(prev => Math.floor(prev * 0.75));
+      
+      // Show bomb hit feedback
+      setLastPoints({ points: 0, bonus: 0, x, y, isBomb: true });
+      setShowComboPopup(true);
+      setTimeout(() => setShowComboPopup(false), 800);
+      
+      // Check Holy Shield for life protection
+      const isShieldActive = gameUser?.holy_shield_until && 
+        new Date(gameUser.holy_shield_until).getTime() > Date.now();
+      
+      if (isShieldActive) {
+        setShieldProtected(true);
+        toast.success("🛡️ Shield blocked the bomb! (-25% score only)");
+        playSound('power-up', effectsOn);
+      } else if (session?.user?.id && gameUser?.lives > 0) {
+        // Lose a life
+        await loseLife(session.user.id, gameUser.lives);
+        await refetch();
+        playSound('life-lost', effectsOn);
+        toast.error("💣 BOOM! Lost a life & 25% score!");
+      }
+      
+      playSound('error', effectsOn);
+      return;
+    }
     
     if (comboTimerRef.current) {
       clearTimeout(comboTimerRef.current);
@@ -386,7 +415,7 @@ const PopGamePage = () => {
     });
     
     playSound('click', effectsOn);
-  }, [gameState, timeLeft, effectsOn]);
+  }, [gameState, timeLeft, effectsOn, gameUser, session?.user?.id, refetch]);
 
   const startGame = () => {
     setScore(0);
@@ -559,16 +588,21 @@ const PopGamePage = () => {
 
       {/* Floating points popup */}
       <AnimatePresence>
-        {showComboPopup && (lastPoints.bonus > 0 || lastPoints.isTime) && (
+        {showComboPopup && (lastPoints.bonus > 0 || lastPoints.isTime || lastPoints.isBomb) && (
           <motion.div
             initial={{ opacity: 1, y: 0, scale: 1 }}
             animate={{ opacity: 0, y: -50, scale: 1.2 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: lastPoints.isBomb ? 0.8 : 0.5 }}
             className="absolute z-50 pointer-events-none text-center"
             style={{ left: lastPoints.x - 40, top: lastPoints.y - 30 }}
           >
-            {lastPoints.isTime ? (
+            {lastPoints.isBomb ? (
+              <div className="text-red-500 font-bold text-2xl animate-pulse">
+                💣 BOOM!
+                <div className="text-sm">-25% score!</div>
+              </div>
+            ) : lastPoints.isTime ? (
               <div className="text-yellow-400 font-bold text-xl">
                 ⏰ +10 SEC!
               </div>
@@ -611,31 +645,40 @@ const PopGamePage = () => {
               Chain taps for combo bonuses!
             </p>
             
-            <div className="grid grid-cols-6 gap-1.5 mb-4 text-sm">
+            <div className="grid grid-cols-7 gap-1 mb-3 text-sm">
               <div className="text-center">
-                <div className="text-xl">❤️</div>
-                <div className="text-gray-500 text-xs">+5</div>
+                <div className="text-lg">❤️</div>
+                <div className="text-gray-500 text-[10px]">+5</div>
               </div>
               <div className="text-center">
-                <div className="text-xl">🎅</div>
-                <div className="text-gray-500 text-xs">+5</div>
+                <div className="text-lg">🎅</div>
+                <div className="text-gray-500 text-[10px]">+5</div>
               </div>
               <div className="text-center">
-                <div className="text-xl">🪔</div>
-                <div className="text-gray-500 text-xs">+10</div>
+                <div className="text-lg">🪔</div>
+                <div className="text-gray-500 text-[10px]">+10</div>
               </div>
               <div className="text-center">
-                <div className="text-xl">🕊️</div>
-                <div className="text-gray-500 text-xs">+15</div>
+                <div className="text-lg">🕊️</div>
+                <div className="text-gray-500 text-[10px]">+15</div>
               </div>
               <div className="text-center">
-                <div className="text-xl">✝️</div>
-                <div className="text-gray-500 text-xs">+20</div>
+                <div className="text-lg">✝️</div>
+                <div className="text-gray-500 text-[10px]">+20</div>
               </div>
               <div className="text-center">
-                <div className="text-xl">👑</div>
-                <div className="text-gray-500 text-xs">+10s</div>
+                <div className="text-lg">👑</div>
+                <div className="text-gray-500 text-[10px]">+10s</div>
               </div>
+              <div className="text-center">
+                <div className="text-lg">💣</div>
+                <div className="text-red-500 text-[10px] font-bold">AVOID!</div>
+              </div>
+            </div>
+            
+            {/* Bomb warning */}
+            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-xs text-red-700">
+              ⚠️ Avoid 💣 bombs! They cost a life + 25% score
             </div>
             
             <div className="text-xs text-amber-600 mb-3">
@@ -659,8 +702,6 @@ const PopGamePage = () => {
 
             <div className="text-sm text-gray-500 mb-4 flex items-center justify-center gap-2">
               <span>❤️ {gameUser?.lives ?? 0} lives</span>
-              <span className="text-gray-300">|</span>
-              <span className="text-red-500">-1 life per game</span>
             </div>
 
             <button

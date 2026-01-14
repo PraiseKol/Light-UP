@@ -37,6 +37,7 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
   const [score, setScore] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [shieldWasActive, setShieldWasActive] = useState(false);
+  const [lifeLostThisGame, setLifeLostThisGame] = useState(false);
   
   // Timer ref
   const timerRef = useRef(null);
@@ -132,6 +133,7 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
     setScore(0);
     setIsProcessing(false);
     setShieldWasActive(false);
+    setLifeLostThisGame(false); // Reset life loss flag
     setGameState('playing');
     
     if (effectsOn) playSound('select');
@@ -227,6 +229,9 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
 
   // Handle game over (time ran out)
   const handleGameOver = async () => {
+    // Prevent multiple life deductions
+    if (lifeLostThisGame) return;
+    
     setGameState('gameover');
     if (effectsOn) playSound('game-over');
     
@@ -238,7 +243,8 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
       setShieldWasActive(true);
       toast.success("🛡️ Holy Shield protected you!");
     } else if (user?.id && gameUser?.lives > 0) {
-      // Lose a life
+      // Lose a life (only once per game)
+      setLifeLostThisGame(true);
       await loseLife(user.id, gameUser.lives);
       await refetch();
       if (effectsOn) playSound('life-lost');
