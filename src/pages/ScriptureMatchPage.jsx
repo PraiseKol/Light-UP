@@ -5,7 +5,7 @@ import { useUser } from '@supabase/auth-helpers-react';
 import toast from 'react-hot-toast';
 
 import { getOrCreateStats, saveGame } from '@/lib/api/scriptureMatch';
-import { generateCards, LEVELS, getMatchTypeHint } from '@/data/scriptureMatchData';
+import { generateCards, LEVELS, getMatchTypeHint, getPageForLevel, PAGES } from '@/data/scriptureMatchData';
 import { playSound } from '@/utils/sound';
 import { useGameUser } from '@/hooks/useGameUser';
 import { loseLife } from '@/utils/loseLife';
