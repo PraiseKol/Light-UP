@@ -115,23 +115,28 @@ export default function SettingsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="relative bg-gradient-to-br from-christmasGreen/10 via-white to-christmasRed/10 p-4 sm:p-6 rounded-2xl shadow-[0_8px_0_#166534,0_12px_20px_rgba(22,101,52,0.4)] w-full max-w-md border-2 border-christmasGreen/30 overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col">
-        {/* Christmas wreath decoration */}
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-3xl sm:text-4xl animate-ornament-swing">🎄</div>
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-christmasGold/5 to-transparent pointer-events-none" />
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="relative bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-4 sm:p-6 rounded-2xl shadow-[0_8px_0_#b45309,0_12px_20px_rgba(180,83,9,0.3)] w-full max-w-md border-2 border-amber-300/50 overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col">
+        {/* Decorative glow at top */}
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-24 h-12 bg-gradient-to-b from-yellow-400/40 to-transparent blur-xl rounded-full pointer-events-none" />
         
-        {/* Snowflake pattern background */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none">
-          {[...Array(8)].map((_, i) => (
-            <span key={i} className="absolute text-xl sm:text-2xl" style={{ top: `${20 + i * 10}%`, left: `${10 + (i % 3) * 35}%` }}>❄</span>
+        {/* Dove icon */}
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl sm:text-3xl">🕊️</div>
+        
+        {/* Subtle warm overlay */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-200/10 via-transparent to-yellow-200/10 pointer-events-none" />
+        
+        {/* Subtle cross pattern background */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+          {[...Array(6)].map((_, i) => (
+            <span key={i} className="absolute text-2xl sm:text-3xl text-amber-900" style={{ top: `${15 + i * 15}%`, left: `${5 + (i % 3) * 40}%` }}>✝</span>
           ))}
         </div>
 
-        <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-christmasGreen to-christmasRed bg-clip-text text-transparent mb-2 sm:mb-4 text-center mt-4">
-          🎅 Player Settings
+        <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-600 via-orange-500 to-yellow-600 bg-clip-text text-transparent mb-2 sm:mb-4 text-center mt-4">
+          ⚙️ Player Settings
         </h2>
-        <div className="text-center text-[10px] sm:text-xs text-blue-900"><i>Refresh after saving to see changes</i></div>
+        <div className="text-center text-[10px] sm:text-xs text-amber-700"><i>Refresh after saving to see changes</i></div>
         
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 mt-2 pr-1">
