@@ -497,8 +497,6 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
             animationDuration: `${2 + Math.random() * 2}s`,
           }}
         />
-          ❄
-        </div>
       ))}
       {/* HUD */}
       <div className="sticky top-0 z-10 flex justify-between items-center px-6 py-4 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md shadow-[0_4px_0_#be185d] rounded-b-2xl border-b-2 border-pink-200">
