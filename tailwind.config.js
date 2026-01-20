@@ -12,14 +12,6 @@ module.exports = {
         candyGreen: '#3DD68C',
         candyPink: '#FF6B9D',
         candyOrange: '#FF9A56',
-        // Christmas colors
-        christmasRed: '#DC2626',
-        christmasGreen: '#166534',
-        christmasGold: '#FFD700',
-        snowWhite: '#F8FAFC',
-        hollyGreen: '#15803D',
-        cranberry: '#991B1B',
-        frostBlue: '#DBEAFE',
       },
       animation: {
         gradientBlur: 'gradientBlur 8s ease-in-out infinite',

@@ -1,8 +1,8 @@
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Book, Trophy, Zap, Users } from "lucide-react";
+import { Sparkles, Book } from "lucide-react";
 import { playSound } from "@/utils/sound";
 
 export default function LoginPage() {
@@ -15,26 +15,11 @@ export default function LoginPage() {
     }
   }, [user, navigate]);
 
-  // Generate snowflakes with random properties
-  const snowflakes = useMemo(() => 
-    [...Array(60)].map((_, i) => ({
-      id: i,
-      left: `${Math.random() * 100}%`,
-      size: Math.random() * 8 + 4,
-      duration: Math.random() * 8 + 6,
-      delay: Math.random() * 5,
-      opacity: Math.random() * 0.6 + 0.4,
-    })), []
-  );
-
   return (
-    <div className="relative min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-[#0d1b2a] via-[#1b4332] to-[#14532d]">
-      {/* Northern Lights Effect */}
-      <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-green-500/20 via-red-500/10 to-transparent blur-3xl" />
-      
+    <div className="relative min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-[#1e3a5f] via-[#2d1b4e] to-[#4c1d95]">
       {/* Animated star field */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(40)].map((_, i) => (
+        {[...Array(50)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 bg-white rounded-full"
@@ -55,39 +40,19 @@ export default function LoginPage() {
         ))}
       </div>
 
-      {/* Falling snowflakes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {snowflakes.map((flake) => (
-          <div
-            key={flake.id}
-            className="absolute text-white animate-snowfall"
-            style={{
-              left: flake.left,
-              top: '-20px',
-              fontSize: `${flake.size}px`,
-              animationDuration: `${flake.duration}s`,
-              animationDelay: `${flake.delay}s`,
-              opacity: flake.opacity,
-            }}
-          >
-            ❄
-          </div>
-        ))}
-      </div>
-
-      {/* Christmas ornament orbs */}
+      {/* Glowing orbs */}
       <motion.div
-        className="absolute top-20 left-10 w-48 h-48 bg-red-500/20 rounded-full blur-3xl"
+        className="absolute top-20 left-10 w-48 h-48 bg-pink-500/20 rounded-full blur-3xl"
         animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
         transition={{ duration: 4, repeat: Infinity }}
       />
       <motion.div
-        className="absolute bottom-20 right-10 w-64 h-64 bg-christmasGold/20 rounded-full blur-3xl"
+        className="absolute bottom-20 right-10 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl"
         animate={{ scale: [1.2, 1, 1.2], opacity: [0.4, 0.6, 0.4] }}
         transition={{ duration: 5, repeat: Infinity }}
       />
       <motion.div
-        className="absolute top-1/3 right-20 w-32 h-32 bg-green-500/20 rounded-full blur-2xl"
+        className="absolute top-1/3 right-20 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"
         animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
         transition={{ duration: 3.5, repeat: Infinity }}
       />
@@ -108,16 +73,8 @@ export default function LoginPage() {
             className="inline-block mb-4"
           >
             <div className="relative">
-              {/* Christmas Star above Bible */}
-              <motion.div
-                className="absolute -top-8 left-1/2 -translate-x-1/2 text-4xl animate-star-glow"
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
-              >
-                ⭐
-              </motion.div>
-              <Book className="w-20 h-20 text-christmasGold drop-shadow-[0_0_20px_rgba(255,215,0,0.8)]" />
-              <Sparkles className="w-8 h-8 text-red-400 absolute -top-2 -right-2 animate-pulse" />
+              <Book className="w-20 h-20 text-candyYellow drop-shadow-[0_0_20px_rgba(255,217,61,0.8)]" />
+              <Sparkles className="w-8 h-8 text-pink-400 absolute -top-2 -right-2 animate-pulse" />
             </div>
           </motion.div>
 
@@ -125,7 +82,7 @@ export default function LoginPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-christmasGold via-yellow-200 to-christmasGold mb-2 drop-shadow-[0_0_30px_rgba(255,215,0,0.5)]"
+            className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-candyYellow via-yellow-200 to-candyYellow mb-2 drop-shadow-[0_0_30px_rgba(255,217,61,0.5)]"
           >
             LightUP
           </motion.h1>
@@ -133,21 +90,21 @@ export default function LoginPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="text-green-200 text-lg font-medium"
+            className="text-purple-200 text-lg font-medium"
           >
-            🎄 Test Your Biblical Knowledge 🎄
+            ✨ Test Your Biblical Knowledge ✨
           </motion.p>
         </div>
 
-        {/* Glass morphism login card with Christmas styling */}
+        {/* Glass morphism login card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.8 }}
-          className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border-2 border-red-400/30 shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_20px_rgba(220,38,38,0.2)]"
+          className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border-2 border-pink-400/30 shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_20px_rgba(236,72,153,0.2)]"
         >
           <h2 className="text-2xl font-bold text-white text-center mb-6">
-            🎅 Start Your Journey
+            ✨ Start Your Journey
           </h2>
 
           {/* Google Sign-In Button */}
@@ -158,7 +115,7 @@ export default function LoginPage() {
               playSound("click", true);
               login();
             }}
-            className="w-full bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 px-6 rounded-xl shadow-[0_8px_0_#166534,0_4px_0_#ffffff_inset,0_15px_25px_rgba(0,0,0,0.3)] hover:shadow-[0_6px_0_#166534,0_3px_0_#ffffff_inset,0_12px_22px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#166534,0_1px_0_#ffffff_inset,0_6px_12px_rgba(0,0,0,0.5)] hover:translate-y-[-2px] active:translate-y-[6px] transition-all duration-150 flex items-center justify-center gap-3"
+            className="w-full bg-white hover:bg-gray-50 text-gray-800 font-bold py-4 px-6 rounded-xl shadow-[0_8px_0_#7c3aed,0_4px_0_#ffffff_inset,0_15px_25px_rgba(0,0,0,0.3)] hover:shadow-[0_6px_0_#7c3aed,0_3px_0_#ffffff_inset,0_12px_22px_rgba(0,0,0,0.4)] active:shadow-[0_2px_0_#7c3aed,0_1px_0_#ffffff_inset,0_6px_12px_rgba(0,0,0,0.5)] hover:translate-y-[-2px] active:translate-y-[6px] transition-all duration-150 flex items-center justify-center gap-3"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24">
               <path
@@ -181,30 +138,30 @@ export default function LoginPage() {
             <span className="text-lg">Sign in with Google</span>
           </motion.button>
 
-          {/* Christmas-themed Features */}
+          {/* Features */}
           <div className="grid grid-cols-2 gap-3 mt-6">
-            <div className="text-center p-3 bg-red-500/10 rounded-xl backdrop-blur-sm border border-red-400/20">
-              <span className="text-2xl">🎁</span>
+            <div className="text-center p-3 bg-pink-500/10 rounded-xl backdrop-blur-sm border border-pink-400/20">
+              <span className="text-2xl">⚡</span>
               <p className="text-xs text-white/90 font-medium mt-1">Power-ups</p>
             </div>
-            <div className="text-center p-3 bg-green-500/10 rounded-xl backdrop-blur-sm border border-green-400/20">
+            <div className="text-center p-3 bg-purple-500/10 rounded-xl backdrop-blur-sm border border-purple-400/20">
               <span className="text-2xl">🏆</span>
               <p className="text-xs text-white/90 font-medium mt-1">Leaderboards</p>
             </div>
-            <div className="text-center p-3 bg-christmasGold/10 rounded-xl backdrop-blur-sm border border-yellow-400/20">
-              <span className="text-2xl">⭐</span>
+            <div className="text-center p-3 bg-blue-500/10 rounded-xl backdrop-blur-sm border border-blue-400/20">
+              <span className="text-2xl">👥</span>
               <p className="text-xs text-white/90 font-medium mt-1">Multiplayer</p>
             </div>
-            <div className="text-center p-3 bg-frostBlue/10 rounded-xl backdrop-blur-sm border border-blue-400/20">
-              <span className="text-2xl">🔔</span>
+            <div className="text-center p-3 bg-yellow-500/10 rounded-xl backdrop-blur-sm border border-yellow-400/20">
+              <span className="text-2xl">📅</span>
               <p className="text-xs text-white/90 font-medium mt-1">Weekly Quiz</p>
             </div>
           </div>
         </motion.div>
 
-        {/* Christmas Footer */}
-        <p className="text-center text-green-200/60 text-sm mt-6">
-          Join thousands celebrating this Christmas season ✨🎄
+        {/* Footer */}
+        <p className="text-center text-purple-200/60 text-sm mt-6">
+          Join thousands on their spiritual journey ✨
         </p>
       </motion.div>
     </div>

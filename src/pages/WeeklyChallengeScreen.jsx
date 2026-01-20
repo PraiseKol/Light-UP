@@ -484,20 +484,19 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0c1445] via-[#1e3a5f] to-[#1b4332] relative overflow-hidden">
-      {/* Gentle snowfall */}
+    <div className="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900 relative overflow-hidden">
+      {/* Twinkling stars */}
       {[...Array(30)].map((_, i) => (
         <div
           key={i}
-          className="absolute text-white/50 animate-snowfall pointer-events-none"
+          className="absolute w-1 h-1 bg-white rounded-full animate-pulse pointer-events-none"
           style={{
             left: `${Math.random() * 100}%`,
-            top: '-10px',
-            fontSize: `${Math.random() * 8 + 4}px`,
-            animationDuration: `${Math.random() * 10 + 10}s`,
-            animationDelay: `${Math.random() * 5}s`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 3}s`,
+            animationDuration: `${2 + Math.random() * 2}s`,
           }}
-        >
+        />
           ❄
         </div>
       ))}
