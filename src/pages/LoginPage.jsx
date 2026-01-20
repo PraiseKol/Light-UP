@@ -103,9 +103,7 @@ export default function LoginPage() {
           transition={{ delay: 0.8 }}
           className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border-2 border-pink-400/30 shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_20px_rgba(236,72,153,0.2)]"
         >
-          <h2 className="text-2xl font-bold text-white text-center mb-6">
-            ✨ Start Your Journey
-          </h2>
+          <h2 className="text-2xl font-bold text-white text-center mb-6">✨ Start Your Journey</h2>
 
           {/* Google Sign-In Button */}
           <motion.button
@@ -160,9 +158,7 @@ export default function LoginPage() {
         </motion.div>
 
         {/* Footer */}
-        <p className="text-center text-purple-200/60 text-sm mt-6">
-          Join thousands on their spiritual journey ✨
-        </p>
+        <p className="text-center text-purple-200/60 text-sm mt-6">Join believers on their spiritual journey ✨</p>
       </motion.div>
     </div>
   );
