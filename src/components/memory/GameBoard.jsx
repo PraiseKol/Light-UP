@@ -24,11 +24,11 @@ const GameBoard = ({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-2 sm:px-4">
+    <div className="flex-1 w-full max-w-2xl mx-auto px-2 sm:px-4 flex items-center justify-center overflow-hidden">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className={`grid ${getGridClass()} gap-2 sm:gap-3`}
+        className={`grid ${getGridClass()} gap-1.5 sm:gap-2 w-full`}
       >
         {cards.map((card, index) => (
           <motion.div
