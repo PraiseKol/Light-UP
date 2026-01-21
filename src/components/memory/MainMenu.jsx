@@ -34,10 +34,10 @@ const MainMenu = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen bg-gradient-to-b from-amber-100 via-orange-50 to-yellow-100 flex flex-col"
+      className="h-[100dvh] bg-gradient-to-b from-amber-100 via-orange-50 to-yellow-100 flex flex-col overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-amber-200">
+      <div className="flex items-center justify-between p-3 sm:p-4 border-b border-amber-200 shrink-0 safe-area-pt">
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
@@ -56,7 +56,7 @@ const MainMenu = ({
       </div>
 
       {/* Stats Bar */}
-      <div className="bg-white/60 backdrop-blur-sm border-b border-amber-200 p-3">
+      <div className="bg-white/60 backdrop-blur-sm border-b border-amber-200 p-2 sm:p-3 shrink-0">
         <div className="max-w-md mx-auto flex justify-around text-center">
           <div>
             <div className="text-xl font-bold text-amber-800">{stats?.high_score || 0}</div>
@@ -74,7 +74,7 @@ const MainMenu = ({
       </div>
 
       {/* Page Navigation Header */}
-      <div className="p-4 pb-2">
+      <div className="p-3 sm:p-4 pb-2 shrink-0">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between mb-3">
             <motion.button

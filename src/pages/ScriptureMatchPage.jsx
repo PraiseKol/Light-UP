@@ -378,7 +378,7 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="min-h-screen pt-20 pb-24"
+            className="h-[100dvh] flex flex-col overflow-hidden"
           >
             <GameHUD
               level={currentLevel}
@@ -406,16 +406,16 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
             />
 
             {/* Power-up Bar */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-200 via-orange-200 to-yellow-200 border-t-2 border-amber-300 p-2 safe-area-pb">
+            <div className="bg-gradient-to-r from-amber-200 via-orange-200 to-yellow-200 border-t-2 border-amber-300 p-2 safe-area-pb shrink-0">
               <div className="flex justify-around items-center max-w-md mx-auto">
                 {/* Divine Hint Button */}
                 <button
                   onClick={handleDivineHint}
                   disabled={!gameUser?.powerups_inventory?.divine_hint || isProcessing}
-                  className="flex flex-col items-center px-3 py-2 rounded-xl bg-blue-400 disabled:bg-gray-300 text-white font-bold transition-all hover:scale-105 active:scale-95"
+                  className="flex flex-col items-center px-3 py-1.5 rounded-xl bg-blue-400 disabled:bg-gray-300 text-white font-bold transition-all hover:scale-105 active:scale-95"
                 >
-                  <span className="text-lg">🧩</span>
-                  <span className="text-[10px]">Hint x{gameUser?.powerups_inventory?.divine_hint || 0}</span>
+                  <span className="text-base sm:text-lg">🧩</span>
+                  <span className="text-[9px] sm:text-[10px]">Hint x{gameUser?.powerups_inventory?.divine_hint || 0}</span>
                 </button>
                 
                 {/* Grace Period Button - only on timed levels */}
@@ -423,10 +423,10 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
                   <button
                     onClick={handleGracePeriod}
                     disabled={!gameUser?.powerups_inventory?.grace_period}
-                    className="flex flex-col items-center px-3 py-2 rounded-xl bg-purple-400 disabled:bg-gray-300 text-white font-bold transition-all hover:scale-105 active:scale-95"
+                    className="flex flex-col items-center px-3 py-1.5 rounded-xl bg-purple-400 disabled:bg-gray-300 text-white font-bold transition-all hover:scale-105 active:scale-95"
                   >
-                    <span className="text-lg">⏳</span>
-                    <span className="text-[10px]">+15s x{gameUser?.powerups_inventory?.grace_period || 0}</span>
+                    <span className="text-base sm:text-lg">⏳</span>
+                    <span className="text-[9px] sm:text-[10px]">+15s x{gameUser?.powerups_inventory?.grace_period || 0}</span>
                   </button>
                 )}
                 
