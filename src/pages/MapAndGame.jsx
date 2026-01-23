@@ -1079,7 +1079,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                   <span className="text-3xl">🥊</span>
                 </div>
                 <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">
-                  {challengeAllowed && !challengePlayed ? "EVENTS" : challengePlayed ? "Played" : "Locked"}
+                  {challengeAllowed && !challengePlayed ? "WEEKEND" : challengePlayed ? "Played" : "Locked"}
                 </span>
               </button>
             </Tooltip>
@@ -1183,7 +1183,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               <div className={`w-16 h-16 -mt-3 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-600 shadow-[0_4px_0_#b45309,0_6px_10px_rgba(180,83,9,0.4)] border-4 border-white flex items-center justify-center transition-all ${challengeAllowed && !challengePlayed ? 'ring-4 ring-yellow-200/50 animate-pulse' : ''} ${!challengeAllowed ? 'opacity-50' : 'active:translate-y-1 active:shadow-[0_2px_0_#b45309]'}`}>
                 <span className="text-3xl">🥊</span>
               </div>
-              <span className="text-[10px] font-bold text-pink-900">EVENTS</span>
+              <span className="text-[10px] font-bold text-pink-900">WEEKEND</span>
             </button>
           </Tooltip>
 
