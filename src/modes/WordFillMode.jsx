@@ -160,7 +160,7 @@ export default function WordFillMode({
         }
         setShowWrongModal(true);
       }
-    }, 300);
+    }, 150);
   }, [userInput, answer, timeLeft, disableIfNoLives, setIsRunning, onIncorrect, onScore, effectsOn]);
 
   // Calculate expected lives after loss (accounting for Holy Shield)

@@ -167,7 +167,7 @@ export default function TriviaMode({
         }
         setShowWrongModal(true);
       }
-    }, 400);
+    }, 200);
   };
 
   // Calculate expected lives after loss (accounting for Holy Shield)
