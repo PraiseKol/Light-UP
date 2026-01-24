@@ -14,10 +14,10 @@ export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn, 
       <Dialog onClose={() => {}} className="relative z-50">
         <Transition.Child
           as={Fragment}
-          enter="ease-out duration-300"
+          enter="ease-out duration-200"
           enterFrom="opacity-0 scale-95"
           enterTo="opacity-100 scale-100"
-          leave="ease-in duration-200"
+          leave="ease-in duration-150"
           leaveFrom="opacity-100 scale-100"
           leaveTo="opacity-0 scale-95"
         >
@@ -25,12 +25,12 @@ export default function TimeUpModal({ isOpen, onTryAgain, onGoToMap, effectsOn, 
         </Transition.Child>
 
         <div className="fixed inset-0 flex items-center justify-center p-3 md:p-4">
-          <Dialog.Panel className="w-full max-w-xs md:max-w-sm rounded-2xl bg-gradient-to-br from-frostBlue/30 via-white to-snowWhite border-2 border-frostBlue p-6 shadow-[0_8px_0_#3b82f6,0_12px_20px_rgba(59,130,246,0.4)] text-center space-y-3 md:space-y-4 relative overflow-hidden">
-            {/* Christmas decorations */}
-            <div className="absolute top-2 left-3 text-lg">❄️</div>
-            <div className="absolute top-2 right-3 text-lg">❄️</div>
+          <Dialog.Panel className="w-full max-w-xs md:max-w-sm rounded-2xl bg-gradient-to-br from-blue-100 via-white to-purple-100 border-2 border-blue-400 p-6 shadow-[0_8px_0_#3b82f6,0_12px_20px_rgba(59,130,246,0.4)] text-center space-y-3 md:space-y-4 relative overflow-hidden">
+            {/* Timer decorations */}
+            <div className="absolute top-2 left-3 text-lg">⏱️</div>
+            <div className="absolute top-2 right-3 text-lg">⏱️</div>
             
-            <Dialog.Title className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-frostBlue bg-clip-text text-transparent">
+            <Dialog.Title className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text text-transparent">
               ⏰ Time's Up!
             </Dialog.Title>
             <Dialog.Description className="text-gray-700">
