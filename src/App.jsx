@@ -31,12 +31,13 @@ import PopGamePage from "@/pages/PopGamePage";
 import ScriptureMatchPage from "@/pages/ScriptureMatchPage";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Analytics } from "@vercel/analytics/react"; // ✅ Import Vercel Analytics
+import { Analytics } from "@vercel/analytics/react";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
 
 import { useState, useEffect } from "react";
 import { claimDailyStreakBonus } from "@/utils/talentUtils";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 // ✅ Create query client once (outside components)
 const queryClient = new QueryClient();
@@ -51,19 +52,21 @@ function AppContent() {
   const { user } = useAuth();
   const [sound, setSound] = useState("default");
   const [effectsOn, setEffectsOn] = useState(true);
+  const [selectedTheme, setSelectedTheme] = useState("default");
 
-  // Fetch user settings
+  // Fetch user settings including theme
   useEffect(() => {
     if (!user?.id) {
       setSound("default");
       setEffectsOn(true);
+      setSelectedTheme("default");
       return;
     }
 
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from("game_users")
-        .select("sound, effects_on")
+        .select("sound, effects_on, selected_theme")
         .eq("user_id", user.id)
         .single();
 
@@ -71,11 +74,13 @@ function AppContent() {
         console.error("Error fetching user settings:", error);
         setSound("default");
         setEffectsOn(true);
+        setSelectedTheme("default");
         return;
       }
 
       setSound(data?.sound || "default");
       setEffectsOn(data?.effects_on ?? true);
+      setSelectedTheme(data?.selected_theme || "default");
     };
 
     fetchSettings();
@@ -102,7 +107,7 @@ function AppContent() {
   }, [user?.id]);
 
   return (
-    <>
+    <ThemeProvider initialTheme={selectedTheme}>
       <PWAInstallPrompt />
       <PWAUpdatePrompt />
       <BackgroundMusic sound={sound} />
@@ -243,7 +248,7 @@ function AppContent() {
 
       {/* ✅ Add Vercel Analytics at the root */}
       <Analytics />
-    </>
+    </ThemeProvider>
   );
 }
 

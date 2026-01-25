@@ -1,6 +1,6 @@
 // src/screens/GameScreen.jsx
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import { useGameUser } from "@/hooks/useGameUser";
 import { supabase } from "@/lib/supabaseClient";
@@ -18,6 +18,7 @@ import HolyShieldButton from "@/components/HolyShieldButton";
 import { playSound } from "@/utils/sound";
 import { awardBonus, awardBonusWithCheck } from "@/utils/talentUtils";
 import { toast } from "sonner";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function GameScreen({
   level,
@@ -356,18 +357,31 @@ export default function GameScreen({
     };
     
 
+  const { config } = useTheme();
+  
+  // Memoize stars to prevent re-render on every frame
+  const stars = useMemo(() => 
+    [...Array(25)].map((_, i) => ({
+      id: i,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 3}s`,
+      duration: `${2 + Math.random() * 2}s`,
+    })), []
+  );
+
   return (
-    <div className="h-[100dvh] flex flex-col bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900 overflow-hidden relative">
+    <div className={`h-[100dvh] flex flex-col bg-gradient-to-b ${config.background.gradient} overflow-hidden relative`}>
       {/* Twinkling stars */}
-      {[...Array(25)].map((_, i) => (
+      {stars.map((star) => (
         <div
-          key={`star-${i}`}
+          key={`star-${star.id}`}
           className="absolute w-1 h-1 bg-white rounded-full animate-pulse pointer-events-none"
           style={{
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 3}s`,
-            animationDuration: `${2 + Math.random() * 2}s`,
+            top: star.top,
+            left: star.left,
+            animationDelay: star.delay,
+            animationDuration: star.duration,
           }}
         />
       ))}
