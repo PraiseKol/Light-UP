@@ -239,6 +239,40 @@ export default function CompetitionManager() {
     const success = await groupPlayersForCompetition(activeCompetition.id);
     if (success) {
       toast.success('Players grouped into A & B! Ready to start.');
+      
+      // Send push notifications to all grouped players
+      const playerUserIds = activeCompetition.competition_players?.map(p => p.user_id) || [];
+      
+      if (playerUserIds.length > 0) {
+        try {
+          await fetch(
+            'https://rhanvchqlilmzxmufode.supabase.co/functions/v1/send-push-notification',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoYW52Y2hxbGlsbXp4bXVmb2RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1MDg5MzIsImV4cCI6MjA2ODA4NDkzMn0.OQ2cN38ZpK-J9GBCFMbqgSWxZxhl229CcBTr6EYS_as'
+              },
+              body: JSON.stringify({
+                userIds: playerUserIds,
+                notification: {
+                  title: '🏆 Competition Alert!',
+                  body: 'You have been selected for the 24-player tournament! Open the app to get ready.',
+                  data: { 
+                    type: 'competition_grouped',
+                    url: '/competition' 
+                  }
+                }
+              })
+            }
+          );
+          console.log('Push notifications sent to', playerUserIds.length, 'players');
+        } catch (error) {
+          console.error('Failed to send push notifications:', error);
+          // Don't fail the grouping if notifications fail
+        }
+      }
+      
       loadData();
     } else {
       toast.error('Failed to group players');
