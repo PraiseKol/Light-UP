@@ -7,7 +7,8 @@ import {
   startRound,
   endRound,
   completeCompetition,
-  searchPlayers
+  searchPlayers,
+  cancelCompetition
 } from '@/lib/api/competition';
 import {
   startPopGameSession,
@@ -15,16 +16,18 @@ import {
   getActivePopGameSession,
   getAggregatedScores,
   getPopGameActive,
-  setPopGameActive
+  setPopGameActive,
+  fetchPopGameTopForCompetition
 } from '@/lib/api/popGame';
 import { getScriptureMatchActive, setScriptureMatchActive } from '@/lib/api/scriptureMatch';
-import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, CheckCircle, Gamepad2, Puzzle } from 'lucide-react';
+import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, CheckCircle, Gamepad2, Puzzle, XCircle, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import Switch from '@/components/ui/Switch';
 
 export default function CompetitionManager() {
   const [activeCompetition, setActiveCompetition] = useState(null);
   const [monthlyTopPlayers, setMonthlyTopPlayers] = useState([]);
+  const [popGameLeaderboard, setPopGameLeaderboard] = useState([]);
   const [manualPlayers, setManualPlayers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -32,10 +35,13 @@ export default function CompetitionManager() {
   const [countdown, setCountdown] = useState(null);
   const [roundTimeLeft, setRoundTimeLeft] = useState(null);
   
-  // Pop Game state
+  // Selection state for leaderboards
+  const [selectedMonthlyIds, setSelectedMonthlyIds] = useState([]);
+  const [selectedPopGameIds, setSelectedPopGameIds] = useState([]);
+  
+  // Pop Game session state (for qualification mini-game - legacy)
   const [popGameSession, setPopGameSession] = useState(null);
   const [popGameScores, setPopGameScores] = useState([]);
-  const [selectedPopGamePlayers, setSelectedPopGamePlayers] = useState([]);
   const [popGameMaxAttempts, setPopGameMaxAttempts] = useState(3);
   
   // Scripture Match state
@@ -80,11 +86,15 @@ export default function CompetitionManager() {
     setActiveCompetition(competition);
 
     if (!competition) {
-      const topPlayers = await fetchMonthlyTopPlayers(19);
+      // Load both leaderboards for selection
+      const topPlayers = await fetchMonthlyTopPlayers(20);
       setMonthlyTopPlayers(topPlayers);
+      
+      const popGameTop = await fetchPopGameTopForCompetition();
+      setPopGameLeaderboard(popGameTop);
     }
     
-    // Load pop game session
+    // Load pop game session (legacy qualification)
     const popSession = await getActivePopGameSession();
     setPopGameSession(popSession);
     if (popSession) {
@@ -129,13 +139,60 @@ export default function CompetitionManager() {
     if (searchTerm.length < 2) return;
     const results = await searchPlayers(searchTerm);
     // Filter out already selected players
-    const selectedIds = [...monthlyTopPlayers, ...manualPlayers].map(p => p.user_id);
-    setSearchResults(results.filter(p => !selectedIds.includes(p.user_id)));
+    const allSelectedIds = getUniqueSelectedIds();
+    setSearchResults(results.filter(p => !allSelectedIds.includes(p.user_id)));
+  }
+
+  // Get all unique selected player IDs
+  function getUniqueSelectedIds() {
+    return [...new Set([
+      ...selectedMonthlyIds,
+      ...selectedPopGameIds,
+      ...manualPlayers.map(p => p.user_id)
+    ])];
+  }
+
+  // Get total unique selected count
+  function getTotalSelected() {
+    return getUniqueSelectedIds().length;
+  }
+
+  // Toggle monthly player selection
+  function toggleMonthlySelection(userId) {
+    setSelectedMonthlyIds(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+    // Remove from pop game if selected there too
+    setSelectedPopGameIds(prev => prev.filter(id => id !== userId));
+  }
+
+  // Toggle pop game player selection
+  function togglePopGameSelection(userId) {
+    setSelectedPopGameIds(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+    // Remove from monthly if selected there too
+    setSelectedMonthlyIds(prev => prev.filter(id => id !== userId));
+  }
+
+  // Check if a player is selected in either list
+  function isPlayerSelected(userId) {
+    return selectedMonthlyIds.includes(userId) || 
+           selectedPopGameIds.includes(userId) || 
+           manualPlayers.some(p => p.user_id === userId);
   }
 
   function addManualPlayer(player) {
-    if (manualPlayers.length >= 5) {
-      toast.error('Maximum 5 manual players allowed');
+    if (getTotalSelected() >= 24) {
+      toast.error('Maximum 24 players allowed');
+      return;
+    }
+    if (isPlayerSelected(player.user_id)) {
+      toast.error('Player already selected');
       return;
     }
     setManualPlayers([...manualPlayers, { ...player, selection_type: 'manual' }]);
@@ -148,19 +205,49 @@ export default function CompetitionManager() {
   }
 
   async function handleCreateCompetition() {
-    if (monthlyTopPlayers.length + manualPlayers.length !== 24) {
-      toast.error(`Need exactly 24 players. Currently have ${monthlyTopPlayers.length + manualPlayers.length}`);
+    const totalSelected = getTotalSelected();
+    if (totalSelected !== 24) {
+      toast.error(`Need exactly 24 players. Currently have ${totalSelected}`);
       return;
     }
 
-    const allPlayers = [...monthlyTopPlayers, ...manualPlayers];
+    // Build player list from all sources
+    const allPlayers = [
+      ...monthlyTopPlayers.filter(p => selectedMonthlyIds.includes(p.user_id)),
+      ...popGameLeaderboard.filter(p => selectedPopGameIds.includes(p.user_id)).map(p => ({
+        ...p,
+        selection_type: 'pop_game'
+      })),
+      ...manualPlayers
+    ];
+
     const competition = await createCompetition(allPlayers);
     
     if (competition) {
       toast.success('Competition created! Ready to start.');
+      // Reset selections
+      setSelectedMonthlyIds([]);
+      setSelectedPopGameIds([]);
+      setManualPlayers([]);
       loadData();
     } else {
       toast.error('Failed to create competition');
+    }
+  }
+
+  async function handleCancelCompetition() {
+    if (!activeCompetition) return;
+    
+    if (!confirm('Are you sure you want to cancel this competition? This will delete all progress and cannot be undone.')) {
+      return;
+    }
+
+    const success = await cancelCompetition(activeCompetition.id);
+    if (success) {
+      toast.success('Competition cancelled');
+      loadData();
+    } else {
+      toast.error('Failed to cancel competition');
     }
   }
 
@@ -205,7 +292,7 @@ export default function CompetitionManager() {
     loadData();
   }
 
-  // Pop Game Functions
+  // Pop Game Session Functions (legacy qualification)
   async function handleStartPopGame() {
     const { data: { user } } = await supabase.auth.getUser();
     const session = await startPopGameSession(user?.id, popGameMaxAttempts);
@@ -224,32 +311,10 @@ export default function CompetitionManager() {
     loadData();
   }
 
-  function togglePopGamePlayerSelection(userId) {
-    setSelectedPopGamePlayers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : prev.length < 5 ? [...prev, userId] : prev
-    );
-  }
-
-  function addPopGamePlayersToCompetition() {
-    const playersToAdd = popGameScores
-      .filter(p => selectedPopGamePlayers.includes(p.user_id))
-      .map(p => ({
-        user_id: p.user_id,
-        player_name: p.player_name,
-        selection_type: 'pop_game'
-      }));
-    
-    setManualPlayers(prev => [...prev, ...playersToAdd]);
-    setSelectedPopGamePlayers([]);
-    toast.success(`Added ${playersToAdd.length} players from Pop Game`);
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin w-8 h-8 border-4 border-christmasGold border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -306,24 +371,33 @@ export default function CompetitionManager() {
       <div className="space-y-6">
         <ScriptureMatchToggle />
         <PopGameToggle />
-        <div className="bg-gradient-to-r from-christmasGreen/20 to-christmasRed/20 rounded-xl p-6 border border-christmasGold/30">
+        <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl p-6 border border-amber-500/30">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-christmasGold flex items-center gap-2">
+            <h2 className="text-xl font-bold text-amber-400 flex items-center gap-2">
               <Trophy className="w-6 h-6" />
               Active Competition
             </h2>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-              activeCompetition.status === 'waiting' ? 'bg-yellow-500/20 text-yellow-300' :
-              activeCompetition.status === 'completed' ? 'bg-green-500/20 text-green-300' :
-              'bg-blue-500/20 text-blue-300'
-            }`}>
-              {activeCompetition.status.replace('_', ' ').toUpperCase()}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                activeCompetition.status === 'waiting' ? 'bg-yellow-500/20 text-yellow-300' :
+                activeCompetition.status === 'completed' ? 'bg-green-500/20 text-green-300' :
+                'bg-blue-500/20 text-blue-300'
+              }`}>
+                {activeCompetition.status.replace('_', ' ').toUpperCase()}
+              </span>
+              <button
+                onClick={handleCancelCompetition}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+              >
+                <XCircle className="w-4 h-4" />
+                Cancel
+              </button>
+            </div>
           </div>
 
           {countdown !== null && (
             <div className="text-center py-8">
-              <div className="text-6xl font-bold text-christmasGold animate-pulse">
+              <div className="text-6xl font-bold text-amber-400 animate-pulse">
                 {countdown}
               </div>
               <p className="text-white/70 mt-2">Starting in...</p>
@@ -333,7 +407,7 @@ export default function CompetitionManager() {
           {activeCompetition.status === 'waiting' && countdown === null && (
             <button
               onClick={handleStartCompetition}
-              className="w-full py-4 bg-gradient-to-r from-christmasGreen to-green-600 text-white font-bold rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2"
+              className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2"
             >
               <Play className="w-5 h-5" />
               Start Competition (5s countdown)
@@ -346,7 +420,7 @@ export default function CompetitionManager() {
               {roundTimeLeft !== null && (
                 <div className="text-center bg-black/30 rounded-lg p-4">
                   <div className="flex items-center justify-center gap-2 text-2xl font-bold text-white">
-                    <Clock className="w-6 h-6 text-christmasGold" />
+                    <Clock className="w-6 h-6 text-amber-400" />
                     {Math.floor(roundTimeLeft / 60)}:{(roundTimeLeft % 60).toString().padStart(2, '0')}
                   </div>
                   <p className="text-white/70 text-sm">Round {activeCompetition.current_round} Time Remaining</p>
@@ -388,7 +462,7 @@ export default function CompetitionManager() {
                 {currentRound?.status === 'completed' && activeCompetition.current_round < 4 && (
                   <button
                     onClick={handleStartNextRound}
-                    className="flex-1 py-3 bg-gradient-to-r from-christmasGreen to-green-600 text-white font-bold rounded-xl hover:scale-105 transition-transform"
+                    className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:scale-105 transition-transform"
                   >
                     Start Round {activeCompetition.current_round + 1}
                   </button>
@@ -396,7 +470,7 @@ export default function CompetitionManager() {
                 {activeCompetition.current_round === 4 && roundTimeLeft === 0 && (
                   <button
                     onClick={handleCompleteCompetition}
-                    className="flex-1 py-3 bg-gradient-to-r from-christmasGold to-yellow-500 text-black font-bold rounded-xl hover:scale-105 transition-transform"
+                    className="flex-1 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold rounded-xl hover:scale-105 transition-transform"
                   >
                     <Crown className="w-5 h-5 inline mr-2" />
                     Complete & Show Winners
@@ -423,7 +497,7 @@ export default function CompetitionManager() {
                         ? player.group_letter === 'A' || player.group_letter === 'C' || player.group_letter === 'E'
                           ? 'bg-blue-500/20 text-blue-300'
                           : 'bg-red-500/20 text-red-300'
-                        : 'bg-christmasGold/20 text-christmasGold'
+                        : 'bg-amber-500/20 text-amber-400'
                   }`}
                 >
                   <div className="font-medium truncate">{player.player_name}</div>
@@ -441,152 +515,117 @@ export default function CompetitionManager() {
   }
 
   // Create new competition view
+  const totalSelected = getTotalSelected();
+
   return (
     <div className="space-y-6">
       <ScriptureMatchToggle />
       <PopGameToggle />
 
-      {/* Pop Game Qualification Section */}
-      <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl p-6 border border-red-500/30">
-        <h2 className="text-xl font-bold text-red-400 flex items-center gap-2 mb-4">
-          <Gamepad2 className="w-6 h-6" />
-          Qualification Mini-Game (Pop Game)
-        </h2>
-
-        {!popGameSession ? (
-          <div className="text-center py-4">
-            <p className="text-white/70 mb-4">
-              Start the Pop Game to let players compete for the remaining 5 spots
-            </p>
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <label className="text-white/70">Max Attempts:</label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={popGameMaxAttempts}
-                onChange={(e) => setPopGameMaxAttempts(Math.min(10, Math.max(1, parseInt(e.target.value) || 3)))}
-                className="w-20 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-center"
-              />
-            </div>
-            <button
-              onClick={handleStartPopGame}
-              className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold rounded-xl hover:scale-105 transition-transform flex items-center gap-2 mx-auto"
-            >
-              <Play className="w-5 h-5" />
-              Start Pop Game ({popGameMaxAttempts} attempts)
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-green-400 font-medium flex items-center gap-2">
-                <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                Pop Game Active ({popGameScores.length} players have played)
-              </span>
-              <button
-                onClick={handleEndPopGame}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                End Pop Game
-              </button>
-            </div>
-
-            {popGameScores.length > 0 && (
-              <div className="bg-black/30 rounded-lg p-3 max-h-60 overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-white/60 border-b border-white/10">
-                    <tr>
-                      <th className="text-left py-2 px-2">Select</th>
-                      <th className="text-left py-2 px-2">Player</th>
-                      <th className="text-center py-2 px-2">Att 1</th>
-                      <th className="text-center py-2 px-2">Att 2</th>
-                      <th className="text-center py-2 px-2">Att 3</th>
-                      <th className="text-center py-2 px-2 text-christmasGold">Best</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {popGameScores.map(player => (
-                      <tr key={player.user_id} className="border-b border-white/5 hover:bg-white/5">
-                        <td className="py-2 px-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedPopGamePlayers.includes(player.user_id)}
-                            onChange={() => togglePopGamePlayerSelection(player.user_id)}
-                            disabled={!selectedPopGamePlayers.includes(player.user_id) && selectedPopGamePlayers.length >= 5}
-                            className="w-4 h-4 rounded"
-                          />
-                        </td>
-                        <td className="py-2 px-2 text-white">{player.player_name}</td>
-                        <td className="py-2 px-2 text-center text-white/70">{player.attempts[1] ?? '-'}</td>
-                        <td className="py-2 px-2 text-center text-white/70">{player.attempts[2] ?? '-'}</td>
-                        <td className="py-2 px-2 text-center text-white/70">{player.attempts[3] ?? '-'}</td>
-                        <td className="py-2 px-2 text-center font-bold text-christmasGold">{player.best_score}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">
-                Selected: {selectedPopGamePlayers.length}/5
-              </span>
-              <button
-                onClick={addPopGamePlayersToCompetition}
-                disabled={selectedPopGamePlayers.length === 0}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedPopGamePlayers.length > 0
-                    ? 'bg-christmasGreen text-white hover:bg-green-600'
-                    : 'bg-gray-500/50 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                Add Selected to Competition
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-gradient-to-r from-christmasGreen/20 to-christmasRed/20 rounded-xl p-6 border border-christmasGold/30">
-        <h2 className="text-xl font-bold text-christmasGold flex items-center gap-2 mb-4">
+      <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl p-6 border border-amber-500/30">
+        <h2 className="text-xl font-bold text-amber-400 flex items-center gap-2 mb-4">
           <Trophy className="w-6 h-6" />
           Create New Competition
         </h2>
 
-        {/* Monthly Top 19 */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-            <Crown className="w-5 h-5 text-christmasGold" />
-            Monthly Top 19 (Auto-qualified)
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-            {monthlyTopPlayers.map((player, idx) => (
-              <div
-                key={player.user_id}
-                className="bg-christmasGold/20 p-2 rounded-lg text-xs border border-christmasGold/30"
-              >
-                <div className="flex items-center gap-1">
-                  <span className="font-bold text-christmasGold">#{idx + 1}</span>
-                  <span className="text-white truncate">{player.player_name}</span>
-                </div>
-                <div className="text-[10px] text-white/60">Score: {player.score}</div>
-              </div>
-            ))}
-            {monthlyTopPlayers.length < 19 && (
-              <div className="col-span-full text-center text-yellow-300 text-sm py-2">
-                Only {monthlyTopPlayers.length} players qualified this month
-              </div>
-            )}
+        {/* Selection Counter */}
+        <div className="mb-4 p-3 bg-black/30 rounded-lg flex items-center justify-between">
+          <span className="text-white font-medium">Selected Players:</span>
+          <span className={`text-2xl font-bold ${totalSelected === 24 ? 'text-green-400' : 'text-amber-400'}`}>
+            {totalSelected}/24
+          </span>
+        </div>
+
+        {/* Dual Leaderboard Display */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Monthly Leaderboard */}
+          <div className="bg-black/20 rounded-lg p-4 border border-blue-500/30">
+            <h3 className="text-lg font-semibold text-blue-300 mb-3 flex items-center gap-2">
+              <Crown className="w-5 h-5 text-amber-400" />
+              Monthly Leaderboard (Top 20)
+            </h3>
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {monthlyTopPlayers.length > 0 ? (
+                monthlyTopPlayers.map((player) => {
+                  const isSelected = selectedMonthlyIds.includes(player.user_id);
+                  const isInOtherList = selectedPopGameIds.includes(player.user_id) || 
+                                        manualPlayers.some(p => p.user_id === player.user_id);
+                  return (
+                    <div
+                      key={player.user_id}
+                      onClick={() => !isInOtherList && toggleMonthlySelection(player.user_id)}
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all ${
+                        isSelected 
+                          ? 'bg-green-500/30 border border-green-500/50' 
+                          : isInOtherList
+                            ? 'bg-gray-500/20 border border-gray-500/30 opacity-50 cursor-not-allowed'
+                            : 'bg-white/5 border border-transparent hover:bg-white/10'
+                      }`}
+                    >
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        isSelected ? 'bg-green-500' : 'bg-white/10'
+                      }`}>
+                        {isSelected ? <Check className="w-4 h-4 text-white" /> : null}
+                      </div>
+                      <span className="font-bold text-amber-400 w-8">#{player.rank}</span>
+                      <span className="text-white flex-1 truncate">{player.player_name}</span>
+                      <span className="text-white/60 text-sm">{player.score.toLocaleString()}</span>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-white/50 text-center py-4">No players this month yet</p>
+              )}
+            </div>
+          </div>
+
+          {/* Pop Game Leaderboard */}
+          <div className="bg-black/20 rounded-lg p-4 border border-red-500/30">
+            <h3 className="text-lg font-semibold text-red-300 mb-3 flex items-center gap-2">
+              <Gamepad2 className="w-5 h-5 text-red-400" />
+              Free Fall Leaderboard (Top 10)
+            </h3>
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {popGameLeaderboard.length > 0 ? (
+                popGameLeaderboard.map((player) => {
+                  const isSelected = selectedPopGameIds.includes(player.user_id);
+                  const isInOtherList = selectedMonthlyIds.includes(player.user_id) || 
+                                        manualPlayers.some(p => p.user_id === player.user_id);
+                  return (
+                    <div
+                      key={player.user_id}
+                      onClick={() => !isInOtherList && togglePopGameSelection(player.user_id)}
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all ${
+                        isSelected 
+                          ? 'bg-green-500/30 border border-green-500/50' 
+                          : isInOtherList
+                            ? 'bg-gray-500/20 border border-gray-500/30 opacity-50 cursor-not-allowed'
+                            : 'bg-white/5 border border-transparent hover:bg-white/10'
+                      }`}
+                    >
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        isSelected ? 'bg-green-500' : 'bg-white/10'
+                      }`}>
+                        {isSelected ? <Check className="w-4 h-4 text-white" /> : null}
+                      </div>
+                      <span className="font-bold text-red-400 w-8">#{player.rank}</span>
+                      <span className="text-white flex-1 truncate">{player.player_name}</span>
+                      <span className="text-white/60 text-sm">{player.score.toLocaleString()}</span>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-white/50 text-center py-4">No Pop Game scores yet</p>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Manual Selection */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-            <Plus className="w-5 h-5 text-christmasGreen" />
-            Manual Selection ({manualPlayers.length}/5)
+            <Plus className="w-5 h-5 text-green-400" />
+            Search & Add Players ({manualPlayers.length} added)
           </h3>
           
           {/* Search */}
@@ -599,12 +638,12 @@ export default function CompetitionManager() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="Search player name..."
-                className="w-full pl-10 pr-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-christmasGold"
+                className="w-full pl-10 pr-4 py-2 bg-black/30 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-amber-400"
               />
             </div>
             <button
               onClick={handleSearch}
-              className="px-4 py-2 bg-christmasGreen text-white rounded-lg hover:bg-green-600 transition-colors"
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               Search
             </button>
@@ -620,45 +659,86 @@ export default function CompetitionManager() {
                   className="w-full text-left p-2 hover:bg-white/10 rounded text-white text-sm flex items-center justify-between"
                 >
                   <span>{player.player_name}</span>
-                  <Plus className="w-4 h-4 text-christmasGreen" />
+                  <Plus className="w-4 h-4 text-green-400" />
                 </button>
               ))}
             </div>
           )}
 
           {/* Selected Manual Players */}
-          <div className="flex flex-wrap gap-2">
-            {manualPlayers.map(player => (
-              <div
-                key={player.user_id}
-                className="bg-christmasGreen/20 px-3 py-1 rounded-full text-sm text-white flex items-center gap-2 border border-christmasGreen/30"
-              >
-                {player.player_name}
-                <button onClick={() => removeManualPlayer(player.user_id)}>
-                  <X className="w-4 h-4 text-red-400 hover:text-red-300" />
-                </button>
-              </div>
-            ))}
-          </div>
+          {manualPlayers.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {manualPlayers.map(player => (
+                <div
+                  key={player.user_id}
+                  className="bg-green-600/20 px-3 py-1 rounded-full text-sm text-white flex items-center gap-2 border border-green-600/30"
+                >
+                  {player.player_name}
+                  <button onClick={() => removeManualPlayer(player.user_id)}>
+                    <X className="w-4 h-4 text-red-400 hover:text-red-300" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Create Button */}
         <div className="flex items-center justify-between">
           <div className="text-white/70 text-sm">
-            Total: {monthlyTopPlayers.length + manualPlayers.length}/24 players
+            {totalSelected < 24 && (
+              <span>Need {24 - totalSelected} more players</span>
+            )}
+            {totalSelected === 24 && (
+              <span className="text-green-400 font-medium">✓ Ready to create competition!</span>
+            )}
+            {totalSelected > 24 && (
+              <span className="text-red-400">Too many players selected</span>
+            )}
           </div>
           <button
             onClick={handleCreateCompetition}
-            disabled={monthlyTopPlayers.length + manualPlayers.length !== 24}
+            disabled={totalSelected !== 24}
             className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${
-              monthlyTopPlayers.length + manualPlayers.length === 24
-                ? 'bg-gradient-to-r from-christmasGold to-yellow-500 text-black hover:scale-105'
+              totalSelected === 24
+                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black hover:scale-105'
                 : 'bg-gray-500/50 text-gray-400 cursor-not-allowed'
             }`}
           >
             <Trophy className="w-5 h-5" />
             Create Competition
           </button>
+        </div>
+      </div>
+
+      {/* Competition Workflow Info */}
+      <div className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-xl p-6 border border-indigo-500/30">
+        <h3 className="text-lg font-bold text-indigo-300 mb-4">📋 How the Competition Works</h3>
+        <div className="space-y-3 text-sm text-white/80">
+          <div className="flex gap-3">
+            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">1</span>
+            <p><strong>Create Competition:</strong> Select 24 players from the leaderboards and click Create.</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">2</span>
+            <p><strong>Start Competition:</strong> 5-second countdown, then 24 players split into Group A (12) vs Group B (12).</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">3</span>
+            <p><strong>Round 1:</strong> 1-minute timer. Groups answer questions. Losing group eliminated. (24 → 12)</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">4</span>
+            <p><strong>Round 2:</strong> Remaining 12 split into Group C vs D. Losing group eliminated. (12 → 6)</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">5</span>
+            <p><strong>Round 3:</strong> Remaining 6 split into Group E vs F. Losing group eliminated. (6 → 3)</p>
+          </div>
+          <div className="flex gap-3">
+            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">6</span>
+            <p><strong>Final Round:</strong> 3 finalists compete individually. Highest score wins! 🏆</p>
+          </div>
         </div>
       </div>
     </div>
