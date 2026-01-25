@@ -260,3 +260,44 @@ export const fetchPopGameLeaderboard = async (userId = null) => {
 
   return { topPlayers, currentUserRank };
 };
+
+// Fetch top 10 unique Pop Game players for competition selection (admin)
+export const fetchPopGameTopForCompetition = async () => {
+  // Get all best scores
+  const { data: allScores, error } = await supabase
+    .from('pop_game_best_scores')
+    .select('user_id, score')
+    .order('score', { ascending: false });
+  
+  if (error || !allScores?.length) {
+    return [];
+  }
+
+  // Get best score per unique player
+  const uniquePlayers = {};
+  allScores.forEach(score => {
+    if (!uniquePlayers[score.user_id] || score.score > uniquePlayers[score.user_id]) {
+      uniquePlayers[score.user_id] = score.score;
+    }
+  });
+
+  // Convert to array, sort by score, and limit to 10
+  const topTen = Object.entries(uniquePlayers)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
+  // Fetch player names
+  const userIds = topTen.map(([userId]) => userId);
+  const { data: users } = await supabase
+    .from('game_users')
+    .select('user_id, player_name')
+    .in('user_id', userIds);
+
+  return topTen.map(([userId, score], idx) => ({
+    user_id: userId,
+    player_name: users?.find(u => u.user_id === userId)?.player_name || 'Unknown',
+    score,
+    rank: idx + 1,
+    source: 'pop_game'
+  }));
+};

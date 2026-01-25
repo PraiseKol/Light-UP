@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
 
-// Fetch top 19 players from monthly leaderboard
-export async function fetchMonthlyTopPlayers(limit = 19) {
+// Fetch top players from monthly leaderboard (default 20 for competition)
+export async function fetchMonthlyTopPlayers(limit = 20) {
   const now = new Date();
   const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
   const endOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59));
@@ -43,12 +43,28 @@ export async function fetchMonthlyTopPlayers(limit = 19) {
     userMap[u.user_id] = u.player_name;
   });
 
-  return sortedUsers.map(([userId, score]) => ({
+  return sortedUsers.map(([userId, score], idx) => ({
     user_id: userId,
     player_name: userMap[userId] || 'Unknown Player',
     score,
+    rank: idx + 1,
     selection_type: 'monthly_top'
   }));
+}
+
+// Cancel an active competition (admin only)
+export async function cancelCompetition(competitionId) {
+  try {
+    // Delete all related data in order (due to foreign key constraints)
+    await supabase.from('competition_answers').delete().eq('competition_id', competitionId);
+    await supabase.from('competition_rounds').delete().eq('competition_id', competitionId);
+    await supabase.from('competition_players').delete().eq('competition_id', competitionId);
+    await supabase.from('competitions').delete().eq('id', competitionId);
+    return true;
+  } catch (error) {
+    console.error('Error cancelling competition:', error);
+    return false;
+  }
 }
 
 // Create a new competition
