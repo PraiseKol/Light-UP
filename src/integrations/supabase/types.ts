@@ -288,6 +288,8 @@ export type Database = {
           created_by: string | null
           current_round: number | null
           id: string
+          phase: string | null
+          phase_ends_at: string | null
           round_ends_at: string | null
           round_started_at: string | null
           second_place_user_id: string | null
@@ -301,6 +303,8 @@ export type Database = {
           created_by?: string | null
           current_round?: number | null
           id?: string
+          phase?: string | null
+          phase_ends_at?: string | null
           round_ends_at?: string | null
           round_started_at?: string | null
           second_place_user_id?: string | null
@@ -314,6 +318,8 @@ export type Database = {
           created_by?: string | null
           current_round?: number | null
           id?: string
+          phase?: string | null
+          phase_ends_at?: string | null
           round_ends_at?: string | null
           round_started_at?: string | null
           second_place_user_id?: string | null

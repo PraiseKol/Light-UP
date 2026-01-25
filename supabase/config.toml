@@ -2,3 +2,6 @@ project_id = "rhanvchqlilmzxmufode"
 
 [functions.send-push-notification]
 verify_jwt = false
+
+[functions.competition-automation]
+verify_jwt = false
