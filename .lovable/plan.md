@@ -1,319 +1,162 @@
 
 
-# Plan: Fully Automated Competition System with Spectator Mode
+# Plan: Send Push Notifications When Admin Groups Players
 
 ## Overview
-Transform the competition from a manual admin-triggered flow to a fully automated system where the admin only needs to:
-1. Click "Group Players" to assign initial groups
-2. Click "Start Competition" to begin the automated flow
-
-Everything else (rounds, eliminations, regrouping, breaks) happens automatically with correct timings.
+Add push notification functionality to alert the 24 selected players when the admin clicks "Group Players". The existing `send-push-notification` Edge Function will be used.
 
 ---
 
-## Competition Flow (Automated)
+## Current State
 
-```text
-[Admin clicks "Group Players"]
-         ↓
-[Admin clicks "Start Competition"]
-         ↓
-[30-second countdown] → Visible to all players/spectators
-         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ ROUND 1: 24 players (12 vs 12) — 2 MINUTES                      │
-│ • Groups A vs B                                                 │
-│ • Scores reset for this round                                   │
-│ • Timer auto-ends round when complete                           │
-└─────────────────────────────────────────────────────────────────┘
-         ↓ (Auto-trigger)
-[30-second break] → Losing group eliminated, winners regrouped into C/D
-         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ ROUND 2: 12 players (6 vs 6) — 1 MINUTE                         │
-│ • Groups C vs D                                                 │
-│ • Scores reset for this round                                   │
-└─────────────────────────────────────────────────────────────────┘
-         ↓ (Auto-trigger)
-[30-second break] → Losing group eliminated, winners regrouped into E/F
-         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ ROUND 3: 6 players (3 vs 3) — 1 MINUTE                          │
-│ • Groups E vs F                                                 │
-│ • Scores reset for this round                                   │
-└─────────────────────────────────────────────────────────────────┘
-         ↓ (Auto-trigger)
-[30-second break] → Losing group eliminated, 3 finalists ready
-         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ FINAL ROUND: 3 players (individual) — 2 MINUTES                 │
-│ • No groups, all compete individually                           │
-│ • Scores reset for this round                                   │
-└─────────────────────────────────────────────────────────────────┘
-         ↓
-[Competition Complete] → Display Results Tables
-```
+### Competition Button
+The **"Compete" button already exists** in both desktop and mobile footers:
+- Red 🏆 trophy button labeled "Compete"
+- Navigates to `/competition`
+- Located at lines 1052-1066 (desktop) and 1206-1220 (mobile) in `MapAndGame.jsx`
+
+No additional UI entry point is needed.
+
+### Push Notification Timing
+Currently: No notifications are sent for competitions
+Required: Notify players when admin clicks "Group Players" (before competition starts)
 
 ---
 
-## Round Timings
+## Implementation
 
-| Round | Duration | Players | Groups | Break After |
-|-------|----------|---------|--------|-------------|
-| 1 | 2 minutes | 24 | A vs B (12 vs 12) | 30 seconds |
-| 2 | 1 minute | 12 | C vs D (6 vs 6) | 30 seconds |
-| 3 | 1 minute | 6 | E vs F (3 vs 3) | 30 seconds |
-| Final | 2 minutes | 3 | Individual | None |
+### File to Modify
 
----
+**`src/admin/CompetitionManager.jsx`** - Add push notification call after successful grouping
 
-## Key Changes Required
+### Changes Required
 
-### 1. Database Migration
-Add new fields to `competitions` table for automation state:
+Update the `handleGroupPlayers()` function (currently lines 238-246):
 
-```sql
-ALTER TABLE competitions ADD COLUMN IF NOT EXISTS phase TEXT DEFAULT 'idle';
--- Phases: idle, countdown, round_active, break, completed
-
-ALTER TABLE competitions ADD COLUMN IF NOT EXISTS phase_ends_at TIMESTAMPTZ;
--- When current phase (countdown/round/break) ends
-```
-
----
-
-### 2. API Changes (`src/lib/api/competition.js`)
-
-#### A. Round Duration Map
 ```javascript
-const ROUND_DURATIONS = {
-  1: 120,  // 2 minutes
-  2: 60,   // 1 minute
-  3: 60,   // 1 minute
-  4: 120   // 2 minutes (final)
-};
-
-const COUNTDOWN_DURATION = 30;  // 30 seconds
-const BREAK_DURATION = 30;      // 30 seconds
+async function handleGroupPlayers() {
+  const success = await groupPlayersForCompetition(activeCompetition.id);
+  if (success) {
+    toast.success('Players grouped into A & B! Ready to start.');
+    
+    // Send push notifications to all grouped players
+    const playerUserIds = activeCompetition.competition_players
+      .map(p => p.user_id);
+    
+    try {
+      await fetch(
+        `https://rhanvchqlilmzxmufode.supabase.co/functions/v1/send-push-notification`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`
+          },
+          body: JSON.stringify({
+            userIds: playerUserIds,
+            notification: {
+              title: '🏆 Competition Alert!',
+              body: 'You have been selected for the 24-player tournament! Open the app to get ready.',
+              data: { 
+                type: 'competition_grouped',
+                url: '/competition' 
+              }
+            }
+          })
+        }
+      );
+      console.log('Push notifications sent to players');
+    } catch (error) {
+      console.error('Failed to send push notifications:', error);
+      // Don't fail the grouping if notifications fail
+    }
+    
+    loadData();
+  } else {
+    toast.error('Failed to group players');
+  }
+}
 ```
 
-#### B. New Functions
+### Additional Helper
 
-- `groupPlayers(competitionId)` - Assigns initial groups A/B to all 24 players
-- `startAutomatedCompetition(competitionId)` - Begins 30-second countdown
-- `processPhaseTransition(competitionId)` - Handles automatic transitions:
-  - countdown → round_active
-  - round_active → break (eliminates losing group, regroups winners)
-  - break → round_active (next round)
-  - final round_active → completed
+Add the Supabase URL and anon key import (if not already available):
 
-#### C. Modified `endRound()` function
-- Now automatically called when phase timer expires
-- Includes auto-regrouping logic for next round
+```javascript
+// At top of file, import the supabase client config
+import { supabase } from '@/lib/supabaseClient';
 
----
-
-### 3. Edge Function for Automation
-Create `supabase/functions/competition-automation/index.ts`:
-
-This function will be triggered by a client-side interval that checks if the current phase has ended. When a phase ends:
-1. Process elimination (if round ended)
-2. Regroup players (if break starts)
-3. Start next phase with correct timer
-4. Update competition state
-
-**Why Edge Function?** To ensure automation continues even if admin closes browser.
-
----
-
-### 4. Admin UI Updates (`src/admin/CompetitionManager.jsx`)
-
-#### Simplified Admin Controls:
-```jsx
-// When competition is in "waiting" status with 24 players
-<button onClick={handleGroupPlayers}>
-  👥 Group Players (Assign A & B)
-</button>
-
-// After players are grouped
-<button onClick={handleStartAutomatedCompetition}>
-  🚀 Start Competition (Auto Mode)
-</button>
-
-// During competition - admin can only watch + cancel
-<div>
-  Competition running automatically...
-  [Cancel Competition] button only
-</div>
+// In the function, use the project URL
+const supabaseUrl = 'https://rhanvchqlilmzxmufode.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // the anon key
 ```
 
-#### Live Status Display:
-- Current phase: "Countdown (25s)" / "Round 1 (1:45)" / "Break (20s)"
-- Phase progress bar
-- No manual "End Round" or "Start Next Round" buttons needed
-
 ---
 
-### 5. Player Competition Page Updates (`src/pages/CompetitionPage.jsx`)
-
-#### Phase-Aware UI:
-- **Countdown Phase**: Show "Get Ready! Starting in 25..."
-- **Round Active**: Show questions + timer
-- **Break Phase**: Show "Round ended! Regrouping... (20s)"
-- **Eliminated**: Redirect to spectator mode
-
-#### Auto-Question Flow:
-- Players answer questions continuously during round
-- Scores update in real-time via database triggers (already working)
-
----
-
-### 6. Spectator Mode Updates (`src/pages/CompetitionViewerPage.jsx`)
-
-#### Enhanced Spectator View:
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ 🏆 LIVE COMPETITION                              [ROUND 2 LIVE] │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ⏱️ 0:45 remaining                                              │
-│  ═══════════════════════▓▓▓▓▓▓▓▓▓▓▓▓▓                          │
-│                                                                 │
-├────────────────────────┬────────────────────────────────────────┤
-│      GROUP C           │           GROUP D                      │
-│   Total: 1,250         │        Total: 980                      │
-├────────────────────────┼────────────────────────────────────────┤
-│  PlayerOne    +350     │  PlayerSeven   +280                    │
-│  PlayerTwo    +290     │  PlayerEight   +250                    │
-│  PlayerThree  +220     │  PlayerNine    +200                    │
-│  PlayerFour   +180     │  PlayerTen     +150                    │
-│  PlayerFive   +120     │  PlayerEleven  +80                     │
-│  PlayerSix    +90      │  PlayerTwelve  +20                     │
-├────────────────────────┴────────────────────────────────────────┤
-│                     ELIMINATED PLAYERS                          │
-│  ───────────────────────────────────────                        │
-│  PlayerX (R1), PlayerY (R1), PlayerZ (R1), ...                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### Features:
-- Real-time group scores and totals
-- Player names with individual scores
-- Which group is winning (highlight)
-- Eliminated players section
-
----
-
-### 7. Results Display (Post-Competition)
-
-#### Table 1: Top 3 Winners (Final Standings)
-```text
-┌───────────────────────────────────────┐
-│     🏆 COMPETITION WINNERS 🏆          │
-├───────────────────────────────────────┤
-│  🥇 1st  PlayerOne         2,450 pts  │
-│  🥈 2nd  PlayerTwo         2,100 pts  │
-│  🥉 3rd  PlayerThree       1,850 pts  │
-└───────────────────────────────────────┘
-```
-
-#### Table 2: Top 7 Scores (All Competition - includes eliminated)
-```text
-┌───────────────────────────────────────┐
-│     ⭐ TOP SCORES (All Rounds) ⭐      │
-├───────────────────────────────────────┤
-│  #1  PlayerOne         2,450 pts ⬅ Final │
-│  #2  PlayerTwo         2,100 pts ⬅ Final │
-│  #3  PlayerFour        1,950 pts  (R2)   │
-│  #4  PlayerThree       1,850 pts ⬅ Final │
-│  #5  PlayerFive        1,720 pts  (R1)   │
-│  #6  PlayerSix         1,680 pts  (R2)   │
-│  #7  PlayerSeven       1,590 pts  (R3)   │
-└───────────────────────────────────────┘
-```
-
-The top 7 scores are calculated from `total_score` accumulated across ALL rounds the player participated in.
-
----
-
-## Files to Modify/Create
-
-| File | Action | Changes |
-|------|--------|---------|
-| `src/lib/api/competition.js` | Modify | Add automation functions, round durations, phase transitions |
-| `src/admin/CompetitionManager.jsx` | Modify | Simplified controls, live phase display |
-| `src/pages/CompetitionPage.jsx` | Modify | Phase-aware UI, countdown/break states |
-| `src/pages/CompetitionViewerPage.jsx` | Modify | Enhanced spectator view, dual results tables |
-| `supabase/functions/competition-automation/index.ts` | Create | Background automation handler |
-| Database migration | Create | Add `phase` and `phase_ends_at` columns |
-
----
-
-## Technical Implementation: Automation Flow
-
-### Client-Side Timer + Server Processing
-
-Since Supabase doesn't have built-in cron/scheduling, we'll use a hybrid approach:
-
-1. **Admin starts competition** → Sets `phase = 'countdown'`, `phase_ends_at = now() + 30s`
-2. **All clients** (admin, players, spectators) subscribe to competition changes
-3. **Any client** checks if `phase_ends_at < now()` → Calls edge function to process transition
-4. **Edge function** (idempotent):
-   - Checks if phase actually ended
-   - Processes elimination/regrouping
-   - Sets next phase and timer
-   - Updates competition record
-
-This ensures automation continues even if admin disconnects.
-
-### Phase State Machine
+## Notification Flow
 
 ```text
-                    ┌─────────────────────┐
-                    │       idle          │
-                    └─────────┬───────────┘
-                              │ startAutomatedCompetition()
-                              ▼
-                    ┌─────────────────────┐
-         ┌──────────│     countdown       │ (30 seconds)
-         │          │   round_number: 1   │
-         │          └─────────┬───────────┘
-         │                    │ timer expires
-         │                    ▼
-         │          ┌─────────────────────┐
-         │          │    round_active     │ (2 min for R1/Final, 1 min for R2/R3)
-         │          └─────────┬───────────┘
-         │                    │ timer expires
-         │                    ▼
-         │          ┌─────────────────────┐
-         │          │       break         │ (30 seconds)
-         │          │ (eliminate losers)  │
-         │          │ (regroup winners)   │
-         │          └─────────┬───────────┘
-         │                    │ timer expires
-         │                    ▼
-         │          ┌─────────────────────┐
-         └──────────│    round_active     │ (next round)
-                    └─────────┬───────────┘
-                              │ (repeat until final)
-                              ▼
-                    ┌─────────────────────┐
-                    │      completed      │
-                    └─────────────────────┘
+Admin Dashboard
+     │
+     ▼
+[Admin clicks "Group Players"]
+     │
+     ▼
+groupPlayersForCompetition() assigns A/B groups
+     │
+     ▼
+On success → Send push notification to 24 players
+     │
+     ▼
+Players receive: "🏆 Competition Alert! You have been selected..."
+     │
+     ▼
+[Admin then clicks "Start Competition"]
 ```
+
+---
+
+## Technical Details
+
+### Edge Function Call Format
+
+The `send-push-notification` Edge Function accepts:
+
+```javascript
+{
+  userIds: string[],         // Array of user UUIDs to notify
+  notification: {
+    title: string,           // Notification title
+    body: string,            // Notification body text
+    icon?: string,           // Optional icon (defaults to /logo192.jpg)
+    badge?: string,          // Optional badge
+    data?: object            // Optional data payload (e.g., { url: '/competition' })
+  }
+}
+```
+
+### Error Handling
+
+- Push notification failures should NOT prevent grouping from succeeding
+- Log errors for debugging but continue with the flow
+- The grouping success toast appears regardless of notification status
+
+---
+
+## Files Changed
+
+| File | Change |
+|------|--------|
+| `src/admin/CompetitionManager.jsx` | Add push notification call in `handleGroupPlayers()` function |
 
 ---
 
 ## Summary
 
-This plan transforms the competition into a fully automated experience:
-
-1. **Admin actions reduced to 2 buttons**: Group Players → Start Competition
-2. **Correct round timings**: R1 (2 min), R2 (1 min), R3 (1 min), Final (2 min)
-3. **30-second breaks** between rounds for elimination + regrouping
-4. **Automatic transitions** with no manual intervention needed
-5. **Enhanced spectator mode** showing groups, player names, and live scores
-6. **Dual results tables**: Top 3 winners + Top 7 overall scores
-
-The automation uses a hybrid client-timer + edge-function approach to ensure reliability even if the admin disconnects.
+This is a minimal change that:
+1. Uses the **existing** Edge Function for push notifications
+2. Triggers notifications when admin clicks **"Group Players"** (as requested)
+3. Targets only the **24 selected players**
+4. Includes a compelling message with competition context
+5. Gracefully handles notification failures without blocking the workflow
 
