@@ -54,19 +54,18 @@ function AppContent() {
   const [effectsOn, setEffectsOn] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState("default");
 
-  // Fetch user settings including theme
+  // Fetch user settings (sound, effects) and global theme
   useEffect(() => {
     if (!user?.id) {
       setSound("default");
       setEffectsOn(true);
-      setSelectedTheme("default");
       return;
     }
 
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from("game_users")
-        .select("sound, effects_on, selected_theme")
+        .select("sound, effects_on")
         .eq("user_id", user.id)
         .single();
 
@@ -74,17 +73,30 @@ function AppContent() {
         console.error("Error fetching user settings:", error);
         setSound("default");
         setEffectsOn(true);
-        setSelectedTheme("default");
         return;
       }
 
       setSound(data?.sound || "default");
       setEffectsOn(data?.effects_on ?? true);
-      setSelectedTheme(data?.selected_theme || "default");
     };
 
     fetchSettings();
   }, [user?.id]);
+
+  // Fetch global theme from global_settings
+  useEffect(() => {
+    const fetchGlobalTheme = async () => {
+      const { data } = await supabase
+        .from("global_settings")
+        .select("value")
+        .eq("key", "app_theme")
+        .maybeSingle();
+
+      setSelectedTheme(data?.value || "default");
+    };
+
+    fetchGlobalTheme();
+  }, []);
 
   // ✅ Claim daily streak bonus once per login/game load
   useEffect(() => {

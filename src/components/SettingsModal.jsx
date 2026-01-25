@@ -10,8 +10,6 @@ import {
   requestNotificationPermission,
   areNotificationsEnabled 
 } from "@/utils/pushNotifications";
-import { THEMES } from "@/themes/themeConfig";
-import { useTheme } from "@/context/ThemeContext";
 
 // Avatar configuration with unlock requirements
 const AVATARS = [
@@ -43,9 +41,6 @@ export default function SettingsModal({
   const [effectsOn, setEffectsOn] = useState(gameUser?.effects_on ?? true);
   const [selectedAvatar, setSelectedAvatar] = useState(gameUser?.selected_avatar || 'avatar1');
   const [volume, setVolumeState] = useState(getVolume() * 100); // 0-100 for slider
-  const [selectedTheme, setSelectedTheme] = useState(gameUser?.selected_theme || 'default');
-  
-  const { setTheme } = useTheme();
 
   const audioRef = useRef(null);
   const navigate = useNavigate();
@@ -82,7 +77,6 @@ export default function SettingsModal({
     setName(gameUser?.player_name || "");
     setEffectsOn(gameUser?.effects_on ?? true);
     setSelectedAvatar(gameUser?.selected_avatar || 'avatar1');
-    setSelectedTheme(gameUser?.selected_theme || 'default');
   }, [gameUser]);
 
   const handleSave = async () => {
@@ -94,22 +88,17 @@ export default function SettingsModal({
         sound,
         effects_on: effectsOn,
         selected_avatar: selectedAvatar,
-        selected_theme: selectedTheme,
       })
       .eq("user_id", gameUser.user_id);
 
     setLoading(false);
 
     if (!error) {
-      // Update theme context immediately
-      setTheme(selectedTheme);
-      
       onSave({
         name,
         sound,
         effectsOn,
         selectedAvatar,
-        selectedTheme,
       });
       onClose();
     } else {
@@ -255,35 +244,6 @@ export default function SettingsModal({
             </p>
           </div>
 
-          {/* Theme Selection */}
-          <div className="border-t border-gray-200 pt-3 sm:pt-4">
-            <label className="text-xs sm:text-sm font-medium mb-2 sm:mb-3 block text-gray-800">
-              🎨 Visual Theme
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {Object.entries(THEMES).map(([key, themeData]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => {
-                    setSelectedTheme(key);
-                    playSound("select", effectsOn);
-                  }}
-                  className={`p-2 sm:p-3 rounded-xl border-2 transition-all ${
-                    selectedTheme === key
-                      ? 'border-yellow-400 ring-2 ring-yellow-300 scale-105 shadow-lg bg-yellow-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
-                  }`}
-                >
-                  <div className="text-xl sm:text-2xl mb-1">{themeData.icon}</div>
-                  <div className="text-[10px] sm:text-xs font-medium text-gray-700">{themeData.name}</div>
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-2 text-center">
-              Switch themes to match the season!
-            </p>
-          </div>
 
           {/* Notification Settings */}
           <div className="border-t border-gray-200 pt-3 sm:pt-4">

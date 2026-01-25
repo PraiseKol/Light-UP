@@ -12,6 +12,7 @@ import AnalyticsDashboard from "@/admin/AnalyticsDashboard";
 import FeedbackManager from "@/admin/FeedbackManager";
 import FinanceManager from "@/admin/FinanceManager";
 import CompetitionManager from "@/admin/CompetitionManager";
+import GlobalSettingsManager from "@/admin/GlobalSettingsManager";
 
 
 
@@ -60,6 +61,8 @@ export default function AdminDashboard() {
         return <CompetitionManager />;
       case "analytics":
         return isSuperAdmin ? <AnalyticsDashboard /> : null;
+      case "settings":
+        return <GlobalSettingsManager />;
       default:
         return null;
     }
@@ -106,6 +109,7 @@ export default function AdminDashboard() {
           {tabButton("finance", "Finance", isSuperAdmin)}
           {tabButton("competition", "Competition")}
           {tabButton("analytics", "Analytics", isSuperAdmin)}
+          {tabButton("settings", "Settings")}
         </div>
 
         {/* Tab Content */}
