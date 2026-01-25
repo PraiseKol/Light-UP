@@ -18,7 +18,18 @@ interface NotificationPayload {
   body: string;
   icon?: string;
   badge?: string;
-  data?: any;
+  data?: Record<string, unknown>;
+}
+
+interface WebPushError {
+  statusCode?: number;
+  message?: string;
+}
+
+// Dynamically import web-push to avoid type resolution issues
+async function getWebPush() {
+  const webpush = await import("npm:web-push@3.6.7");
+  return webpush.default || webpush;
 }
 
 serve(async (req) => {
@@ -36,6 +47,30 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get VAPID keys from environment
+    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
+    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      console.error('❌ VAPID keys not configured');
+      return new Response(
+        JSON.stringify({ error: 'VAPID keys not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get web-push module dynamically
+    const webpush = await getWebPush();
+
+    // Configure web-push with VAPID keys
+    webpush.setVapidDetails(
+      'mailto:support@lightup.app',
+      vapidPublicKey,
+      vapidPrivateKey
+    );
+
+    console.log('🔑 VAPID keys configured successfully');
 
     // Fetch push subscriptions
     let query = supabase
@@ -66,20 +101,6 @@ serve(async (req) => {
 
     console.log(`📮 Found ${subscriptions.length} subscription(s)`);
 
-    // Get VAPID keys from environment
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
-    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
-
-    if (!vapidPublicKey || !vapidPrivateKey) {
-      console.error('❌ VAPID keys not configured');
-      return new Response(
-        JSON.stringify({ error: 'VAPID keys not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('🔑 VAPID keys loaded successfully');
-
     // Create the notification payload
     const payload = JSON.stringify({
       title: notification.title,
@@ -89,57 +110,38 @@ serve(async (req) => {
       data: notification.data || {},
     });
 
-    // Send notifications using Web Push protocol
+    // Send notifications using web-push (handles VAPID signing and encryption automatically)
     const results = await Promise.allSettled(
       subscriptions.map(async (sub: PushSubscription) => {
         try {
-          // Create JWT for VAPID authentication
-          const jwtHeader = btoa(JSON.stringify({ typ: 'JWT', alg: 'ES256' }));
-          const jwtPayload = btoa(JSON.stringify({
-            aud: new URL(sub.endpoint).origin,
-            exp: Math.floor(Date.now() / 1000) + (12 * 60 * 60), // 12 hours
-            sub: 'mailto:support@lightup.app',
-          }));
-
-          // Note: In production, proper ECDSA signing should be implemented
-          const vapidToken = `${jwtHeader}.${jwtPayload}.signature`;
-
-          // Send notification using native fetch
-          const response = await fetch(sub.endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/octet-stream',
-              'TTL': '86400',
-              'Content-Encoding': 'aes128gcm',
-              'Authorization': `vapid t=${vapidToken}, k=${vapidPublicKey}`,
-            },
-            body: new TextEncoder().encode(payload),
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`❌ Failed to send to ${sub.endpoint.substring(0, 50)}...`, response.status, errorText);
-            
-            // If subscription is no longer valid, remove it
-            if (response.status === 404 || response.status === 410) {
-              console.log(`🗑️ Removing invalid subscription`);
-              await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+          const pushSubscription = {
+            endpoint: sub.endpoint,
+            keys: {
+              p256dh: sub.p256dh,
+              auth: sub.auth
             }
-            
-            return { success: false, endpoint: sub.endpoint, status: response.status };
-          }
+          };
 
+          await webpush.sendNotification(pushSubscription, payload);
+          
           console.log(`✅ Sent to ${sub.endpoint.substring(0, 50)}...`);
           return { success: true, endpoint: sub.endpoint };
-        } catch (err) {
-          console.error(`❌ Error sending notification:`, err);
-          const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-          return { success: false, endpoint: sub.endpoint, error: errorMessage };
+        } catch (err: unknown) {
+          const error = err as WebPushError;
+          console.error(`❌ Failed to send to ${sub.endpoint.substring(0, 50)}...`, error.message);
+          
+          // If subscription is no longer valid, remove it
+          if (error.statusCode === 404 || error.statusCode === 410) {
+            console.log(`🗑️ Removing invalid subscription`);
+            await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+          }
+          
+          return { success: false, endpoint: sub.endpoint, error: error.message };
         }
       })
     );
 
-    const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+    const successCount = results.filter(r => r.status === 'fulfilled' && (r.value as { success: boolean }).success).length;
     
     console.log(`✅ Successfully sent ${successCount}/${subscriptions.length} notifications`);
 
