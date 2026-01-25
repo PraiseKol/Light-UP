@@ -1,5 +1,5 @@
 // src/screens/WeeklyChallengeScreen.jsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@supabase/auth-helpers-react";
@@ -7,6 +7,7 @@ import { useUser } from "@supabase/auth-helpers-react";
 import WordFillWeekly from "@/modes/WordFillWeekly";
 import ScriptureMatchWeekly from "@/modes/ScriptureMatchWeekly";
 import TriviaWeekly from "@/modes/TriviaWeekly";
+import { useTheme } from "@/context/ThemeContext";
 
 console.log("🟣 WeeklyChallengeScreen component mounted");
 
@@ -483,18 +484,31 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
     }
   };
 
+  const { config } = useTheme();
+  
+  // Memoize stars to prevent re-render
+  const stars = useMemo(() => 
+    [...Array(30)].map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 3}s`,
+      duration: `${2 + Math.random() * 2}s`,
+    })), []
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900 relative overflow-hidden">
+    <div className={`min-h-screen bg-gradient-to-b ${config.background.gradient} relative overflow-hidden`}>
       {/* Twinkling stars */}
-      {[...Array(30)].map((_, i) => (
+      {stars.map((star) => (
         <div
-          key={i}
+          key={star.id}
           className="absolute w-1 h-1 bg-white rounded-full animate-pulse pointer-events-none"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 3}s`,
-            animationDuration: `${2 + Math.random() * 2}s`,
+            left: star.left,
+            top: star.top,
+            animationDelay: star.delay,
+            animationDuration: star.duration,
           }}
         />
       ))}

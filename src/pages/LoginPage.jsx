@@ -1,13 +1,27 @@
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Book } from "lucide-react";
 import { playSound } from "@/utils/sound";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
+
+  const { config } = useTheme();
+
+  // Memoize stars to prevent re-render
+  const stars = useMemo(() => 
+    [...Array(50)].map((_, i) => ({
+      id: i,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      duration: 2 + Math.random() * 3,
+      delay: Math.random() * 2,
+    })), []
+  );
 
   useEffect(() => {
     if (user) {
@@ -16,25 +30,25 @@ export default function LoginPage() {
   }, [user, navigate]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-[#1e3a5f] via-[#2d1b4e] to-[#4c1d95]">
+    <div className={`relative min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br ${config.background.gradient}`}>
       {/* Animated star field */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(50)].map((_, i) => (
+        {stars.map((star) => (
           <motion.div
-            key={i}
+            key={star.id}
             className="absolute w-1 h-1 bg-white rounded-full"
             style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
+              top: star.top,
+              left: star.left,
             }}
             animate={{
               opacity: [0.2, 1, 0.2],
               scale: [1, 1.5, 1],
             }}
             transition={{
-              duration: 2 + Math.random() * 3,
+              duration: star.duration,
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: star.delay,
             }}
           />
         ))}

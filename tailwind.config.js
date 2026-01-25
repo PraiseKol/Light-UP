@@ -12,6 +12,15 @@ module.exports = {
         candyGreen: '#3DD68C',
         candyPink: '#FF6B9D',
         candyOrange: '#FF9A56',
+        // Easter theme colors
+        easterPink: '#F9A8D4',
+        easterPurple: '#C084FC',
+        easterBlue: '#7DD3FC',
+        easterGreen: '#86EFAC',
+        // Christmas theme colors
+        christmasRed: '#DC2626',
+        christmasGreen: '#16A34A',
+        christmasGold: '#FBBF24',
       },
       animation: {
         gradientBlur: 'gradientBlur 8s ease-in-out infinite',

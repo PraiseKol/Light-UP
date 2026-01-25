@@ -479,6 +479,7 @@ export type Database = {
           powerups_inventory: Json | null
           role: string | null
           selected_avatar: string | null
+          selected_theme: string | null
           sound: string | null
           talents: number
           total_user_score: number | null
@@ -507,6 +508,7 @@ export type Database = {
           powerups_inventory?: Json | null
           role?: string | null
           selected_avatar?: string | null
+          selected_theme?: string | null
           sound?: string | null
           talents?: number
           total_user_score?: number | null
@@ -535,6 +537,7 @@ export type Database = {
           powerups_inventory?: Json | null
           role?: string | null
           selected_avatar?: string | null
+          selected_theme?: string | null
           sound?: string | null
           talents?: number
           total_user_score?: number | null
