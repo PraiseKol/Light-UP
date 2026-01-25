@@ -1498,6 +1498,7 @@ export type Database = {
         Returns: undefined
       }
       set_week_start_date: { Args: never; Returns: string }
+      trigger_competition_automation: { Args: never; Returns: undefined }
       use_invite_code: { Args: { code_input: string }; Returns: Json }
       use_powerup: {
         Args: { p_game_id: string; p_player_id: string; p_type: string }
