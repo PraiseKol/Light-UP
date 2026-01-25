@@ -19,7 +19,6 @@ import { playSound } from "@/utils/sound";
 import { awardBonus, awardBonusWithCheck } from "@/utils/talentUtils";
 import { toast } from "sonner";
 import { useTheme } from "@/context/ThemeContext";
-import { useMemo } from "react";
 
 export default function GameScreen({
   level,
