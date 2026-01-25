@@ -19,6 +19,7 @@ import { playSound } from "@/utils/sound";
 import { awardBonus, awardBonusWithCheck } from "@/utils/talentUtils";
 import { toast } from "sonner";
 import { useTheme } from "@/context/ThemeContext";
+import { useMemo } from "react";
 
 export default function GameScreen({
   level,
@@ -37,6 +38,20 @@ export default function GameScreen({
     loading: loadingGameUser,
     refetch,
   } = useGameUser(user?.id ?? null);
+  
+  // ✅ Theme hook - must be called before any early returns
+  const { config } = useTheme();
+  
+  // ✅ Memoize stars to prevent re-render - must be before early returns
+  const stars = useMemo(() => 
+    [...Array(25)].map((_, i) => ({
+      id: i,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 3}s`,
+      duration: `${2 + Math.random() * 2}s`,
+    })), []
+  );
 
   // Mark player as in game when screen mounts
   useEffect(() => {
@@ -356,19 +371,6 @@ export default function GameScreen({
       activePowerups: { ...activePowerups, setGraceUsed },
     };
     
-
-  const { config } = useTheme();
-  
-  // Memoize stars to prevent re-render on every frame
-  const stars = useMemo(() => 
-    [...Array(25)].map((_, i) => ({
-      id: i,
-      top: `${Math.random() * 100}%`,
-      left: `${Math.random() * 100}%`,
-      delay: `${Math.random() * 3}s`,
-      duration: `${2 + Math.random() * 2}s`,
-    })), []
-  );
 
   return (
     <div className={`h-[100dvh] flex flex-col bg-gradient-to-b ${config.background.gradient} overflow-hidden relative`}>

@@ -88,6 +88,20 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   const user = useUser();
   const submittedRef = useRef(false);
   const questionStartTimeRef = useRef(Date.now());
+  
+  // ✅ Theme hook - must be called before any early returns
+  const { config } = useTheme();
+  
+  // ✅ Memoize stars to prevent re-render - must be before early returns
+  const stars = useMemo(() => 
+    [...Array(30)].map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 3}s`,
+      duration: `${2 + Math.random() * 2}s`,
+    })), []
+  );
 
   // ✅ Clear localStorage when week changes
   useEffect(() => {
@@ -483,19 +497,6 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
         return <div>Unknown mode</div>;
     }
   };
-
-  const { config } = useTheme();
-  
-  // Memoize stars to prevent re-render
-  const stars = useMemo(() => 
-    [...Array(30)].map((_, i) => ({
-      id: i,
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-      delay: `${Math.random() * 3}s`,
-      duration: `${2 + Math.random() * 2}s`,
-    })), []
-  );
 
   return (
     <div className={`min-h-screen bg-gradient-to-b ${config.background.gradient} relative overflow-hidden`}>
