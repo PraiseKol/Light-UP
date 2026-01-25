@@ -192,3 +192,71 @@ export const getAggregatedScores = async (sessionId) => {
   // Convert to array and sort by best score
   return Object.values(playerScores).sort((a, b) => b.best_score - a.best_score);
 };
+
+// Fetch global leaderboard (top 10 scores - same player can appear multiple times)
+export const fetchPopGameLeaderboard = async (userId = null) => {
+  // Get top 10 scores globally (all scores, not just rank 1)
+  const { data: topScores, error: scoresError } = await supabase
+    .from('pop_game_best_scores')
+    .select('user_id, score, achieved_at')
+    .order('score', { ascending: false })
+    .limit(10);
+  
+  if (scoresError || !topScores?.length) {
+    return { topPlayers: [], currentUserRank: null };
+  }
+
+  // Get unique user IDs and fetch their player names
+  const userIds = [...new Set(topScores.map(s => s.user_id))];
+  const { data: users } = await supabase
+    .from('game_users')
+    .select('user_id, player_name')
+    .in('user_id', userIds);
+
+  // Map player names to scores
+  const topPlayers = topScores.map((scoreEntry, index) => ({
+    position: index + 1,
+    user_id: scoreEntry.user_id,
+    player_name: users?.find(u => u.user_id === scoreEntry.user_id)?.player_name || 'Unknown',
+    score: scoreEntry.score,
+    achieved_at: scoreEntry.achieved_at
+  }));
+
+  // Check if current user has any entry in top 10
+  let currentUserRank = null;
+  const userInTop10 = userId && topPlayers.some(p => p.user_id === userId);
+
+  if (userId && !userInTop10) {
+    // Get user's best score
+    const { data: userBest } = await supabase
+      .from('pop_game_best_scores')
+      .select('score')
+      .eq('user_id', userId)
+      .order('score', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (userBest) {
+      // Count how many scores are higher than the user's best
+      const { count } = await supabase
+        .from('pop_game_best_scores')
+        .select('*', { count: 'exact', head: true })
+        .gt('score', userBest.score);
+
+      // Get user's player name
+      const { data: userData } = await supabase
+        .from('game_users')
+        .select('player_name')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      currentUserRank = {
+        position: (count || 0) + 1,
+        score: userBest.score,
+        player_name: userData?.player_name || 'You'
+      };
+    }
+  }
+
+  return { topPlayers, currentUserRank };
+};

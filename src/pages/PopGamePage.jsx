@@ -7,8 +7,10 @@ import PopGameItem from '../components/PopGameItem';
 import { 
   getPopGameActive,
   getPlayerBestScores, 
-  updatePlayerBestScores 
+  updatePlayerBestScores,
+  fetchPopGameLeaderboard 
 } from '../lib/api/popGame';
+import PopGameLeaderboardModal from '../components/PopGameLeaderboardModal';
 import { supabase } from '../lib/supabaseClient';
 import { playSound } from '../utils/sound';
 import { toast } from 'sonner';
@@ -96,6 +98,10 @@ const PopGamePage = () => {
   const [lastPoints, setLastPoints] = useState({ points: 0, bonus: 0, x: 0, y: 0 });
   const [effectsOn, setEffectsOn] = useState(true);
   
+  // Leaderboard states
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboardData, setLeaderboardData] = useState({ topPlayers: [], currentUserRank: null });
+  
   // Power-up states
   const [divineHintActive, setDivineHintActive] = useState(false);
   const [gracePeriodUsed, setGracePeriodUsed] = useState(false);
@@ -161,6 +167,10 @@ const PopGamePage = () => {
         // Get best scores
         const scores = await getPlayerBestScores(session.user.id);
         setBestScores(scores);
+
+        // Load leaderboard data
+        const lbData = await fetchPopGameLeaderboard(session.user.id);
+        setLeaderboardData(lbData);
 
         setGameState('ready');
       } catch (error) {
@@ -700,6 +710,16 @@ const PopGamePage = () => {
               </div>
             )}
 
+            {/* Leaderboard Button */}
+            <button
+              onClick={() => setShowLeaderboard(true)}
+              className="w-full py-3 mb-3 bg-gradient-to-r from-amber-400 to-orange-500 
+                text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform
+                flex items-center justify-center gap-2"
+            >
+              🏆 View Leaderboard
+            </button>
+
             <div className="text-sm text-gray-500 mb-4 flex items-center justify-center gap-2">
               <span>❤️ {gameUser?.lives ?? 0} lives</span>
             </div>
@@ -786,6 +806,14 @@ const PopGamePage = () => {
                 {gameUser?.lives > 0 ? 'Play Again' : 'No Lives Left'}
               </button>
               <button
+                onClick={() => setShowLeaderboard(true)}
+                className="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 
+                  text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform
+                  flex items-center justify-center gap-2"
+              >
+                🏆 View Leaderboard
+              </button>
+              <button
                 onClick={() => navigate('/')}
                 className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 
                   text-white font-bold rounded-xl shadow-lg"
@@ -796,6 +824,15 @@ const PopGamePage = () => {
           </motion.div>
         </div>
       )}
+
+      {/* Leaderboard Modal */}
+      <PopGameLeaderboardModal
+        isOpen={showLeaderboard}
+        onClose={() => setShowLeaderboard(false)}
+        topPlayers={leaderboardData.topPlayers}
+        currentUserRank={leaderboardData.currentUserRank}
+        currentUserId={session?.user?.id}
+      />
     </div>
   );
 };
