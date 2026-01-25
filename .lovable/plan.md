@@ -1,214 +1,206 @@
 
-# Plan: Seasonal Theme System
+# Plan: Convert Theme System to Admin-Controlled Global Setting
 
 ## Overview
 
-Add a theme switching system that allows users to select between **Default** (spiritual/candy), **Easter**, and **Christmas** themes via the Settings modal. The selected theme will be saved to the database and applied app-wide, affecting backgrounds, decorative elements, color schemes, and accent emojis.
+Change the theme system from per-user preferences to a single global theme controlled by admins. All players will see the same theme, which an admin can switch from the Admin Dashboard.
 
 ---
 
-## Architecture
+## Current State
 
-### Theme Structure
+- Each user has a `selected_theme` column in `game_users`
+- Users can switch themes via Settings modal
+- `App.jsx` loads theme from user's `game_users.selected_theme`
+- `ThemeContext` manages theme state per user
 
-```text
-src/
-├── context/
-│   └── ThemeContext.jsx          # NEW - React context for theme state
-├── themes/
-│   ├── themeConfig.js            # NEW - Theme definitions (colors, emojis, gradients)
-│   └── ThemedBackground.jsx      # NEW - Unified background component
-├── components/
-│   ├── SettingsModal.jsx         # MODIFY - Add theme picker
-│   ├── MapBackground.jsx         # MODIFY - Use theme context
-│   ├── GameScreen.jsx            # MODIFY - Use themed background
-│   ├── PowerUpStore.jsx          # MODIFY - Use theme colors
-│   └── PopGameItem.jsx           # MODIFY - Add theme-based items
-├── pages/
-│   ├── LoginPage.jsx             # MODIFY - Use themed background
-│   └── WeeklyChallengeScreen.jsx # MODIFY - Use themed background
-```
+---
+
+## Target State
+
+- A single `global_settings` table stores the app-wide theme
+- Only admins can change the theme via a new "Settings" tab in Admin Dashboard
+- All users see the same theme fetched from `global_settings`
+- Theme picker removed from user Settings modal
 
 ---
 
 ## Database Changes
 
-### Add `selected_theme` column to `game_users`
+### Create `global_settings` table
 
 ```sql
-ALTER TABLE public.game_users 
-ADD COLUMN selected_theme text DEFAULT 'default';
+CREATE TABLE public.global_settings (
+  key text PRIMARY KEY,
+  value text NOT NULL,
+  updated_at timestamptz DEFAULT now(),
+  updated_by uuid REFERENCES auth.users(id)
+);
 
--- Add comment for documentation
-COMMENT ON COLUMN public.game_users.selected_theme IS 'User selected visual theme: default, easter, christmas';
-```
+-- Insert default theme
+INSERT INTO global_settings (key, value) VALUES ('app_theme', 'default');
 
----
+-- RLS policies
+ALTER TABLE public.global_settings ENABLE ROW LEVEL SECURITY;
 
-## Theme Definitions
+-- Anyone can read (needed for all users to get the theme)
+CREATE POLICY "Anyone can read global settings"
+  ON public.global_settings FOR SELECT
+  USING (true);
 
-### File: `src/themes/themeConfig.js`
-
-Each theme defines:
-- **Background gradients** (primary gradient colors)
-- **Accent colors** (for buttons, highlights)
-- **Decorative emojis** (theme-specific floating elements)
-- **Particle colors** (for floating light particles)
-- **Special elements** (crosses become Easter eggs, etc.)
-
-```javascript
-export const THEMES = {
-  default: {
-    name: 'Default',
-    icon: '✨',
-    description: 'Classic spiritual theme',
-    background: {
-      gradient: 'from-indigo-900 via-purple-900 to-blue-900',
-      particleColor: 'bg-candyYellow/30',
-    },
-    decorations: {
-      primary: ['🕊️', '✝️', '👼'],
-      secondary: ['⭐', '✨'],
-      floating: '🕊️',
-    },
-    accent: {
-      primary: 'candyYellow',
-      secondary: 'candyPink',
-      glow: 'rgba(255,217,61,0.8)',
-    },
-    popGameItems: {
-      special: { emoji: '🕊️', name: 'dove' },
-    }
-  },
-  
-  easter: {
-    name: 'Easter',
-    icon: '🐰',
-    description: 'Celebrate the resurrection',
-    background: {
-      gradient: 'from-sky-400 via-purple-300 to-pink-200',
-      particleColor: 'bg-pink-300/40',
-    },
-    decorations: {
-      primary: ['🐰', '🥚', '🌷'],
-      secondary: ['🦋', '🌸', '☀️'],
-      floating: '🐰',
-    },
-    accent: {
-      primary: 'pink-400',
-      secondary: 'purple-400',
-      glow: 'rgba(236,72,153,0.8)',
-    },
-    popGameItems: {
-      special: { emoji: '🥚', name: 'egg' },
-    }
-  },
-  
-  christmas: {
-    name: 'Christmas',
-    icon: '🎄',
-    description: 'Celebrate the birth of Christ',
-    background: {
-      gradient: 'from-slate-900 via-blue-950 to-indigo-950',
-      particleColor: 'bg-white/40',
-    },
-    decorations: {
-      primary: ['🎄', '⭐', '🎅'],
-      secondary: ['❄️', '🎁', '🔔'],
-      floating: '❄️',
-      snowfall: true,
-    },
-    accent: {
-      primary: 'red-500',
-      secondary: 'green-600',
-      glow: 'rgba(239,68,68,0.8)',
-    },
-    popGameItems: {
-      special: { emoji: '🎅', name: 'santa' },
-    }
-  }
-};
-```
-
----
-
-## Theme Context
-
-### File: `src/context/ThemeContext.jsx`
-
-```javascript
-import { createContext, useContext, useState, useEffect } from 'react';
-import { THEMES } from '@/themes/themeConfig';
-
-const ThemeContext = createContext();
-
-export function ThemeProvider({ children, initialTheme = 'default' }) {
-  const [theme, setTheme] = useState(initialTheme);
-  
-  const themeConfig = THEMES[theme] || THEMES.default;
-  
-  return (
-    <ThemeContext.Provider value={{ 
-      theme, 
-      setTheme, 
-      config: themeConfig,
-      themes: THEMES 
-    }}>
-      {children}
-    </ThemeContext.Provider>
+-- Only admins can update
+CREATE POLICY "Admins can update global settings"
+  ON public.global_settings FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM game_users
+      WHERE game_users.user_id = auth.uid()
+      AND game_users.role IN ('admin', 'super_admin')
+    )
   );
-}
-
-export const useTheme = () => useContext(ThemeContext);
 ```
 
 ---
 
-## Themed Background Component
+## File Changes Summary
 
-### File: `src/themes/ThemedBackground.jsx`
+| File | Change | Description |
+|------|--------|-------------|
+| `src/App.jsx` | **MODIFY** | Fetch theme from `global_settings` instead of `game_users.selected_theme` |
+| `src/context/ThemeContext.jsx` | **MODIFY** | Add real-time subscription to `global_settings` changes |
+| `src/components/SettingsModal.jsx` | **MODIFY** | Remove theme picker section entirely |
+| `src/pages/AdminDashboard.jsx` | **MODIFY** | Add new "Settings" tab |
+| `src/admin/GlobalSettingsManager.jsx` | **NEW** | Admin component for theme switching |
 
-A unified background component that renders differently based on the current theme:
+---
+
+## Implementation Details
+
+### 1. App.jsx - Fetch Global Theme
+
+Replace user-specific theme loading with global settings:
 
 ```javascript
-import { motion } from 'framer-motion';
-import { useTheme } from '@/context/ThemeContext';
+// Instead of fetching from game_users.selected_theme
+const { data: themeData } = await supabase
+  .from("global_settings")
+  .select("value")
+  .eq("key", "app_theme")
+  .single();
 
-export default function ThemedBackground({ starCount = 60 }) {
-  const { config, theme } = useTheme();
-  
+setSelectedTheme(themeData?.value || "default");
+```
+
+### 2. ThemeContext.jsx - Add Real-time Updates
+
+Subscribe to theme changes so all users see updates immediately:
+
+```javascript
+useEffect(() => {
+  // Subscribe to global_settings changes
+  const subscription = supabase
+    .channel('global-theme')
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'global_settings',
+      filter: 'key=eq.app_theme'
+    }, (payload) => {
+      setTheme(payload.new.value);
+    })
+    .subscribe();
+
+  return () => subscription.unsubscribe();
+}, []);
+```
+
+### 3. SettingsModal.jsx - Remove Theme Section
+
+Remove lines 258-286 (the entire "Theme Selection" section):
+- Delete the theme state: `const [selectedTheme, setSelectedTheme] = useState(...)`
+- Delete the theme from `handleSave()`
+- Delete the theme picker UI
+
+### 4. AdminDashboard.jsx - Add Settings Tab
+
+Add a new tab for global settings:
+
+```javascript
+// Add to imports
+import GlobalSettingsManager from "@/admin/GlobalSettingsManager";
+
+// Add to tabs
+{tabButton("settings", "Settings")}
+
+// Add to renderTabContent
+case "settings":
+  return <GlobalSettingsManager />;
+```
+
+### 5. New: GlobalSettingsManager.jsx
+
+Create a new admin component for managing app-wide settings:
+
+```javascript
+// src/admin/GlobalSettingsManager.jsx
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { THEMES } from "@/themes/themeConfig";
+
+export default function GlobalSettingsManager() {
+  const [currentTheme, setCurrentTheme] = useState("default");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    // Fetch current theme
+    const fetchTheme = async () => {
+      const { data } = await supabase
+        .from("global_settings")
+        .select("value")
+        .eq("key", "app_theme")
+        .single();
+      if (data) setCurrentTheme(data.value);
+    };
+    fetchTheme();
+  }, []);
+
+  const handleThemeChange = async (newTheme) => {
+    setSaving(true);
+    await supabase
+      .from("global_settings")
+      .update({ 
+        value: newTheme, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq("key", "app_theme");
+    setCurrentTheme(newTheme);
+    setSaving(false);
+  };
+
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Base gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-b ${config.background.gradient}`} />
-      
-      {/* Stars (all themes) */}
-      <div className="absolute inset-0">
-        {[...Array(starCount)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full opacity-80"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animation: `twinkle ${2 + Math.random() * 3}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 2}s`,
-            }}
-          />
+    <div className="p-6">
+      <h2 className="text-xl font-bold mb-4">🎨 App Theme</h2>
+      <p className="text-gray-600 mb-4">
+        Select the visual theme for all players. Changes apply immediately to everyone.
+      </p>
+      <div className="grid grid-cols-3 gap-4 max-w-md">
+        {Object.entries(THEMES).map(([key, themeData]) => (
+          <button
+            key={key}
+            onClick={() => handleThemeChange(key)}
+            disabled={saving}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              currentTheme === key
+                ? 'border-blue-500 ring-2 ring-blue-300 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="text-3xl mb-2">{themeData.icon}</div>
+            <div className="text-sm font-medium">{themeData.name}</div>
+          </button>
         ))}
       </div>
-      
-      {/* Snowfall for Christmas */}
-      {config.decorations.snowfall && <SnowfallEffect />}
-      
-      {/* Floating decorations */}
-      <FloatingDecorations decorations={config.decorations} />
-      
-      {/* Themed particles */}
-      <FloatingParticles color={config.background.particleColor} />
-      
-      {/* Rolling hills */}
-      <Hills theme={theme} />
+      {saving && <p className="text-blue-500 mt-2">Saving...</p>}
     </div>
   );
 }
@@ -216,178 +208,35 @@ export default function ThemedBackground({ starCount = 60 }) {
 
 ---
 
-## Settings Modal Update
+## Visual Changes
 
-### Modify: `src/components/SettingsModal.jsx`
+### Admin Dashboard
+- New "Settings" tab appears in the tab bar
+- Theme picker UI with 3 large buttons (Default ✨, Easter 🐰, Christmas 🎄)
+- Current theme highlighted with blue border
 
-Add a theme picker section between the avatar selection and notifications:
-
-```javascript
-// Inside SettingsModal component
-
-const [selectedTheme, setSelectedTheme] = useState(gameUser?.selected_theme || 'default');
-
-// In handleSave:
-await supabase
-  .from("game_users")
-  .update({
-    player_name: name,
-    sound,
-    effects_on: effectsOn,
-    selected_avatar: selectedAvatar,
-    selected_theme: selectedTheme,  // NEW
-  })
-  .eq("user_id", gameUser.user_id);
-
-// In the JSX, add after Avatar Selection:
-{/* Theme Selection */}
-<div className="border-t border-gray-200 pt-3 sm:pt-4">
-  <label className="text-xs sm:text-sm font-medium mb-2 sm:mb-3 block text-gray-800">
-    🎨 Visual Theme
-  </label>
-  <div className="grid grid-cols-3 gap-2">
-    {Object.entries(THEMES).map(([key, themeData]) => (
-      <button
-        key={key}
-        onClick={() => {
-          setSelectedTheme(key);
-          playSound("select", effectsOn);
-        }}
-        className={`p-3 rounded-xl border-2 transition-all ${
-          selectedTheme === key
-            ? 'border-yellow-400 ring-2 ring-yellow-300 scale-105 shadow-lg'
-            : 'border-gray-200 hover:border-gray-300'
-        }`}
-      >
-        <div className="text-2xl mb-1">{themeData.icon}</div>
-        <div className="text-xs font-medium">{themeData.name}</div>
-      </button>
-    ))}
-  </div>
-  <p className="text-[10px] sm:text-xs text-gray-500 mt-2 text-center">
-    Switch themes to match the season!
-  </p>
-</div>
-```
+### User Settings Modal
+- Theme section completely removed
+- Users no longer see any theme switching options
 
 ---
 
-## Component Updates
+## Real-time Sync
 
-### 1. MapBackground.jsx
-Replace hardcoded gradients and emojis with theme-aware versions using `useTheme()`.
-
-### 2. GameScreen.jsx
-Replace the hardcoded `bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900` with the themed gradient.
-
-### 3. LoginPage.jsx
-Apply theme-aware gradient and decorative elements.
-
-### 4. WeeklyChallengeScreen.jsx
-Use `ThemedBackground` component.
-
-### 5. PowerUpStore.jsx
-Remove the hardcoded Christmas colors (`christmasGreen`, `christmasRed`) and replace with theme-aware accent colors.
-
-### 6. PopGameItem.jsx
-Add theme-specific items (Easter eggs for Easter, Santa for Christmas) based on current theme.
-
----
-
-## App.jsx Integration
-
-### Wrap the app with ThemeProvider:
-
-```javascript
-// In App.jsx
-import { ThemeProvider } from '@/context/ThemeContext';
-
-function AppContent() {
-  // Fetch user's selected_theme from gameUser
-  const theme = gameUser?.selected_theme || 'default';
-  
-  return (
-    <ThemeProvider initialTheme={theme}>
-      {/* ... rest of app */}
-    </ThemeProvider>
-  );
-}
-```
-
----
-
-## Tailwind Config Update
-
-### Add seasonal colors to `tailwind.config.js`:
-
-```javascript
-colors: {
-  // Existing candy colors...
-  
-  // Easter theme
-  easterPink: '#F9A8D4',
-  easterPurple: '#C084FC',
-  easterBlue: '#7DD3FC',
-  easterGreen: '#86EFAC',
-  
-  // Christmas theme
-  christmasRed: '#DC2626',
-  christmasGreen: '#16A34A',
-  christmasGold: '#FBBF24',
-}
-```
-
----
-
-## Files Changed Summary
-
-| File | Change Type | Description |
-|------|-------------|-------------|
-| `src/themes/themeConfig.js` | **NEW** | Theme definitions with colors, emojis, gradients |
-| `src/context/ThemeContext.jsx` | **NEW** | React context for theme state management |
-| `src/themes/ThemedBackground.jsx` | **NEW** | Unified themed background component |
-| `src/components/SettingsModal.jsx` | **MODIFY** | Add theme picker UI |
-| `src/components/MapBackground.jsx` | **MODIFY** | Use theme context for gradients/decorations |
-| `src/components/GameScreen.jsx` | **MODIFY** | Apply themed background |
-| `src/components/PowerUpStore.jsx` | **MODIFY** | Use theme-aware colors |
-| `src/components/PopGameItem.jsx` | **MODIFY** | Add theme-specific items |
-| `src/pages/LoginPage.jsx` | **MODIFY** | Apply themed background |
-| `src/pages/WeeklyChallengeScreen.jsx` | **MODIFY** | Apply themed background |
-| `src/App.jsx` | **MODIFY** | Wrap with ThemeProvider |
-| `tailwind.config.js` | **MODIFY** | Add Easter/Christmas colors |
-| **Database Migration** | **NEW** | Add `selected_theme` column to `game_users` |
-
----
-
-## Visual Preview
-
-### Default Theme (Current)
-- Deep purple-blue gradient sky
-- Doves, crosses, angels floating
-- Golden/yellow accents
-
-### Easter Theme
-- Pastel sky gradient (sky blue to pink)
-- Bunnies, Easter eggs, butterflies, flowers
-- Pink/purple accents
-- Bright, hopeful atmosphere
-
-### Christmas Theme
-- Dark winter night gradient
-- Snowfall animation
-- Christmas trees, stars, Santa, snowflakes
-- Red/green accents
-- Festive, cozy atmosphere
+When an admin changes the theme:
+1. Update is saved to `global_settings` table
+2. Supabase real-time broadcasts the change
+3. All connected clients receive the update via subscription
+4. `ThemeContext` updates, triggering re-render of themed components
+5. All players see the new theme within seconds
 
 ---
 
 ## Implementation Order
 
-1. **Database**: Add `selected_theme` column
-2. **Config**: Create `themeConfig.js` with theme definitions
-3. **Context**: Create `ThemeContext.jsx`
-4. **Tailwind**: Add seasonal colors
-5. **Background**: Create `ThemedBackground.jsx`
-6. **Settings**: Add theme picker to `SettingsModal.jsx`
-7. **Integration**: Update `App.jsx` with ThemeProvider
-8. **Components**: Update each component to use theme context
+1. **Database**: Create `global_settings` table with RLS policies
+2. **Admin UI**: Create `GlobalSettingsManager.jsx`
+3. **Admin Dashboard**: Add Settings tab
+4. **App.jsx**: Switch to fetch from `global_settings`
+5. **ThemeContext**: Add real-time subscription
+6. **SettingsModal**: Remove theme picker section
