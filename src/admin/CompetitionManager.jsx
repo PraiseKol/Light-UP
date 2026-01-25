@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { 
   fetchMonthlyTopPlayers, 
   createCompetition, 
   getActiveCompetition,
-  startRound,
-  endRound,
-  completeCompetition,
   searchPlayers,
-  cancelCompetition
+  cancelCompetition,
+  groupPlayersForCompetition,
+  startAutomatedCompetition,
+  processPhaseTransition,
+  ROUND_DURATIONS,
+  COUNTDOWN_DURATION,
+  BREAK_DURATION
 } from '@/lib/api/competition';
 import {
-  startPopGameSession,
-  endPopGameSession,
   getActivePopGameSession,
   getAggregatedScores,
   getPopGameActive,
@@ -20,7 +21,7 @@ import {
   fetchPopGameTopForCompetition
 } from '@/lib/api/popGame';
 import { getScriptureMatchActive, setScriptureMatchActive } from '@/lib/api/scriptureMatch';
-import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, CheckCircle, Gamepad2, Puzzle, XCircle, Check } from 'lucide-react';
+import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, Gamepad2, Puzzle, XCircle, Check, Zap, Timer, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Switch from '@/components/ui/Switch';
 
@@ -32,53 +33,57 @@ export default function CompetitionManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [countdown, setCountdown] = useState(null);
-  const [roundTimeLeft, setRoundTimeLeft] = useState(null);
+  const [phaseTimeLeft, setPhaseTimeLeft] = useState(null);
   
   // Selection state for leaderboards
   const [selectedMonthlyIds, setSelectedMonthlyIds] = useState([]);
   const [selectedPopGameIds, setSelectedPopGameIds] = useState([]);
   
-  // Pop Game session state (for qualification mini-game - legacy)
-  const [popGameSession, setPopGameSession] = useState(null);
-  const [popGameScores, setPopGameScores] = useState([]);
-  const [popGameMaxAttempts, setPopGameMaxAttempts] = useState(3);
-  
   // Scripture Match state
   const [scriptureMatchActive, setScriptureMatchActiveState] = useState(false);
   
-  // Pop Game visibility state (independent of session)
+  // Pop Game visibility state
   const [popGameVisibility, setPopGameVisibility] = useState(false);
 
+  // Load data and subscribe to updates
   useEffect(() => {
     loadData();
     
-    // Subscribe to competition updates
     const channel = supabase
       .channel('competition-admin')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'competitions' }, loadData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'competition_rounds' }, loadData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'competition_players' }, loadData)
       .subscribe();
 
     return () => supabase.removeChannel(channel);
   }, []);
 
+  // Phase timer and auto-transition
   useEffect(() => {
-    if (activeCompetition?.round_ends_at) {
-      const interval = setInterval(() => {
-        const endTime = new Date(activeCompetition.round_ends_at).getTime();
-        const now = Date.now();
-        const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
-        setRoundTimeLeft(remaining);
-
-        if (remaining === 0) {
-          clearInterval(interval);
-        }
-      }, 1000);
-
-      return () => clearInterval(interval);
+    if (!activeCompetition?.phase_ends_at) {
+      setPhaseTimeLeft(null);
+      return;
     }
-  }, [activeCompetition?.round_ends_at]);
+
+    const interval = setInterval(async () => {
+      const endTime = new Date(activeCompetition.phase_ends_at).getTime();
+      const now = Date.now();
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+      setPhaseTimeLeft(remaining);
+
+      // Auto-trigger transition when timer reaches 0
+      if (remaining === 0) {
+        try {
+          await processPhaseTransition(activeCompetition.id);
+        } catch (error) {
+          console.error('Phase transition error:', error);
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [activeCompetition?.phase_ends_at, activeCompetition?.id]);
 
   async function loadData() {
     setLoading(true);
@@ -86,7 +91,6 @@ export default function CompetitionManager() {
     setActiveCompetition(competition);
 
     if (!competition) {
-      // Load both leaderboards for selection
       const topPlayers = await fetchMonthlyTopPlayers(20);
       setMonthlyTopPlayers(topPlayers);
       
@@ -94,19 +98,9 @@ export default function CompetitionManager() {
       setPopGameLeaderboard(popGameTop);
     }
     
-    // Load pop game session (legacy qualification)
-    const popSession = await getActivePopGameSession();
-    setPopGameSession(popSession);
-    if (popSession) {
-      const scores = await getAggregatedScores(popSession.id);
-      setPopGameScores(scores);
-    }
-    
-    // Load Scripture Match visibility
     const scriptureActive = await getScriptureMatchActive();
     setScriptureMatchActiveState(scriptureActive);
     
-    // Load Pop Game visibility
     const popActive = await getPopGameActive();
     setPopGameVisibility(popActive);
     
@@ -118,7 +112,7 @@ export default function CompetitionManager() {
     const success = await setScriptureMatchActive(checked, user?.id);
     if (success) {
       setScriptureMatchActiveState(checked);
-      toast.success(checked ? 'Scripture Match enabled! Yellow orb now visible.' : 'Scripture Match disabled.');
+      toast.success(checked ? 'Scripture Match enabled!' : 'Scripture Match disabled.');
     } else {
       toast.error('Failed to update Scripture Match visibility');
     }
@@ -129,7 +123,7 @@ export default function CompetitionManager() {
     const success = await setPopGameActive(checked, user?.id);
     if (success) {
       setPopGameVisibility(checked);
-      toast.success(checked ? 'Pop Game enabled! Red orb now visible on player maps.' : 'Pop Game disabled.');
+      toast.success(checked ? 'Pop Game enabled!' : 'Pop Game disabled.');
     } else {
       toast.error('Failed to update Pop Game visibility');
     }
@@ -138,12 +132,10 @@ export default function CompetitionManager() {
   async function handleSearch() {
     if (searchTerm.length < 2) return;
     const results = await searchPlayers(searchTerm);
-    // Filter out already selected players
     const allSelectedIds = getUniqueSelectedIds();
     setSearchResults(results.filter(p => !allSelectedIds.includes(p.user_id)));
   }
 
-  // Get all unique selected player IDs
   function getUniqueSelectedIds() {
     return [...new Set([
       ...selectedMonthlyIds,
@@ -152,34 +144,28 @@ export default function CompetitionManager() {
     ])];
   }
 
-  // Get total unique selected count
   function getTotalSelected() {
     return getUniqueSelectedIds().length;
   }
 
-  // Toggle monthly player selection
   function toggleMonthlySelection(userId) {
     setSelectedMonthlyIds(prev => 
       prev.includes(userId) 
         ? prev.filter(id => id !== userId)
         : [...prev, userId]
     );
-    // Remove from pop game if selected there too
     setSelectedPopGameIds(prev => prev.filter(id => id !== userId));
   }
 
-  // Toggle pop game player selection
   function togglePopGameSelection(userId) {
     setSelectedPopGameIds(prev => 
       prev.includes(userId) 
         ? prev.filter(id => id !== userId)
         : [...prev, userId]
     );
-    // Remove from monthly if selected there too
     setSelectedMonthlyIds(prev => prev.filter(id => id !== userId));
   }
 
-  // Check if a player is selected in either list
   function isPlayerSelected(userId) {
     return selectedMonthlyIds.includes(userId) || 
            selectedPopGameIds.includes(userId) || 
@@ -211,7 +197,6 @@ export default function CompetitionManager() {
       return;
     }
 
-    // Build player list from all sources
     const allPlayers = [
       ...monthlyTopPlayers.filter(p => selectedMonthlyIds.includes(p.user_id)),
       ...popGameLeaderboard.filter(p => selectedPopGameIds.includes(p.user_id)).map(p => ({
@@ -224,8 +209,7 @@ export default function CompetitionManager() {
     const competition = await createCompetition(allPlayers);
     
     if (competition) {
-      toast.success('Competition created! Ready to start.');
-      // Reset selections
+      toast.success('Competition created! Click "Group Players" to assign groups.');
       setSelectedMonthlyIds([]);
       setSelectedPopGameIds([]);
       setManualPlayers([]);
@@ -251,64 +235,48 @@ export default function CompetitionManager() {
     }
   }
 
+  async function handleGroupPlayers() {
+    const success = await groupPlayersForCompetition(activeCompetition.id);
+    if (success) {
+      toast.success('Players grouped into A & B! Ready to start.');
+      loadData();
+    } else {
+      toast.error('Failed to group players');
+    }
+  }
+
   async function handleStartCompetition() {
-    setCountdown(5);
+    const success = await startAutomatedCompetition(activeCompetition.id);
+    if (success) {
+      toast.success('Competition started! 30-second countdown begins...');
+      loadData();
+    } else {
+      toast.error('Failed to start competition');
+    }
+  }
+
+  // Get phase display info
+  function getPhaseInfo() {
+    if (!activeCompetition) return null;
     
-    const countdownInterval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(countdownInterval);
-          startRound(activeCompetition.id, 1);
-          return null;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }
-
-  async function handleStartNextRound() {
-    const nextRound = activeCompetition.current_round + 1;
-    if (nextRound > 4) {
-      await completeCompetition(activeCompetition.id);
-      toast.success('Competition completed!');
-    } else {
-      await startRound(activeCompetition.id, nextRound);
-      toast.success(`Round ${nextRound} started!`);
+    const { phase, current_round } = activeCompetition;
+    
+    switch (phase) {
+      case 'idle':
+        return { label: 'Waiting', color: 'text-gray-400', bgColor: 'bg-gray-500/20' };
+      case 'grouped':
+        return { label: 'Players Grouped', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' };
+      case 'countdown':
+        return { label: `Round ${current_round} Starting...`, color: 'text-blue-400', bgColor: 'bg-blue-500/20' };
+      case 'round_active':
+        return { label: `Round ${current_round} Active`, color: 'text-green-400', bgColor: 'bg-green-500/20 animate-pulse' };
+      case 'break':
+        return { label: 'Break - Regrouping...', color: 'text-orange-400', bgColor: 'bg-orange-500/20' };
+      case 'completed':
+        return { label: 'Completed', color: 'text-purple-400', bgColor: 'bg-purple-500/20' };
+      default:
+        return { label: phase, color: 'text-white', bgColor: 'bg-white/10' };
     }
-    loadData();
-  }
-
-  async function handleEndRound() {
-    const result = await endRound(activeCompetition.id, activeCompetition.current_round);
-    if (result) {
-      toast.success(`Round ended! ${result.winningGroup} wins, ${result.losingGroup} eliminated.`);
-      loadData();
-    }
-  }
-
-  async function handleCompleteCompetition() {
-    await completeCompetition(activeCompetition.id);
-    toast.success('Competition completed!');
-    loadData();
-  }
-
-  // Pop Game Session Functions (legacy qualification)
-  async function handleStartPopGame() {
-    const { data: { user } } = await supabase.auth.getUser();
-    const session = await startPopGameSession(user?.id, popGameMaxAttempts);
-    if (session) {
-      toast.success(`Pop Game started with ${popGameMaxAttempts} attempts! Red bulb now visible on player maps.`);
-      loadData();
-    } else {
-      toast.error('Failed to start Pop Game');
-    }
-  }
-
-  async function handleEndPopGame() {
-    if (!popGameSession) return;
-    await endPopGameSession(popGameSession.id);
-    toast.success('Pop Game ended!');
-    loadData();
   }
 
   if (loading) {
@@ -319,71 +287,68 @@ export default function CompetitionManager() {
     );
   }
 
-  // Scripture Match Toggle - Always visible
+  // Scripture Match Toggle
   const ScriptureMatchToggle = () => (
     <div className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-xl p-6 border border-yellow-500/30">
       <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2 mb-4">
         <Puzzle className="w-6 h-6" />
         Memory Challenge
       </h2>
-      
       <div className="flex items-center justify-between">
         <div>
           <p className="text-white font-medium">Yellow Orb Visibility</p>
-          <p className="text-white/60 text-sm">Toggle to show/hide the game button on player maps</p>
+          <p className="text-white/60 text-sm">Toggle to show/hide on player maps</p>
         </div>
-        <Switch
-          checked={scriptureMatchActive}
-          onChange={handleToggleScriptureMatch}
-        />
+        <Switch checked={scriptureMatchActive} onChange={handleToggleScriptureMatch} />
       </div>
     </div>
   );
 
-  // Pop Game Toggle - Always visible (independent of competition sessions)
+  // Pop Game Toggle
   const PopGameToggle = () => (
     <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-xl p-6 border border-red-500/30">
       <h2 className="text-xl font-bold text-red-400 flex items-center gap-2 mb-4">
         <Gamepad2 className="w-6 h-6" />
         Free Fall Pop Game
       </h2>
-      
       <div className="flex items-center justify-between">
         <div>
           <p className="text-white font-medium">Red Orb Visibility</p>
-          <p className="text-white/60 text-sm">Players can play anytime. Top 3 best scores are tracked permanently.</p>
+          <p className="text-white/60 text-sm">Players can play anytime when enabled.</p>
         </div>
-        <Switch
-          checked={popGameVisibility}
-          onChange={handleTogglePopGame}
-        />
+        <Switch checked={popGameVisibility} onChange={handleTogglePopGame} />
       </div>
     </div>
   );
 
   // Active competition view
   if (activeCompetition) {
+    const phaseInfo = getPhaseInfo();
     const currentRound = activeCompetition.competition_rounds?.find(
       r => r.round_number === activeCompetition.current_round
     );
+    const qualifiedPlayers = activeCompetition.competition_players?.filter(p => p.is_qualified) || [];
+    const eliminatedPlayers = activeCompetition.competition_players?.filter(p => !p.is_qualified) || [];
+
+    // Group players by their current group
+    const groupAPlayers = qualifiedPlayers.filter(p => ['A', 'C', 'E'].includes(p.group_letter));
+    const groupBPlayers = qualifiedPlayers.filter(p => ['B', 'D', 'F'].includes(p.group_letter));
 
     return (
       <div className="space-y-6">
         <ScriptureMatchToggle />
         <PopGameToggle />
+        
         <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl p-6 border border-amber-500/30">
-          <div className="flex items-center justify-between mb-4">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-amber-400 flex items-center gap-2">
               <Trophy className="w-6 h-6" />
               Active Competition
             </h2>
             <div className="flex items-center gap-3">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                activeCompetition.status === 'waiting' ? 'bg-yellow-500/20 text-yellow-300' :
-                activeCompetition.status === 'completed' ? 'bg-green-500/20 text-green-300' :
-                'bg-blue-500/20 text-blue-300'
-              }`}>
-                {activeCompetition.status.replace('_', ' ').toUpperCase()}
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${phaseInfo?.bgColor} ${phaseInfo?.color}`}>
+                {phaseInfo?.label}
               </span>
               <button
                 onClick={handleCancelCompetition}
@@ -395,119 +360,211 @@ export default function CompetitionManager() {
             </div>
           </div>
 
-          {countdown !== null && (
-            <div className="text-center py-8">
-              <div className="text-6xl font-bold text-amber-400 animate-pulse">
-                {countdown}
+          {/* Phase Timer */}
+          {phaseTimeLeft !== null && activeCompetition.phase !== 'completed' && activeCompetition.phase !== 'idle' && activeCompetition.phase !== 'grouped' && (
+            <div className="bg-black/40 rounded-xl p-4 mb-6 border border-amber-500/30">
+              <div className="flex items-center justify-center gap-4">
+                <Timer className="w-8 h-8 text-amber-400" />
+                <div className="text-center">
+                  <div className="text-4xl font-mono font-bold text-white">
+                    {Math.floor(phaseTimeLeft / 60)}:{(phaseTimeLeft % 60).toString().padStart(2, '0')}
+                  </div>
+                  <p className="text-white/60 text-sm">
+                    {activeCompetition.phase === 'countdown' && 'Round starting in...'}
+                    {activeCompetition.phase === 'round_active' && `Round ${activeCompetition.current_round} ends in...`}
+                    {activeCompetition.phase === 'break' && 'Next round starts in...'}
+                  </p>
+                </div>
               </div>
-              <p className="text-white/70 mt-2">Starting in...</p>
-            </div>
-          )}
-
-          {activeCompetition.status === 'waiting' && countdown === null && (
-            <button
-              onClick={handleStartCompetition}
-              className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2"
-            >
-              <Play className="w-5 h-5" />
-              Start Competition (5s countdown)
-            </button>
-          )}
-
-          {activeCompetition.status !== 'waiting' && activeCompetition.status !== 'completed' && (
-            <div className="space-y-4">
-              {/* Round Timer */}
-              {roundTimeLeft !== null && (
-                <div className="text-center bg-black/30 rounded-lg p-4">
-                  <div className="flex items-center justify-center gap-2 text-2xl font-bold text-white">
-                    <Clock className="w-6 h-6 text-amber-400" />
-                    {Math.floor(roundTimeLeft / 60)}:{(roundTimeLeft % 60).toString().padStart(2, '0')}
-                  </div>
-                  <p className="text-white/70 text-sm">Round {activeCompetition.current_round} Time Remaining</p>
-                </div>
-              )}
-
-              {/* Current Round Scores */}
-              {currentRound && activeCompetition.current_round < 4 && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-blue-500/20 rounded-lg p-4 text-center border border-blue-500/30">
-                    <div className="text-2xl font-bold text-blue-300">
-                      Group {currentRound.group_a_letter}
-                    </div>
-                    <div className="text-4xl font-bold text-white mt-2">
-                      {currentRound.group_a_score}
-                    </div>
-                  </div>
-                  <div className="bg-red-500/20 rounded-lg p-4 text-center border border-red-500/30">
-                    <div className="text-2xl font-bold text-red-300">
-                      Group {currentRound.group_b_letter}
-                    </div>
-                    <div className="text-4xl font-bold text-white mt-2">
-                      {currentRound.group_b_score}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Admin Controls */}
-              <div className="flex gap-4">
-                {roundTimeLeft === 0 && currentRound?.status === 'in_progress' && (
-                  <button
-                    onClick={handleEndRound}
-                    className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl hover:scale-105 transition-transform"
-                  >
-                    End Round & Eliminate
-                  </button>
-                )}
-                {currentRound?.status === 'completed' && activeCompetition.current_round < 4 && (
-                  <button
-                    onClick={handleStartNextRound}
-                    className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:scale-105 transition-transform"
-                  >
-                    Start Round {activeCompetition.current_round + 1}
-                  </button>
-                )}
-                {activeCompetition.current_round === 4 && roundTimeLeft === 0 && (
-                  <button
-                    onClick={handleCompleteCompetition}
-                    className="flex-1 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold rounded-xl hover:scale-105 transition-transform"
-                  >
-                    <Crown className="w-5 h-5 inline mr-2" />
-                    Complete & Show Winners
-                  </button>
-                )}
+              
+              {/* Progress bar */}
+              <div className="mt-4 h-2 bg-black/30 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-amber-400 to-yellow-500 transition-all duration-1000"
+                  style={{
+                    width: `${(() => {
+                      let totalDuration;
+                      if (activeCompetition.phase === 'countdown') totalDuration = COUNTDOWN_DURATION;
+                      else if (activeCompetition.phase === 'break') totalDuration = BREAK_DURATION;
+                      else totalDuration = ROUND_DURATIONS[activeCompetition.current_round] || 60;
+                      return ((totalDuration - phaseTimeLeft) / totalDuration) * 100;
+                    })()}%`
+                  }}
+                />
               </div>
             </div>
           )}
+
+          {/* Admin Controls */}
+          <div className="mb-6">
+            {activeCompetition.phase === 'idle' && (
+              <button
+                onClick={handleGroupPlayers}
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+              >
+                <Users className="w-5 h-5" />
+                Group Players (Assign A & B)
+              </button>
+            )}
+
+            {activeCompetition.phase === 'grouped' && (
+              <button
+                onClick={handleStartCompetition}
+                className="w-full py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
+              >
+                <Play className="w-5 h-5" />
+                Start Competition (Fully Automated)
+              </button>
+            )}
+
+            {['countdown', 'round_active', 'break'].includes(activeCompetition.phase) && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 flex items-center gap-3">
+                <Zap className="w-6 h-6 text-green-400 animate-pulse" />
+                <div>
+                  <p className="text-green-400 font-bold">Competition Running Automatically</p>
+                  <p className="text-white/60 text-sm">Rounds, breaks, and eliminations are handled automatically.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Live Group Scores */}
+          {currentRound && activeCompetition.phase === 'round_active' && activeCompetition.current_round < 4 && (
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-blue-500/20 rounded-xl p-4 border border-blue-500/30">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-300">Group {currentRound.group_a_letter}</div>
+                  <div className="text-5xl font-bold text-white my-2">{currentRound.group_a_score}</div>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {groupAPlayers.map(p => (
+                      <div key={p.id} className="flex justify-between text-xs px-2">
+                        <span className="text-white/70 truncate">{p.player_name}</span>
+                        <span className="text-blue-300 font-mono">{p.current_round_score}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="bg-red-500/20 rounded-xl p-4 border border-red-500/30">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-300">Group {currentRound.group_b_letter}</div>
+                  <div className="text-5xl font-bold text-white my-2">{currentRound.group_b_score}</div>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {groupBPlayers.map(p => (
+                      <div key={p.id} className="flex justify-between text-xs px-2">
+                        <span className="text-white/70 truncate">{p.player_name}</span>
+                        <span className="text-red-300 font-mono">{p.current_round_score}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Final Round - Individual Scores */}
+          {activeCompetition.current_round === 4 && activeCompetition.phase === 'round_active' && (
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <Crown className="w-5 h-5 text-christmasGold" />
+                Final Round - Top 3 Battle
+              </h3>
+              <div className="space-y-2">
+                {qualifiedPlayers
+                  .sort((a, b) => b.current_round_score - a.current_round_score)
+                  .map((player, idx) => (
+                    <div
+                      key={player.id}
+                      className={`rounded-xl p-3 flex items-center gap-4 ${
+                        idx === 0 ? 'bg-gradient-to-r from-christmasGold/30 to-yellow-500/20 border border-christmasGold/50' :
+                        idx === 1 ? 'bg-gradient-to-r from-gray-400/20 to-gray-300/10 border border-gray-400/30' :
+                        'bg-gradient-to-r from-amber-700/20 to-amber-600/10 border border-amber-600/30'
+                      }`}
+                    >
+                      <div className="text-2xl">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</div>
+                      <div className="flex-1">
+                        <div className="font-bold text-white">{player.player_name}</div>
+                      </div>
+                      <div className="text-2xl font-bold text-christmasGold">{player.current_round_score}</div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Round Progress */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-white/70 mb-3">Round Progress</h3>
+            <div className="flex justify-between">
+              {[1, 2, 3, 4].map(round => {
+                const isActive = activeCompetition.current_round === round && activeCompetition.phase === 'round_active';
+                const isCompleted = activeCompetition.current_round > round || 
+                  (activeCompetition.current_round === round && ['break', 'completed'].includes(activeCompetition.phase));
+                const isPending = activeCompetition.current_round < round;
+                
+                return (
+                  <div key={round} className="flex flex-col items-center">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                      isActive ? 'bg-christmasGold text-black animate-pulse scale-110' :
+                      isCompleted ? 'bg-green-500 text-white' :
+                      'bg-white/10 text-white/50'
+                    }`}>
+                      {isCompleted ? '✓' : round}
+                    </div>
+                    <span className={`text-xs mt-1 ${isActive ? 'text-christmasGold font-bold' : 'text-white/50'}`}>
+                      {round === 4 ? 'Final' : `R${round}`}
+                    </span>
+                    <span className="text-[10px] text-white/40">
+                      {ROUND_DURATIONS[round] / 60}m
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Players List */}
-          <div className="mt-6">
+          <div>
             <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
               <Users className="w-5 h-5" />
-              Players ({activeCompetition.competition_players?.length || 0})
+              Qualified Players ({qualifiedPlayers.length})
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-60 overflow-y-auto">
-              {activeCompetition.competition_players?.map(player => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+              {qualifiedPlayers.map(player => (
                 <div
                   key={player.id}
                   className={`p-2 rounded-lg text-xs ${
-                    !player.is_qualified 
-                      ? 'bg-gray-500/20 text-gray-400 line-through' 
-                      : player.group_letter 
-                        ? player.group_letter === 'A' || player.group_letter === 'C' || player.group_letter === 'E'
-                          ? 'bg-blue-500/20 text-blue-300'
-                          : 'bg-red-500/20 text-red-300'
+                    ['A', 'C', 'E'].includes(player.group_letter)
+                      ? 'bg-blue-500/20 text-blue-300'
+                      : ['B', 'D', 'F'].includes(player.group_letter)
+                        ? 'bg-red-500/20 text-red-300'
                         : 'bg-amber-500/20 text-amber-400'
                   }`}
                 >
                   <div className="font-medium truncate">{player.player_name}</div>
                   <div className="text-[10px] opacity-70">
                     {player.group_letter ? `Group ${player.group_letter}` : 'Final'}
-                    {' • '}Score: {player.total_score}
+                    {' • '}Total: {player.total_score}
                   </div>
                 </div>
               ))}
             </div>
+
+            {eliminatedPlayers.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm text-white/50 mb-2">Eliminated ({eliminatedPlayers.length})</h4>
+                <div className="flex flex-wrap gap-1">
+                  {eliminatedPlayers.map(player => (
+                    <span
+                      key={player.id}
+                      className="px-2 py-0.5 bg-gray-500/20 text-gray-500 rounded text-xs line-through"
+                    >
+                      {player.player_name} (R{player.round_eliminated})
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -628,7 +685,6 @@ export default function CompetitionManager() {
             Search & Add Players ({manualPlayers.length} added)
           </h3>
           
-          {/* Search */}
           <div className="flex gap-2 mb-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
@@ -649,7 +705,6 @@ export default function CompetitionManager() {
             </button>
           </div>
 
-          {/* Search Results */}
           {searchResults.length > 0 && (
             <div className="mb-3 bg-black/30 rounded-lg p-2 max-h-32 overflow-y-auto">
               {searchResults.map(player => (
@@ -665,7 +720,6 @@ export default function CompetitionManager() {
             </div>
           )}
 
-          {/* Selected Manual Players */}
           {manualPlayers.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {manualPlayers.map(player => (
@@ -686,15 +740,9 @@ export default function CompetitionManager() {
         {/* Create Button */}
         <div className="flex items-center justify-between">
           <div className="text-white/70 text-sm">
-            {totalSelected < 24 && (
-              <span>Need {24 - totalSelected} more players</span>
-            )}
-            {totalSelected === 24 && (
-              <span className="text-green-400 font-medium">✓ Ready to create competition!</span>
-            )}
-            {totalSelected > 24 && (
-              <span className="text-red-400">Too many players selected</span>
-            )}
+            {totalSelected < 24 && <span>Need {24 - totalSelected} more players</span>}
+            {totalSelected === 24 && <span className="text-green-400 font-medium">✓ Ready to create competition!</span>}
+            {totalSelected > 24 && <span className="text-red-400">Too many players selected</span>}
           </div>
           <button
             onClick={handleCreateCompetition}
@@ -713,31 +761,30 @@ export default function CompetitionManager() {
 
       {/* Competition Workflow Info */}
       <div className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-xl p-6 border border-indigo-500/30">
-        <h3 className="text-lg font-bold text-indigo-300 mb-4">📋 How the Competition Works</h3>
+        <h3 className="text-lg font-bold text-indigo-300 mb-4">🤖 Fully Automated Competition Flow</h3>
         <div className="space-y-3 text-sm text-white/80">
           <div className="flex gap-3">
-            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">1</span>
-            <p><strong>Create Competition:</strong> Select 24 players from the leaderboards and click Create.</p>
+            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold shrink-0">1</span>
+            <p><strong>Create Competition:</strong> Select 24 players from leaderboards.</p>
           </div>
           <div className="flex gap-3">
-            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">2</span>
-            <p><strong>Start Competition:</strong> 5-second countdown, then 24 players split into Group A (12) vs Group B (12).</p>
+            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold shrink-0">2</span>
+            <p><strong>Group Players:</strong> Randomly assign to Group A (12) and Group B (12).</p>
           </div>
           <div className="flex gap-3">
-            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">3</span>
-            <p><strong>Round 1:</strong> 1-minute timer. Groups answer questions. Losing group eliminated. (24 → 12)</p>
+            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold shrink-0">3</span>
+            <p><strong>Start Competition:</strong> Everything is automated from here!</p>
           </div>
-          <div className="flex gap-3">
-            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">4</span>
-            <p><strong>Round 2:</strong> Remaining 12 split into Group C vs D. Losing group eliminated. (12 → 6)</p>
-          </div>
-          <div className="flex gap-3">
-            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">5</span>
-            <p><strong>Round 3:</strong> Remaining 6 split into Group E vs F. Losing group eliminated. (6 → 3)</p>
-          </div>
-          <div className="flex gap-3">
-            <span className="bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-xs font-bold">6</span>
-            <p><strong>Final Round:</strong> 3 finalists compete individually. Highest score wins! 🏆</p>
+          <div className="bg-black/30 rounded-lg p-3 mt-2">
+            <p className="text-white/60 text-xs mb-2">⏱️ Timing:</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>• 30s countdown before each round</div>
+              <div>• Round 1: 2 minutes (24→12)</div>
+              <div>• Round 2: 1 minute (12→6)</div>
+              <div>• Round 3: 1 minute (6→3)</div>
+              <div>• Final: 2 minutes (top 3)</div>
+              <div>• 30s break between rounds</div>
+            </div>
           </div>
         </div>
       </div>
