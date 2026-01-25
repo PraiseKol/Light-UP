@@ -1,358 +1,393 @@
 
-
-# Plan: Fix Push Notifications, Competition Automation, and Service Worker
+# Plan: Seasonal Theme System
 
 ## Overview
 
-This plan addresses the three identified issues to ensure the competition system and push notifications work reliably:
-
-1. **Push Notification Edge Function** - Currently broken due to improper VAPID signing and Web Push encryption
-2. **Competition Automation Reliability** - Currently depends on client-side timers which will fail if no clients are connected
-3. **Service Worker Push Handler** - Missing custom handler to display notifications when app is in background
+Add a theme switching system that allows users to select between **Default** (spiritual/candy), **Easter**, and **Christmas** themes via the Settings modal. The selected theme will be saved to the database and applied app-wide, affecting backgrounds, decorative elements, color schemes, and accent emojis.
 
 ---
 
-## Issue 1: Fix Push Notification Edge Function
+## Architecture
 
-### Problem
+### Theme Structure
 
-The current `send-push-notification` Edge Function has critical flaws:
-- Line 105: VAPID JWT signature is a literal string `"signature"` instead of actual ECDSA-signed data
-- Line 116: Payload is sent as plain text instead of being encrypted with AES-128-GCM
-- This causes all push notifications to fail with 401/403 errors from push services
-
-### Solution
-
-Rewrite the Edge Function using the `web-push` npm package which handles all the complex cryptography automatically.
-
-### Implementation
-
-**File: `supabase/functions/send-push-notification/index.ts`**
-
-```typescript
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import webpush from "npm:web-push@3.6.7";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const { userIds, notification } = await req.json();
-
-    // Initialize Supabase
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
-
-    // Configure web-push with VAPID keys
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!;
-    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!;
-    
-    webpush.setVapidDetails(
-      'mailto:support@lightup.app',
-      vapidPublicKey,
-      vapidPrivateKey
-    );
-
-    // Fetch subscriptions
-    let query = supabase.from('push_subscriptions').select('*');
-    if (userIds?.length > 0) {
-      query = query.in('user_id', userIds);
-    }
-    const { data: subscriptions, error } = await query;
-
-    if (error || !subscriptions?.length) {
-      return new Response(
-        JSON.stringify({ sent: 0, message: 'No subscriptions found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create payload
-    const payload = JSON.stringify({
-      title: notification.title,
-      body: notification.body,
-      icon: notification.icon || '/logo192.jpg',
-      badge: '/logo192.jpg',
-      data: notification.data || {},
-    });
-
-    // Send notifications using web-push (handles encryption automatically)
-    const results = await Promise.allSettled(
-      subscriptions.map(async (sub) => {
-        try {
-          await webpush.sendNotification(
-            {
-              endpoint: sub.endpoint,
-              keys: { p256dh: sub.p256dh, auth: sub.auth }
-            },
-            payload
-          );
-          return { success: true, endpoint: sub.endpoint };
-        } catch (err) {
-          // Remove invalid subscriptions
-          if (err.statusCode === 404 || err.statusCode === 410) {
-            await supabase.from('push_subscriptions')
-              .delete().eq('endpoint', sub.endpoint);
-          }
-          return { success: false, endpoint: sub.endpoint };
-        }
-      })
-    );
-
-    const sent = results.filter(r => 
-      r.status === 'fulfilled' && r.value.success
-    ).length;
-
-    return new Response(
-      JSON.stringify({ sent, total: subscriptions.length }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-});
+```text
+src/
+├── context/
+│   └── ThemeContext.jsx          # NEW - React context for theme state
+├── themes/
+│   ├── themeConfig.js            # NEW - Theme definitions (colors, emojis, gradients)
+│   └── ThemedBackground.jsx      # NEW - Unified background component
+├── components/
+│   ├── SettingsModal.jsx         # MODIFY - Add theme picker
+│   ├── MapBackground.jsx         # MODIFY - Use theme context
+│   ├── GameScreen.jsx            # MODIFY - Use themed background
+│   ├── PowerUpStore.jsx          # MODIFY - Use theme colors
+│   └── PopGameItem.jsx           # MODIFY - Add theme-based items
+├── pages/
+│   ├── LoginPage.jsx             # MODIFY - Use themed background
+│   └── WeeklyChallengeScreen.jsx # MODIFY - Use themed background
 ```
 
-**Key changes:**
-- Uses `npm:web-push@3.6.7` which handles ECDSA signing and AES-GCM encryption
-- `webpush.setVapidDetails()` properly configures VAPID authentication
-- `webpush.sendNotification()` encrypts payload correctly per Web Push protocol
-
 ---
 
-## Issue 2: Add Server-Side Competition Automation
+## Database Changes
 
-### Problem
-
-Competition phase transitions currently rely on client-side timers calling `processPhaseTransition()`. If no clients are connected (e.g., all users close their browsers), the competition will stall.
-
-### Solution
-
-Use Supabase's `pg_cron` extension to schedule a job that calls the `competition-automation` Edge Function every 10 seconds during active competitions.
-
-### Implementation
-
-**Step 1: Run SQL to create cron job**
-
-This SQL will be run via the database migration tool:
+### Add `selected_theme` column to `game_users`
 
 ```sql
--- Enable required extensions
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
+ALTER TABLE public.game_users 
+ADD COLUMN selected_theme text DEFAULT 'default';
 
--- Create a function to check and trigger competition automation
-CREATE OR REPLACE FUNCTION public.trigger_competition_automation()
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  active_comp RECORD;
-BEGIN
-  -- Find active competition that needs phase transition
-  SELECT id INTO active_comp
-  FROM public.competitions
-  WHERE status != 'completed'
-    AND phase IS NOT NULL
-    AND phase NOT IN ('idle', 'grouped', 'completed')
-    AND phase_ends_at IS NOT NULL
-    AND phase_ends_at <= NOW()
-  LIMIT 1;
-
-  -- If found, call the edge function
-  IF active_comp.id IS NOT NULL THEN
-    PERFORM net.http_post(
-      url := 'https://rhanvchqlilmzxmufode.supabase.co/functions/v1/competition-automation',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoYW52Y2hxbGlsbXp4bXVmb2RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1MDg5MzIsImV4cCI6MjA2ODA4NDkzMn0.OQ2cN38ZpK-J9GBCFMbqgSWxZxhl229CcBTr6EYS_as'
-      ),
-      body := jsonb_build_object('competitionId', active_comp.id)
-    );
-  END IF;
-END;
-$$;
-
--- Schedule the job to run every 10 seconds
-SELECT cron.schedule(
-  'competition-automation-check',
-  '*/10 * * * *',  -- Every 10 seconds approximated by minute-level cron
-  $$SELECT public.trigger_competition_automation()$$
-);
-```
-
-Note: Since `pg_cron` only supports minute-level granularity, we'll use a hybrid approach - the cron runs every minute but the Edge Function is also triggered by client timers for faster response. This ensures reliability even if no clients are connected.
-
-**Alternative: 10-second polling via enhanced cron**
-
-For true 10-second intervals, we can schedule 6 jobs offset by 10 seconds each:
-
-```sql
--- Schedule 6 jobs at different second offsets for ~10s granularity
-SELECT cron.schedule('comp-auto-0', '* * * * *', $$SELECT pg_sleep(0); SELECT public.trigger_competition_automation()$$);
-SELECT cron.schedule('comp-auto-10', '* * * * *', $$SELECT pg_sleep(10); SELECT public.trigger_competition_automation()$$);
-SELECT cron.schedule('comp-auto-20', '* * * * *', $$SELECT pg_sleep(20); SELECT public.trigger_competition_automation()$$);
-SELECT cron.schedule('comp-auto-30', '* * * * *', $$SELECT pg_sleep(30); SELECT public.trigger_competition_automation()$$);
-SELECT cron.schedule('comp-auto-40', '* * * * *', $$SELECT pg_sleep(40); SELECT public.trigger_competition_automation()$$);
-SELECT cron.schedule('comp-auto-50', '* * * * *', $$SELECT pg_sleep(50); SELECT public.trigger_competition_automation()$$);
+-- Add comment for documentation
+COMMENT ON COLUMN public.game_users.selected_theme IS 'User selected visual theme: default, easter, christmas';
 ```
 
 ---
 
-## Issue 3: Add Service Worker Push Event Handler
+## Theme Definitions
 
-### Problem
+### File: `src/themes/themeConfig.js`
 
-The PWA uses `vite-plugin-pwa` which generates a service worker automatically, but it doesn't include a custom `push` event handler. Without this, incoming push notifications won't be displayed when the app is in the background.
-
-### Solution
-
-Create a custom service worker file that handles push events and configure vite-plugin-pwa to include it.
-
-### Implementation
-
-**Step 1: Create custom service worker**
-
-**File: `public/sw-custom.js`**
+Each theme defines:
+- **Background gradients** (primary gradient colors)
+- **Accent colors** (for buttons, highlights)
+- **Decorative emojis** (theme-specific floating elements)
+- **Particle colors** (for floating light particles)
+- **Special elements** (crosses become Easter eggs, etc.)
 
 ```javascript
-// Custom push notification handler
-self.addEventListener('push', function(event) {
-  if (!event.data) return;
-
-  try {
-    const data = event.data.json();
-    
-    const options = {
-      body: data.body || 'New notification',
-      icon: data.icon || '/logo192.jpg',
-      badge: data.badge || '/logo192.jpg',
-      vibrate: [100, 50, 100],
-      data: data.data || {},
-      actions: [
-        { action: 'open', title: 'Open App' }
-      ]
-    };
-
-    event.waitUntil(
-      self.registration.showNotification(data.title || 'Light UP', options)
-    );
-  } catch (e) {
-    console.error('Push event error:', e);
-  }
-});
-
-// Handle notification click
-self.addEventListener('notificationclick', function(event) {
-  event.notification.close();
-
-  const urlToOpen = event.notification.data?.url || '/';
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(function(clientList) {
-        // If app is already open, focus it
-        for (let client of clientList) {
-          if (client.url.includes(self.location.origin) && 'focus' in client) {
-            client.navigate(urlToOpen);
-            return client.focus();
-          }
-        }
-        // Otherwise open new window
-        return clients.openWindow(urlToOpen);
-      })
-  );
-});
-```
-
-**Step 2: Update vite.config.js to inject custom service worker**
-
-**File: `vite.config.js`** - Update the VitePWA configuration:
-
-```javascript
-VitePWA({
-  registerType: 'autoUpdate',
-  includeAssets: ['logoo.png', 'logo192.jpg', 'logo512.png'],
-  manifest: {
-    // ... existing manifest config
+export const THEMES = {
+  default: {
+    name: 'Default',
+    icon: '✨',
+    description: 'Classic spiritual theme',
+    background: {
+      gradient: 'from-indigo-900 via-purple-900 to-blue-900',
+      particleColor: 'bg-candyYellow/30',
+    },
+    decorations: {
+      primary: ['🕊️', '✝️', '👼'],
+      secondary: ['⭐', '✨'],
+      floating: '🕊️',
+    },
+    accent: {
+      primary: 'candyYellow',
+      secondary: 'candyPink',
+      glow: 'rgba(255,217,61,0.8)',
+    },
+    popGameItems: {
+      special: { emoji: '🕊️', name: 'dove' },
+    }
   },
-  workbox: {
-    skipWaiting: true,
-    clientsClaim: true,
-    globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,svg,woff2,mp3,wav,m4a}'],
-    maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-    // Import custom service worker code
-    importScripts: ['/sw-custom.js'],
-    runtimeCaching: [
-      // ... existing runtime caching config
-    ]
+  
+  easter: {
+    name: 'Easter',
+    icon: '🐰',
+    description: 'Celebrate the resurrection',
+    background: {
+      gradient: 'from-sky-400 via-purple-300 to-pink-200',
+      particleColor: 'bg-pink-300/40',
+    },
+    decorations: {
+      primary: ['🐰', '🥚', '🌷'],
+      secondary: ['🦋', '🌸', '☀️'],
+      floating: '🐰',
+    },
+    accent: {
+      primary: 'pink-400',
+      secondary: 'purple-400',
+      glow: 'rgba(236,72,153,0.8)',
+    },
+    popGameItems: {
+      special: { emoji: '🥚', name: 'egg' },
+    }
+  },
+  
+  christmas: {
+    name: 'Christmas',
+    icon: '🎄',
+    description: 'Celebrate the birth of Christ',
+    background: {
+      gradient: 'from-slate-900 via-blue-950 to-indigo-950',
+      particleColor: 'bg-white/40',
+    },
+    decorations: {
+      primary: ['🎄', '⭐', '🎅'],
+      secondary: ['❄️', '🎁', '🔔'],
+      floating: '❄️',
+      snowfall: true,
+    },
+    accent: {
+      primary: 'red-500',
+      secondary: 'green-600',
+      glow: 'rgba(239,68,68,0.8)',
+    },
+    popGameItems: {
+      special: { emoji: '🎅', name: 'santa' },
+    }
   }
-})
+};
 ```
 
-The key addition is `importScripts: ['/sw-custom.js']` which tells Workbox to import our custom push handler into the generated service worker.
+---
+
+## Theme Context
+
+### File: `src/context/ThemeContext.jsx`
+
+```javascript
+import { createContext, useContext, useState, useEffect } from 'react';
+import { THEMES } from '@/themes/themeConfig';
+
+const ThemeContext = createContext();
+
+export function ThemeProvider({ children, initialTheme = 'default' }) {
+  const [theme, setTheme] = useState(initialTheme);
+  
+  const themeConfig = THEMES[theme] || THEMES.default;
+  
+  return (
+    <ThemeContext.Provider value={{ 
+      theme, 
+      setTheme, 
+      config: themeConfig,
+      themes: THEMES 
+    }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export const useTheme = () => useContext(ThemeContext);
+```
 
 ---
 
-## Summary of Changes
+## Themed Background Component
 
-| File | Change |
-|------|--------|
-| `supabase/functions/send-push-notification/index.ts` | Rewrite to use `web-push` npm package for proper VAPID signing and payload encryption |
-| `public/sw-custom.js` | New file - Custom service worker with push and notificationclick handlers |
-| `vite.config.js` | Add `importScripts` to include custom service worker |
-| Database (via SQL Editor) | Add `pg_cron` jobs to trigger competition automation every ~10 seconds |
+### File: `src/themes/ThemedBackground.jsx`
+
+A unified background component that renders differently based on the current theme:
+
+```javascript
+import { motion } from 'framer-motion';
+import { useTheme } from '@/context/ThemeContext';
+
+export default function ThemedBackground({ starCount = 60 }) {
+  const { config, theme } = useTheme();
+  
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden">
+      {/* Base gradient */}
+      <div className={`absolute inset-0 bg-gradient-to-b ${config.background.gradient}`} />
+      
+      {/* Stars (all themes) */}
+      <div className="absolute inset-0">
+        {[...Array(starCount)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full opacity-80"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animation: `twinkle ${2 + Math.random() * 3}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 2}s`,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Snowfall for Christmas */}
+      {config.decorations.snowfall && <SnowfallEffect />}
+      
+      {/* Floating decorations */}
+      <FloatingDecorations decorations={config.decorations} />
+      
+      {/* Themed particles */}
+      <FloatingParticles color={config.background.particleColor} />
+      
+      {/* Rolling hills */}
+      <Hills theme={theme} />
+    </div>
+  );
+}
+```
 
 ---
 
-## Testing Plan
+## Settings Modal Update
 
-After implementation:
+### Modify: `src/components/SettingsModal.jsx`
 
-1. **Test Push Notifications:**
-   - Subscribe to push notifications in the app
-   - Use the Edge Function directly to send a test notification
-   - Verify notification appears on device (both foreground and background)
+Add a theme picker section between the avatar selection and notifications:
 
-2. **Test Competition Automation:**
-   - Start a test competition with the admin panel
-   - Close all browser windows
-   - Verify phases still transition automatically via cron
+```javascript
+// Inside SettingsModal component
 
-3. **Test Service Worker:**
-   - Install PWA on device
-   - Send push notification while app is closed
-   - Verify notification appears and clicking it opens the app
+const [selectedTheme, setSelectedTheme] = useState(gameUser?.selected_theme || 'default');
+
+// In handleSave:
+await supabase
+  .from("game_users")
+  .update({
+    player_name: name,
+    sound,
+    effects_on: effectsOn,
+    selected_avatar: selectedAvatar,
+    selected_theme: selectedTheme,  // NEW
+  })
+  .eq("user_id", gameUser.user_id);
+
+// In the JSX, add after Avatar Selection:
+{/* Theme Selection */}
+<div className="border-t border-gray-200 pt-3 sm:pt-4">
+  <label className="text-xs sm:text-sm font-medium mb-2 sm:mb-3 block text-gray-800">
+    🎨 Visual Theme
+  </label>
+  <div className="grid grid-cols-3 gap-2">
+    {Object.entries(THEMES).map(([key, themeData]) => (
+      <button
+        key={key}
+        onClick={() => {
+          setSelectedTheme(key);
+          playSound("select", effectsOn);
+        }}
+        className={`p-3 rounded-xl border-2 transition-all ${
+          selectedTheme === key
+            ? 'border-yellow-400 ring-2 ring-yellow-300 scale-105 shadow-lg'
+            : 'border-gray-200 hover:border-gray-300'
+        }`}
+      >
+        <div className="text-2xl mb-1">{themeData.icon}</div>
+        <div className="text-xs font-medium">{themeData.name}</div>
+      </button>
+    ))}
+  </div>
+  <p className="text-[10px] sm:text-xs text-gray-500 mt-2 text-center">
+    Switch themes to match the season!
+  </p>
+</div>
+```
 
 ---
 
-## Technical Notes
+## Component Updates
 
-### Why web-push library?
-The Web Push protocol requires:
-- ECDSA signing of VAPID JWT with ES256 algorithm
-- AES-128-GCM encryption of the payload using the subscription's p256dh and auth keys
-- Proper HTTP headers including encrypted content
+### 1. MapBackground.jsx
+Replace hardcoded gradients and emojis with theme-aware versions using `useTheme()`.
 
-The `web-push` library handles all of this automatically and is the industry standard.
+### 2. GameScreen.jsx
+Replace the hardcoded `bg-gradient-to-b from-indigo-900 via-purple-900 to-blue-900` with the themed gradient.
 
-### Why pg_cron?
-- Runs server-side regardless of client connections
-- Built into Supabase (just needs enabling)
-- Reliable for periodic tasks like competition phase transitions
+### 3. LoginPage.jsx
+Apply theme-aware gradient and decorative elements.
 
+### 4. WeeklyChallengeScreen.jsx
+Use `ThemedBackground` component.
+
+### 5. PowerUpStore.jsx
+Remove the hardcoded Christmas colors (`christmasGreen`, `christmasRed`) and replace with theme-aware accent colors.
+
+### 6. PopGameItem.jsx
+Add theme-specific items (Easter eggs for Easter, Santa for Christmas) based on current theme.
+
+---
+
+## App.jsx Integration
+
+### Wrap the app with ThemeProvider:
+
+```javascript
+// In App.jsx
+import { ThemeProvider } from '@/context/ThemeContext';
+
+function AppContent() {
+  // Fetch user's selected_theme from gameUser
+  const theme = gameUser?.selected_theme || 'default';
+  
+  return (
+    <ThemeProvider initialTheme={theme}>
+      {/* ... rest of app */}
+    </ThemeProvider>
+  );
+}
+```
+
+---
+
+## Tailwind Config Update
+
+### Add seasonal colors to `tailwind.config.js`:
+
+```javascript
+colors: {
+  // Existing candy colors...
+  
+  // Easter theme
+  easterPink: '#F9A8D4',
+  easterPurple: '#C084FC',
+  easterBlue: '#7DD3FC',
+  easterGreen: '#86EFAC',
+  
+  // Christmas theme
+  christmasRed: '#DC2626',
+  christmasGreen: '#16A34A',
+  christmasGold: '#FBBF24',
+}
+```
+
+---
+
+## Files Changed Summary
+
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `src/themes/themeConfig.js` | **NEW** | Theme definitions with colors, emojis, gradients |
+| `src/context/ThemeContext.jsx` | **NEW** | React context for theme state management |
+| `src/themes/ThemedBackground.jsx` | **NEW** | Unified themed background component |
+| `src/components/SettingsModal.jsx` | **MODIFY** | Add theme picker UI |
+| `src/components/MapBackground.jsx` | **MODIFY** | Use theme context for gradients/decorations |
+| `src/components/GameScreen.jsx` | **MODIFY** | Apply themed background |
+| `src/components/PowerUpStore.jsx` | **MODIFY** | Use theme-aware colors |
+| `src/components/PopGameItem.jsx` | **MODIFY** | Add theme-specific items |
+| `src/pages/LoginPage.jsx` | **MODIFY** | Apply themed background |
+| `src/pages/WeeklyChallengeScreen.jsx` | **MODIFY** | Apply themed background |
+| `src/App.jsx` | **MODIFY** | Wrap with ThemeProvider |
+| `tailwind.config.js` | **MODIFY** | Add Easter/Christmas colors |
+| **Database Migration** | **NEW** | Add `selected_theme` column to `game_users` |
+
+---
+
+## Visual Preview
+
+### Default Theme (Current)
+- Deep purple-blue gradient sky
+- Doves, crosses, angels floating
+- Golden/yellow accents
+
+### Easter Theme
+- Pastel sky gradient (sky blue to pink)
+- Bunnies, Easter eggs, butterflies, flowers
+- Pink/purple accents
+- Bright, hopeful atmosphere
+
+### Christmas Theme
+- Dark winter night gradient
+- Snowfall animation
+- Christmas trees, stars, Santa, snowflakes
+- Red/green accents
+- Festive, cozy atmosphere
+
+---
+
+## Implementation Order
+
+1. **Database**: Add `selected_theme` column
+2. **Config**: Create `themeConfig.js` with theme definitions
+3. **Context**: Create `ThemeContext.jsx`
+4. **Tailwind**: Add seasonal colors
+5. **Background**: Create `ThemedBackground.jsx`
+6. **Settings**: Add theme picker to `SettingsModal.jsx`
+7. **Integration**: Update `App.jsx` with ThemeProvider
+8. **Components**: Update each component to use theme context
