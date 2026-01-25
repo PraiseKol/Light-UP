@@ -32,19 +32,19 @@ export default function LeaderboardModal({
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="🎄 Leaderboards 🏆"
+      title="🏆 Leaderboards ⭐"
       className="max-w-2xl w-full mx-2 sm:mx-auto"
     >
       <div className="space-y-3 sm:space-y-4 relative">
-        {/* Christmas decoration at top */}
+        {/* Sparkle decoration at top */}
         <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex gap-1 sm:gap-2">
-          <span className="text-base sm:text-xl animate-ornament-swing">🎄</span>
-          <span className="text-base sm:text-xl animate-ornament-swing" style={{ animationDelay: '0.3s' }}>⭐</span>
-          <span className="text-base sm:text-xl animate-ornament-swing" style={{ animationDelay: '0.6s' }}>🎄</span>
+          <span className="text-base sm:text-xl animate-pulse">✨</span>
+          <span className="text-base sm:text-xl animate-pulse" style={{ animationDelay: '0.3s' }}>⭐</span>
+          <span className="text-base sm:text-xl animate-pulse" style={{ animationDelay: '0.6s' }}>✨</span>
         </div>
         
         {/* Toggle between Overall, Weekly, and Monthly */}
-        <div className="flex gap-1 sm:gap-2 bg-gradient-to-r from-christmasGreen/20 to-christmasRed/20 p-1 rounded-xl mt-4 sm:mt-6">
+        <div className="flex gap-1 sm:gap-2 bg-gradient-to-r from-blue-200/30 to-purple-200/30 p-1 rounded-xl mt-4 sm:mt-6">
           <button
             onClick={() => {
               playSound("switch", true);
@@ -105,7 +105,7 @@ export default function LeaderboardModal({
               
               // Medal colors for top 3
               const medalColor = 
-                rank === 1 ? "text-christmasGold" :
+                rank === 1 ? "text-amber-500" :
                 rank === 2 ? "text-gray-300" :
                 rank === 3 ? "text-amber-600" :
                 "text-gray-500";
@@ -124,7 +124,7 @@ export default function LeaderboardModal({
                 >
                   {/* Rank with Christmas styling */}
                   <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-sm sm:text-lg relative ${
-                    rank === 1 ? "bg-gradient-to-br from-christmasGold to-yellow-600 text-white" :
+                    rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-500 text-white" :
                     rank === 2 ? "bg-gradient-to-br from-gray-300 to-gray-400 text-white" :
                     rank === 3 ? "bg-gradient-to-br from-amber-500 to-amber-700 text-white" :
                     "bg-gray-200 text-gray-600"
