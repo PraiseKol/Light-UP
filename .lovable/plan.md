@@ -1,151 +1,233 @@
 
-# Plan: Fix React Hooks Violation in WeeklyChallengeScreen and GameScreen
+# Plan: Add Error Boundary, Loading Skeleton, and No Quiz Page
 
-## Problem Summary
+## Overview
 
-Users are seeing a **white screen** when trying to play the Weekend Challenge because of a critical React error: **hooks are being called after early return statements**.
-
-In React, all hooks must be called at the **top level** of a component and in the **same order** on every render. When a component returns early (e.g., during loading), the hooks below that return are skipped. This causes React's internal hook tracking to break, resulting in a crash and white screen.
-
----
-
-## Files Affected
-
-| File | Issue |
-|------|-------|
-| `src/pages/WeeklyChallengeScreen.jsx` | `useTheme()` called at line 487, after 4 early return blocks |
-| `src/components/GameScreen.jsx` | `useTheme()` and `useMemo()` called at lines 360-363, after 3 early return blocks |
+Implement three features to improve user experience when things go wrong or are not ready:
+1. **Error Boundary** - Catch JavaScript errors in game screens and display a graceful fallback UI
+2. **Loading Skeleton** - Themed, animated skeleton for Weekend Challenge loading state
+3. **No Quiz Page** - Dedicated page for levels without quiz content
 
 ---
 
-## Fix Strategy
+## Current State
 
-Move all hook calls (`useTheme()`, `useMemo()`) to the **top of the component**, before any conditional returns. The hook values can still be used in the later rendering logic.
+| Issue | Current Behavior |
+|-------|------------------|
+| JavaScript errors in game screens | White screen crash |
+| Weekend Challenge loading | Plain gray text "Loading Weekly Challenge..." |
+| No quiz for a level | Basic centered message in GameScreen |
 
 ---
 
-## Changes Required
+## Implementation
 
-### 1. WeeklyChallengeScreen.jsx
+### 1. Error Boundary Component (NEW)
 
-**Current (broken):**
-```javascript
-// Lines 339-448: Multiple early returns
-if (error) return ...
-if (!questions) return ...
-if (previousAttempt) return ...
-if (isFinished) return ...
+Create a reusable React class component that catches errors in child components.
 
-// Line 487: Hook called AFTER early returns (WRONG!)
-const { config } = useTheme();
+**File:** `src/components/ErrorBoundary.jsx`
 
-// Lines 490-498: useMemo for stars
-const stars = useMemo(() => [...], []);
+```text
++-------------------------------------------+
+|                                           |
+|              😢 Oops!                     |
+|                                           |
+|     Something went wrong                  |
+|                                           |
+|   Don't worry, your progress is saved.   |
+|   Try refreshing or go back to the map.  |
+|                                           |
+|   [🔄 Try Again]  [🗺️ Back to Map]       |
+|                                           |
++-------------------------------------------+
 ```
 
-**Fixed:**
-```javascript
-// Move hooks to TOP, before any early returns
-const { config } = useTheme();
+**Features:**
+- Uses React's `componentDidCatch` and `getDerivedStateFromError` lifecycle methods
+- Themed UI matching the app's Candy Crush style with gradient backgrounds
+- "Try Again" button that resets the error state
+- "Back to Map" button to safely navigate away
+- Logs errors to console for debugging
+- Uses `useTheme()` for consistent styling (via wrapper component pattern)
 
-const stars = useMemo(() => 
-  [...Array(30)].map((_, i) => ({
-    id: i,
-    left: `${Math.random() * 100}%`,
-    top: `${Math.random() * 100}%`,
-    delay: `${Math.random() * 3}s`,
-    duration: `${2 + Math.random() * 2}s`,
-  })), []
-);
+**Technical Note:** Since Error Boundaries must be class components but we want to use the `useTheme()` hook, we'll create a functional wrapper component that passes theme config as a prop.
 
-// Now the early returns are safe
-if (error) return ...
-if (!questions) return ...
-if (previousAttempt) return ...
-if (isFinished) return ...
+---
 
-// Rest of component uses `config` and `stars`
-return (
-  <div className={`min-h-screen bg-gradient-to-b ${config.background.gradient} ...`}>
-    {stars.map(...)}
-  </div>
-);
+### 2. Loading Skeleton for Weekend Challenge (NEW)
+
+Create a themed loading skeleton that matches the Weekend Challenge UI.
+
+**File:** `src/components/ui/WeeklyChallengeLoadingSkeleton.jsx`
+
+```text
++-------------------------------------------+
+|  ⏳ ---   Score: ---   Q --/--            |  <- Skeleton HUD
++-------------------------------------------+
+|  [===========---------------------]       |  <- Skeleton progress bar
+|                                           |
+|  +-----------------------------------+    |
+|  |                                   |    |
+|  |    ✨ Lighting up your word...   |    |  <- Centered message
+|  |                                   |    |
+|  |    [~~~~~~~~~~~~~~~]              |    |  <- Skeleton question box
+|  |    [~~~]  [~~~]  [~~~]  [~~~]    |    |  <- Skeleton options
+|  |                                   |    |
+|  +-----------------------------------+    |
+|                                           |
+|   ✅ Correct: --    ❌ Incorrect: --     |  <- Skeleton stats
++-------------------------------------------+
 ```
 
-### 2. GameScreen.jsx
+**Features:**
+- Animated shimmer effect on skeleton elements
+- Matches the actual Weekend Challenge layout (HUD, progress bar, question card, stats)
+- Uses theme colors from `useTheme()`
+- Twinkling star background matching the active game
+- Spiritual loading messages: "Lighting up your word...", "Preparing your challenge..."
 
-**Current (broken):**
-```javascript
-// Lines 202-252: Multiple early returns
-if (!user) return ...
-if (loadingQuestion || loadingGameUser) return ...
-if (!questionData) return ...
+---
 
-// Lines 360-371: Hooks called AFTER early returns (WRONG!)
-const { config } = useTheme();
-const stars = useMemo(() => [...], []);
+### 3. No Quiz Page Component (NEW)
+
+Create a dedicated, themed page for levels without quiz content.
+
+**File:** `src/components/NoQuizPage.jsx`
+
+```text
++-------------------------------------------+
+|              ✨ Stars background ✨       |
+|                                           |
+|     +-------------------------------+     |
+|     |                               |     |
+|     |           📖                  |     |
+|     |                               |     |
+|     |   Quiz Coming Soon!           |     |
+|     |                               |     |
+|     |   This level's quiz is being  |     |
+|     |   prepared. Check back soon!  |     |
+|     |                               |     |
+|     |   [🗺️ Back to Map]           |     |
+|     |                               |     |
+|     +-------------------------------+     |
+|                                           |
++-------------------------------------------+
 ```
 
-**Fixed:**
+**Features:**
+- Full-screen themed background with twinkling stars
+- Glass-morphism card with pink/purple borders (matching game style)
+- Bible/scroll emoji for biblical theming
+- Clear, friendly message explaining the quiz isn't ready
+- 3D styled "Back to Map" button
+- Uses `useTheme()` for consistent theming
+
+---
+
+## File Changes Summary
+
+| File | Change | Description |
+|------|--------|-------------|
+| `src/components/ErrorBoundary.jsx` | **NEW** | Reusable error boundary component |
+| `src/components/ui/WeeklyChallengeLoadingSkeleton.jsx` | **NEW** | Themed loading skeleton |
+| `src/components/NoQuizPage.jsx` | **NEW** | Page for levels without quiz |
+| `src/pages/WeeklyChallengeScreen.jsx` | **MODIFY** | Wrap with ErrorBoundary, use new skeleton |
+| `src/components/GameScreen.jsx` | **MODIFY** | Wrap with ErrorBoundary, use NoQuizPage |
+| `src/App.jsx` | **MODIFY** | Add ErrorBoundary wrapper around game routes |
+
+---
+
+## Integration Details
+
+### Wrapping GameScreen with ErrorBoundary
+
+In `src/App.jsx` or `src/pages/MapAndGame.jsx`, wrap the GameScreen:
+
 ```javascript
-// Move hooks to TOP of component, near other hooks
-const { config } = useTheme();
+import ErrorBoundary from '@/components/ErrorBoundary';
 
-const stars = useMemo(() => 
-  [...Array(25)].map((_, i) => ({
-    id: i,
-    top: `${Math.random() * 100}%`,
-    left: `${Math.random() * 100}%`,
-    delay: `${Math.random() * 3}s`,
-    duration: `${2 + Math.random() * 2}s`,
-  })), []
-);
+<ErrorBoundary>
+  <GameScreen {...props} />
+</ErrorBoundary>
+```
 
-// Early returns are now safe - hooks have already been called
-if (!user) return ...
-if (loadingQuestion || loadingGameUser) return ...
-if (!questionData) return ...
+### Using NoQuizPage in GameScreen
 
-// Main render uses `config` and `stars`
-return (
-  <div className={`h-[100dvh] flex flex-col bg-gradient-to-b ${config.background.gradient} ...`}>
-    {stars.map(...)}
-  </div>
-);
+Replace the current basic "No Question Yet" block (lines 248-266) with:
+
+```javascript
+import NoQuizPage from '@/components/NoQuizPage';
+
+if (!questionData) {
+  return <NoQuizPage />;
+}
+```
+
+### Using LoadingSkeleton in WeeklyChallengeScreen
+
+Replace the current loading state (lines 369-376) with:
+
+```javascript
+import WeeklyChallengeLoadingSkeleton from '@/components/ui/WeeklyChallengeLoadingSkeleton';
+
+if (!questions) {
+  return <WeeklyChallengeLoadingSkeleton />;
+}
 ```
 
 ---
 
-## Technical Details
+## Styling Approach
 
-### Why This Fix Works
-
-1. **Consistent Hook Order**: By calling `useTheme()` and `useMemo()` at the top of the component, they are executed on **every** render, regardless of which branch the component takes afterward.
-
-2. **No Wasted Work**: Even though the hooks run during loading/error states, the overhead is minimal:
-   - `useTheme()` just reads from context
-   - `useMemo()` with `[]` dependency only runs once and caches the result
-
-3. **Early Returns Still Work**: After the hooks are called, the component can safely return early for loading, error, or completion states without breaking React's hook tracking.
+All new components will follow the established design system:
+- **Background:** Themed gradient from `config.background.gradient`
+- **Cards:** Glass-morphism with `bg-white/95 backdrop-blur-xl` and pink borders
+- **Buttons:** 3D candy-style with `shadow-[0_3px_0_color]` and hover effects
+- **Stars:** Same twinkling star animation pattern used in GameScreen
+- **Typography:** Bold gradients for headings, friendly messaging
 
 ---
 
-## Summary of Line Changes
+## Error Boundary Technical Details
 
-### WeeklyChallengeScreen.jsx
-- **Move** `const { config } = useTheme();` from line 487 to after the existing useState/useEffect hooks (around line 90)
-- **Move** the `stars` useMemo block from lines 490-498 to the same location
+Since React Error Boundaries require class components but our theme system uses hooks, we use this pattern:
 
-### GameScreen.jsx  
-- **Move** `const { config } = useTheme();` from line 360 to after the existing hooks (around line 90)
-- **Move** the `stars` useMemo block from lines 363-371 to the same location
+```javascript
+// Wrapper to pass theme to class component
+function ErrorBoundaryWrapper({ children }) {
+  const { config } = useTheme();
+  return <ErrorBoundaryClass config={config}>{children}</ErrorBoundaryClass>;
+}
+
+// Class component with error catching
+class ErrorBoundaryClass extends React.Component {
+  state = { hasError: false, error: null };
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      // Render themed fallback UI using this.props.config
+    }
+    return this.props.children;
+  }
+}
+```
 
 ---
 
-## Testing
+## Implementation Order
 
-After the fix:
-1. Weekend Challenge should load without white screen
-2. Main game should load without white screen
-3. Theme should still apply correctly to all screens
-4. Loading and error states should display properly
+1. **ErrorBoundary.jsx** - Create the error boundary component first
+2. **NoQuizPage.jsx** - Create the no quiz page
+3. **WeeklyChallengeLoadingSkeleton.jsx** - Create the loading skeleton
+4. **GameScreen.jsx** - Integrate NoQuizPage and wrap with ErrorBoundary
+5. **WeeklyChallengeScreen.jsx** - Integrate skeleton and wrap with ErrorBoundary
+6. **App.jsx** - Add top-level ErrorBoundary wrapper for safety
