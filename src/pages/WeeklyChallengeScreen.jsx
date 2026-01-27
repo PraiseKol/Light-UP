@@ -8,6 +8,8 @@ import WordFillWeekly from "@/modes/WordFillWeekly";
 import ScriptureMatchWeekly from "@/modes/ScriptureMatchWeekly";
 import TriviaWeekly from "@/modes/TriviaWeekly";
 import { useTheme } from "@/context/ThemeContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import WeeklyChallengeLoadingSkeleton from "@/components/ui/WeeklyChallengeLoadingSkeleton";
 
 console.log("🟣 WeeklyChallengeScreen component mounted");
 
@@ -61,7 +63,7 @@ function getCurrentWeekStartDate() {
   return friday.toISOString().slice(0, 10); // YYYY-MM-DD only
 }
 
-export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
+function WeeklyChallengeContent({ sound, setSound, effectsOn }) {
   const [questions, setQuestions] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(() =>
     parseInt(localStorage.getItem(STORAGE_KEY_INDEX) || "0", 10)
@@ -367,13 +369,7 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
   }
 
   if (!questions) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="text-gray-700 text-lg font-medium animate-pulse">
-          Loading Weekly Challenge...
-        </div>
-      </div>
-    );
+    return <WeeklyChallengeLoadingSkeleton />;
   }
 
   // ✅ If user already attempted, show their saved results
@@ -555,5 +551,14 @@ export default function WeeklyChallengeScreen({ sound, setSound, effectsOn }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// Export wrapped with ErrorBoundary
+export default function WeeklyChallengeScreen(props) {
+  return (
+    <ErrorBoundary>
+      <WeeklyChallengeContent {...props} />
+    </ErrorBoundary>
   );
 }

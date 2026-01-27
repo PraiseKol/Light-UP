@@ -19,8 +19,10 @@ import { playSound } from "@/utils/sound";
 import { awardBonus, awardBonusWithCheck } from "@/utils/talentUtils";
 import { toast } from "sonner";
 import { useTheme } from "@/context/ThemeContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import NoQuizPage from "@/components/NoQuizPage";
 
-export default function GameScreen({
+function GameScreenContent({
   level,
   onBack,
   onComplete,
@@ -246,24 +248,7 @@ export default function GameScreen({
   }
 
   if (!questionData) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-blue-200 via-blue-50 to-white px-4">
-        <div className="text-6xl mb-4 animate-bounce">😢</div>
-        <div className="text-2xl font-bold mb-2 text-blue-700">
-          No Question Yet
-        </div>
-        <p className="text-sm text-gray-600 text-center max-w-xs">
-          This level hasn’t been unlocked yet. Try another challenge or check
-          back soon.
-        </p>
-        <button
-          onClick={() => navigate("/map")}
-          className="mt-6 px-5 py-2 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white shadow-md transition-all"
-        >
-          Return to Map
-        </button>
-      </div>
-    );
+    return <NoQuizPage />;
   }
 
   const handleLevelComplete = async () => {
@@ -500,5 +485,14 @@ export default function GameScreen({
         </div>
       )}
     </div>
+  );
+}
+
+// Export wrapped with ErrorBoundary
+export default function GameScreen(props) {
+  return (
+    <ErrorBoundary>
+      <GameScreenContent {...props} />
+    </ErrorBoundary>
   );
 }
