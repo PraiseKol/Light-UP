@@ -1,114 +1,84 @@
 
-# Plan: Add Error Boundary, Loading Skeleton, and No Quiz Page
+
+# Plan: Add Offline Support with Graceful Offline Page
 
 ## Overview
 
-Implement three features to improve user experience when things go wrong or are not ready:
-1. **Error Boundary** - Catch JavaScript errors in game screens and display a graceful fallback UI
-2. **Loading Skeleton** - Themed, animated skeleton for Weekend Challenge loading state
-3. **No Quiz Page** - Dedicated page for levels without quiz content
+Add a complete offline detection system that displays a graceful, themed page when users lose internet connection during gameplay, and automatically reconnects when back online.
 
 ---
 
 ## Current State
 
-| Issue | Current Behavior |
-|-------|------------------|
-| JavaScript errors in game screens | White screen crash |
-| Weekend Challenge loading | Plain gray text "Loading Weekly Challenge..." |
-| No quiz for a level | Basic centered message in GameScreen |
+| Aspect | Current Status |
+|--------|----------------|
+| PWA Caching | Configured in `vite.config.js` with Workbox |
+| Service Worker | Exists for push notifications only |
+| Offline Detection | None - no `navigator.onLine` checks |
+| Offline UI | None - users see failed requests with no explanation |
 
 ---
 
 ## Implementation
 
-### 1. Error Boundary Component (NEW)
+### 1. Create useOnlineStatus Hook (NEW)
 
-Create a reusable React class component that catches errors in child components.
+A reusable React hook that monitors network connectivity.
 
-**File:** `src/components/ErrorBoundary.jsx`
+**File:** `src/hooks/useOnlineStatus.js`
 
-```text
-+-------------------------------------------+
-|                                           |
-|              😢 Oops!                     |
-|                                           |
-|     Something went wrong                  |
-|                                           |
-|   Don't worry, your progress is saved.   |
-|   Try refreshing or go back to the map.  |
-|                                           |
-|   [🔄 Try Again]  [🗺️ Back to Map]       |
-|                                           |
-+-------------------------------------------+
+```javascript
+import { useState, useEffect } from 'react';
+
+export function useOnlineStatus() {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return isOnline;
+}
 ```
 
 **Features:**
-- Uses React's `componentDidCatch` and `getDerivedStateFromError` lifecycle methods
-- Themed UI matching the app's Candy Crush style with gradient backgrounds
-- "Try Again" button that resets the error state
-- "Back to Map" button to safely navigate away
-- Logs errors to console for debugging
-- Uses `useTheme()` for consistent styling (via wrapper component pattern)
-
-**Technical Note:** Since Error Boundaries must be class components but we want to use the `useTheme()` hook, we'll create a functional wrapper component that passes theme config as a prop.
+- Uses `navigator.onLine` for initial state
+- Listens to `online` and `offline` window events
+- Returns boolean indicating current connectivity
+- Lightweight and reusable across the app
 
 ---
 
-### 2. Loading Skeleton for Weekend Challenge (NEW)
+### 2. Create OfflinePage Component (NEW)
 
-Create a themed loading skeleton that matches the Weekend Challenge UI.
+A themed full-screen offline fallback page.
 
-**File:** `src/components/ui/WeeklyChallengeLoadingSkeleton.jsx`
-
-```text
-+-------------------------------------------+
-|  ⏳ ---   Score: ---   Q --/--            |  <- Skeleton HUD
-+-------------------------------------------+
-|  [===========---------------------]       |  <- Skeleton progress bar
-|                                           |
-|  +-----------------------------------+    |
-|  |                                   |    |
-|  |    ✨ Lighting up your word...   |    |  <- Centered message
-|  |                                   |    |
-|  |    [~~~~~~~~~~~~~~~]              |    |  <- Skeleton question box
-|  |    [~~~]  [~~~]  [~~~]  [~~~]    |    |  <- Skeleton options
-|  |                                   |    |
-|  +-----------------------------------+    |
-|                                           |
-|   ✅ Correct: --    ❌ Incorrect: --     |  <- Skeleton stats
-+-------------------------------------------+
-```
-
-**Features:**
-- Animated shimmer effect on skeleton elements
-- Matches the actual Weekend Challenge layout (HUD, progress bar, question card, stats)
-- Uses theme colors from `useTheme()`
-- Twinkling star background matching the active game
-- Spiritual loading messages: "Lighting up your word...", "Preparing your challenge..."
-
----
-
-### 3. No Quiz Page Component (NEW)
-
-Create a dedicated, themed page for levels without quiz content.
-
-**File:** `src/components/NoQuizPage.jsx`
+**File:** `src/components/OfflinePage.jsx`
 
 ```text
 +-------------------------------------------+
-|              ✨ Stars background ✨       |
+|            Twinkling Stars                |
 |                                           |
 |     +-------------------------------+     |
+|     |           📡                  |     |
 |     |                               |     |
-|     |           📖                  |     |
+|     |   You're Offline              |     |
 |     |                               |     |
-|     |   Quiz Coming Soon!           |     |
+|     |   Don't worry! Your progress  |     |
+|     |   is saved. We'll reconnect   |     |
+|     |   automatically when you're   |     |
+|     |   back online.                |     |
 |     |                               |     |
-|     |   This level's quiz is being  |     |
-|     |   prepared. Check back soon!  |     |
-|     |                               |     |
-|     |   [🗺️ Back to Map]           |     |
+|     |   [Animated connection dots]  |     |
 |     |                               |     |
 |     +-------------------------------+     |
 |                                           |
@@ -116,12 +86,56 @@ Create a dedicated, themed page for levels without quiz content.
 ```
 
 **Features:**
-- Full-screen themed background with twinkling stars
-- Glass-morphism card with pink/purple borders (matching game style)
-- Bible/scroll emoji for biblical theming
-- Clear, friendly message explaining the quiz isn't ready
-- 3D styled "Back to Map" button
+- Themed gradient background with twinkling stars (matching app style)
+- Glass-morphism card with pink borders (consistent with ErrorBoundary, NoQuizPage)
+- Animated "searching for connection" indicator (pulsing dots)
+- Friendly, reassuring message about progress being saved
 - Uses `useTheme()` for consistent theming
+- Automatically dismisses when connection is restored (no button needed)
+
+---
+
+### 3. Create OfflineWrapper Component (NEW)
+
+A wrapper component that conditionally shows the offline page.
+
+**File:** `src/components/OfflineWrapper.jsx`
+
+This component wraps the main app content and:
+- Uses the `useOnlineStatus` hook
+- Shows `OfflinePage` when offline
+- Shows children when online
+- Includes optional toast notification when connection is restored
+
+---
+
+### 4. Update App.jsx (MODIFY)
+
+Integrate the offline wrapper at the app level.
+
+**Changes:**
+- Import `OfflineWrapper`
+- Wrap `AppContent` with `OfflineWrapper`
+
+```javascript
+import OfflineWrapper from '@/components/OfflineWrapper';
+
+function App() {
+  return (
+    <SessionContextProvider supabaseClient={supabase}>
+      <Router>
+        <AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <OfflineWrapper>
+              <AppContent />
+            </OfflineWrapper>
+          </QueryClientProvider>
+        </AuthProvider>
+      </Router>
+    </SessionContextProvider>
+  );
+}
+```
 
 ---
 
@@ -129,105 +143,97 @@ Create a dedicated, themed page for levels without quiz content.
 
 | File | Change | Description |
 |------|--------|-------------|
-| `src/components/ErrorBoundary.jsx` | **NEW** | Reusable error boundary component |
-| `src/components/ui/WeeklyChallengeLoadingSkeleton.jsx` | **NEW** | Themed loading skeleton |
-| `src/components/NoQuizPage.jsx` | **NEW** | Page for levels without quiz |
-| `src/pages/WeeklyChallengeScreen.jsx` | **MODIFY** | Wrap with ErrorBoundary, use new skeleton |
-| `src/components/GameScreen.jsx` | **MODIFY** | Wrap with ErrorBoundary, use NoQuizPage |
-| `src/App.jsx` | **MODIFY** | Add ErrorBoundary wrapper around game routes |
+| `src/hooks/useOnlineStatus.js` | **NEW** | Hook to monitor network connectivity |
+| `src/components/OfflinePage.jsx` | **NEW** | Themed offline fallback page |
+| `src/components/OfflineWrapper.jsx` | **NEW** | Wrapper that shows offline page when disconnected |
+| `src/App.jsx` | **MODIFY** | Wrap AppContent with OfflineWrapper |
 
 ---
 
-## Integration Details
+## User Experience Flow
 
-### Wrapping GameScreen with ErrorBoundary
-
-In `src/App.jsx` or `src/pages/MapAndGame.jsx`, wrap the GameScreen:
-
-```javascript
-import ErrorBoundary from '@/components/ErrorBoundary';
-
-<ErrorBoundary>
-  <GameScreen {...props} />
-</ErrorBoundary>
-```
-
-### Using NoQuizPage in GameScreen
-
-Replace the current basic "No Question Yet" block (lines 248-266) with:
-
-```javascript
-import NoQuizPage from '@/components/NoQuizPage';
-
-if (!questionData) {
-  return <NoQuizPage />;
-}
-```
-
-### Using LoadingSkeleton in WeeklyChallengeScreen
-
-Replace the current loading state (lines 369-376) with:
-
-```javascript
-import WeeklyChallengeLoadingSkeleton from '@/components/ui/WeeklyChallengeLoadingSkeleton';
-
-if (!questions) {
-  return <WeeklyChallengeLoadingSkeleton />;
-}
+```text
+User Playing Game
+       |
+       v
+Connection Lost ──────> OfflineWrapper detects (navigator.onLine = false)
+       |
+       v
+Offline Page Displayed
+  - Themed UI
+  - Reassuring message
+  - Animated indicator
+       |
+       v
+Connection Restored ───> OfflineWrapper detects (online event)
+       |
+       v
+App Content Returns
+  - Optional toast: "You're back online!"
+  - Game continues from where they left off
 ```
 
 ---
 
-## Styling Approach
+## Technical Details
 
-All new components will follow the established design system:
-- **Background:** Themed gradient from `config.background.gradient`
-- **Cards:** Glass-morphism with `bg-white/95 backdrop-blur-xl` and pink borders
-- **Buttons:** 3D candy-style with `shadow-[0_3px_0_color]` and hover effects
-- **Stars:** Same twinkling star animation pattern used in GameScreen
-- **Typography:** Bold gradients for headings, friendly messaging
+### Why Use Both navigator.onLine AND Events?
+
+- `navigator.onLine` provides **initial state** when component mounts
+- `online`/`offline` events provide **real-time updates**
+- Together they ensure accurate detection at all times
+
+### Why Not Block Everything Offline?
+
+The current approach:
+- Shows offline page **over** the app content (not replacing it)
+- When back online, the app is exactly where it was
+- User doesn't lose context or navigation state
+
+### Styling Consistency
+
+The OfflinePage will follow the established design patterns:
+- Gradient background from theme config
+- Glass-morphism card (bg-white/95 backdrop-blur-xl)
+- Pink border accent (border-pink-200)
+- 3D candy-style elements where appropriate
+- Twinkling star background animation
 
 ---
 
-## Error Boundary Technical Details
+## OfflinePage Visual Design
 
-Since React Error Boundaries require class components but our theme system uses hooks, we use this pattern:
-
-```javascript
-// Wrapper to pass theme to class component
-function ErrorBoundaryWrapper({ children }) {
-  const { config } = useTheme();
-  return <ErrorBoundaryClass config={config}>{children}</ErrorBoundaryClass>;
-}
-
-// Class component with error catching
-class ErrorBoundaryClass extends React.Component {
-  state = { hasError: false, error: null };
-  
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-  
-  componentDidCatch(error, errorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-  }
-  
-  render() {
-    if (this.state.hasError) {
-      // Render themed fallback UI using this.props.config
-    }
-    return this.props.children;
-  }
-}
+```text
++-------------------------------------------+
+|  [Stars twinkling in background]          |
+|                                           |
+|    +----------------------------------+   |
+|    |  Glass card with pink border     |   |
+|    |                                  |   |
+|    |          📡                      |   |
+|    |   (large wifi/signal emoji)      |   |
+|    |                                  |   |
+|    |   You're Offline                 |   |
+|    |   (gradient text title)          |   |
+|    |                                  |   |
+|    |   Don't worry! Your progress     |   |
+|    |   is saved. We'll reconnect      |   |
+|    |   as soon as you're back online. |   |
+|    |                                  |   |
+|    |   [● ● ●] (pulsing dots)        |   |
+|    |   Waiting for connection...      |   |
+|    |                                  |   |
+|    +----------------------------------+   |
+|                                           |
++-------------------------------------------+
 ```
 
 ---
 
 ## Implementation Order
 
-1. **ErrorBoundary.jsx** - Create the error boundary component first
-2. **NoQuizPage.jsx** - Create the no quiz page
-3. **WeeklyChallengeLoadingSkeleton.jsx** - Create the loading skeleton
-4. **GameScreen.jsx** - Integrate NoQuizPage and wrap with ErrorBoundary
-5. **WeeklyChallengeScreen.jsx** - Integrate skeleton and wrap with ErrorBoundary
-6. **App.jsx** - Add top-level ErrorBoundary wrapper for safety
+1. **useOnlineStatus.js** - Create the network detection hook
+2. **OfflinePage.jsx** - Create the themed offline UI
+3. **OfflineWrapper.jsx** - Create the wrapper component
+4. **App.jsx** - Integrate the wrapper
+
