@@ -11,6 +11,7 @@ import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { AuthProvider, useAuth } from "@/auth/AuthProvider";
 
 import BackgroundMusic from "@/components/BackgroundMusic";
+import OfflineWrapper from "@/components/OfflineWrapper";
 
 import LoginPage from "@/pages/LoginPage";
 import MapAndGame from "@/pages/MapAndGame";
@@ -271,7 +272,9 @@ export default function App() {
         <AuthProvider>
           {/* ✅ React Query provider */}
           <QueryClientProvider client={queryClient}>
-            <AppContent />
+            <OfflineWrapper>
+              <AppContent />
+            </OfflineWrapper>
           </QueryClientProvider>
         </AuthProvider>
       </Router>
