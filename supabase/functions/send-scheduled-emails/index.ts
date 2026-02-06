@@ -219,18 +219,36 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Found ${gameUsers.length} users to notify`);
 
-    // Get email addresses from auth.users
+    // Get email addresses from auth.users with pagination
     const userIds = gameUsers.map(u => u.user_id);
-    const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+    let allAuthUsers: any[] = [];
+    let page = 1;
+    const perPage = 1000;
 
-    if (authError) {
-      console.error("Error fetching auth users:", authError);
-      throw new Error(`Failed to fetch auth users: ${authError.message}`);
+    while (true) {
+      const { data, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+
+      if (authError) {
+        console.error("Error fetching auth users page", page, ":", authError);
+        throw new Error(`Failed to fetch auth users: ${authError.message}`);
+      }
+
+      if (!data.users || data.users.length === 0) break;
+      allAuthUsers = allAuthUsers.concat(data.users);
+      console.log(`Fetched auth users page ${page}: ${data.users.length} users`);
+      
+      if (data.users.length < perPage) break;
+      page++;
     }
+
+    console.log(`Total auth users fetched: ${allAuthUsers.length}`);
 
     // Create a map of user_id to email
     const userEmailMap = new Map<string, string>();
-    authUsers.users.forEach(user => {
+    allAuthUsers.forEach(user => {
       if (user.email && userIds.includes(user.id)) {
         userEmailMap.set(user.id, user.email);
       }
@@ -253,14 +271,14 @@ const handler = async (req: Request): Promise<Response> => {
       
       if (type === "challenge_open") {
         emailsToSend.push({
-          from: "Light Up Bible Trivia <noreply@lightupbibletrivia.com>",
+          from: "Light Up Bible Trivia <onboarding@resend.dev>",
           to: email,
           subject: "✨ Weekly Challenge Starts in 1 Hour!",
           html: getFridayEmailHtml(playerName, appUrl),
         });
       } else {
         emailsToSend.push({
-          from: "Light Up Bible Trivia <noreply@lightupbibletrivia.com>",
+          from: "Light Up Bible Trivia <onboarding@resend.dev>",
           to: email,
           subject: `📖 Quick Question: ${randomQuestion.question}`,
           html: getTuesdayEmailHtml(playerName, randomQuestion, appUrl),
@@ -280,10 +298,11 @@ const handler = async (req: Request): Promise<Response> => {
       
       for (const emailData of batch) {
         try {
-          await resend.emails.send(emailData);
+          const result = await resend.emails.send(emailData);
+          console.log(`Email sent to ${emailData.to}:`, result);
           successCount++;
-        } catch (emailError) {
-          console.error(`Failed to send email to ${emailData.to}:`, emailError);
+        } catch (emailError: any) {
+          console.error(`Failed to send email to ${emailData.to}:`, emailError?.message || emailError);
           failCount++;
         }
       }
