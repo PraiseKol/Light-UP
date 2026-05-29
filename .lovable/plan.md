@@ -1,78 +1,54 @@
-## Goal
+## Monthly Competition: Auto-Selection of 16 Players
 
-Fill in missing levels in the `quiz` table for phases 11–20 as `four-pics` puzzles, generate 4 themed images per puzzle, upload them to the `fourpics-images` bucket, and write the rows with correctly formatted `answer`, `hint_letters`, `letters`, and `image_urls`.
+### Selection rule
+- **12 slots**: top scorers by `total_user_score` for the **current calendar month** (sum of `progress.score` where `completed_at` is in this UTC month).
+- **4 wildcard slots**: randomly picked from "active but not in top 12" players. *Active* = at least 3 `progress` entries in the last 14 days.
+- **Excluded**: anyone in `main_leaderboard_bans` or `weekly_leaderboard_bans`, plus players already in the top 12.
 
-## Missing Levels Found
+### Admin flow
+1. New **"Monthly Competition"** panel inside `CompetitionManager` with a **"Generate 16 Players"** button.
+2. Calls a new edge function `monthly-competition-select` that returns the 12 + 4 list (with name, score, selection_type: `top_score` / `wildcard`).
+3. Admin sees a **preview table** with swap controls:
+   - Remove any player → pick replacement from a searchable list of eligible alternates.
+   - Re-roll wildcards button.
+4. Admin clicks **"Confirm & Notify"** → inserts rows into `competition_players` (reusing existing table; add `selection_type` value `monthly_auto`), sends push notifications via existing `send-push-notification`.
+5. **"Start Competition"** button (separate, only enabled after confirm) launches the existing 4-round engine.
 
-| Phase | Phase Theme | Missing Levels |
-|-------|-------------|----------------|
-| 11 | Pentecost and the Holy Spirit | 5, 8 |
-| 12 | The Early Church Community | 5, 8 |
-| 13 | Peter's Ministry and Miracles | 5 |
-| 14 | Conversion of Saul (Paul) | 8 |
-| 15 | Paul's First Missionary Journey | 5, 8 |
-| 16 | Paul's Second Missionary Journey | 5, 8 |
-| 17 | The Jerusalem Council | 5, 8 |
-| 18 | Paul's Third Missionary Journey | 5, 8 |
-| 19 | Paul's Arrest and Imprisonment | 5, 8 (plus duplicate row cleanup — see note) |
-| 20 | The Spread of the Gospel to Rome | 5, 8 |
+### Player-side experience
+- **Qualified players**: Footer Compete button shows a **"You're In! Prepare for battle"** badge + countdown card on the map.
+- **Non-qualified players**: Compete button shows **"Watch Live"** with a spectator entry — reuses `CompetitionViewerPage` with real-time scoreboard and elimination list (already exists; just wire entry point + label).
+- Real-time updates already handled by `competition_players` / `competition_rounds` subscriptions.
 
-Total: 18 new four-pics rows.
+### Technical pieces
+- **Edge function** `monthly-competition-select/index.ts`:
+  - Query monthly totals (UTC), exclude bans, return top 12.
+  - Query active players (progress count ≥ 3 in 14d), exclude bans + top 12, random sample 4.
+- **Migration**:
+  - Add `competition_players.selection_type` allowed values include `'monthly_top'`, `'monthly_wildcard'` (already a text col).
+  - Optional `monthly_competition_pool` table to persist the admin's draft pre-confirm (so reloads don't lose the list).
+- **Admin UI**: extend `src/admin/CompetitionManager.jsx` with the new panel.
+- **Player UI**: update footer Compete button + map badge to read qualification state from `competition_players` for the upcoming (status='waiting') competition.
 
-**Note on phase 19:** Every existing level (1, 2, 3, 4, 6, 7, 9, 10) has two identical duplicate rows. I will delete one row from each duplicate pair before inserting the new four-pics rows. If you'd rather I leave duplicates alone, say so.
+---
 
-## Proposed Words (4–10 letters, themed)
+## App Improvements
 
-| Phase | Level | Word | Length |
-|-------|-------|------|--------|
-| 11 | 5 | TONGUES | 7 |
-| 11 | 8 | PROPHECY | 8 |
-| 12 | 5 | FELLOWSHIP | 10 |
-| 12 | 8 | BREAD | 5 |
-| 13 | 5 | HEALING | 7 |
-| 14 | 8 | SCALES | 6 |
-| 15 | 5 | JOURNEY | 7 |
-| 15 | 8 | PREACH | 6 |
-| 16 | 5 | MACEDONIA | 9 |
-| 16 | 8 | PHILIPPI | 8 |
-| 17 | 5 | COUNCIL | 7 |
-| 17 | 8 | DECREE | 6 |
-| 18 | 5 | EPHESUS | 7 |
-| 18 | 8 | FAREWELL | 8 |
-| 19 | 5 | CHAINS | 6 |
-| 19 | 8 | PRISON | 6 |
-| 20 | 5 | VOYAGE | 6 |
-| 20 | 8 | SHIPWRECK | 9 |
+### Engagement (Phase 1)
+- **Daily Quests**: 3 rotating quests per day (e.g., "Complete 2 levels", "Get a perfect score", "Play Weekend Challenge"). New `daily_quests` + `user_quest_progress` tables. Reward: talents/lives. Surfaces in a new map header tile.
+- **Achievements & Badges**: ~25 milestones (first perfect, 10-day streak, finish phase X, tournament finalist). New `achievements` + `user_achievements` tables. Display on a profile/badges modal accessible from Settings.
+- **Profile/Stats screen**: collects total score, streak, badges, tournament history — gives players something to show off.
 
-If any word doesn't fit your vision, list replacements and I'll swap.
+### Polish (Phase 2)
+- **Onboarding**: short interactive tutorial after the explainer video — guided first level + tooltip on lives/talents/footer buttons. Tracked via new `has_completed_tutorial` flag on `game_users`.
+- **Accessibility**: add `aria-label`s to orb buttons, focus rings on interactive map nodes, prefers-reduced-motion handling for animations, color-contrast pass on glass cards.
+- **Performance**: lazy-load admin bundle and competition viewer, image `loading="lazy"` on four-pics, memoize map node list, defer audio preload until first interaction.
 
-## Image Acquisition
+---
 
-I will **generate** 4 images per word using the image generator (clean, biblically themed illustrations) rather than scraping the web — generated images are royalty-free, consistent in style with your existing art, and avoid copyright risk. If you specifically want photographs scraped from the web, say so and I'll switch to web search + download. The 4 images per word will visually represent different angles of the concept (e.g., for CHAINS: iron chains, prisoner's wrists in chains, broken chains, a chained door).
+## Suggested Build Order
+1. Monthly auto-selection (edge function + admin preview/confirm + player qualification UI).
+2. Daily Quests system.
+3. Achievements/Badges + Profile screen.
+4. Onboarding tutorial + a11y/perf polish pass.
 
-## Storage Upload
-
-For each puzzle, upload `phase{P}level{L}image{1..4}.jpg` to the public `fourpics-images` bucket via a Node script using the service role key.
-
-## Quiz Row Format
-
-Each row will follow the existing four-pics convention from `MainGameQuizManager.jsx`:
-- `answer`: uppercase word
-- `hint_letters`: last 2 letters of the word
-- `letters`: shuffled answer + random A–Z padding to length 12
-- `image_urls`: comma-separated 4 public URLs from the bucket
-- `options`: null, `question`: null
-
-## Execution Steps (after approval)
-
-1. (Optional) Dedupe phase 19 existing rows.
-2. For each of the 18 puzzles:
-   - Generate 4 themed images → save locally → upload to `fourpics-images` bucket as `phase{P}level{L}image{1..4}.jpg`.
-3. Insert 18 rows into `quiz` via a single SQL `INSERT` using the computed `letters`, `hint_letters`, and `image_urls`.
-4. Verify with a SELECT that phases 11–20 each have levels 1–10.
-
-## Confirmations Needed
-
-1. OK to **generate** images (vs. web-scraped photos)?
-2. OK to **delete duplicate rows** in phase 19?
-3. Approve the proposed word list (or send replacements)?
+Want me to start with **Step 1 (monthly auto-selection end-to-end)**, or split it differently?
