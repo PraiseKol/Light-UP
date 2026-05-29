@@ -204,6 +204,29 @@ export default function CompetitionPage() {
     );
   }
 
+  // Pre-start phases (idle/grouped) — qualified players see prep screen
+  if (competition.phase === 'idle' || competition.phase === 'grouped') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#0c1445] via-[#1e3a5f] to-[#0d1b2a] flex flex-col items-center justify-center p-4">
+        <div className="text-6xl mb-4 animate-bounce">🎉</div>
+        <h1 className="text-3xl font-bold text-christmasGold mb-2 text-center">You're In!</h1>
+        <p className="text-white/80 text-center mb-6 max-w-md">
+          You've qualified for the Monthly Competition. Get ready — the admin will start the rounds shortly.
+        </p>
+        {playerEntry.group_letter && (
+          <div className="bg-black/30 rounded-xl p-4 mb-4 text-center">
+            <p className="text-white/60 text-sm">Your Group</p>
+            <p className="text-christmasGold font-bold text-2xl">{playerEntry.group_letter}</p>
+          </div>
+        )}
+        <p className="text-white/50 text-sm mb-6">Stay on this screen — the competition begins automatically.</p>
+        <button onClick={() => navigate('/map')} className="px-6 py-3 bg-white/10 text-white rounded-xl font-bold border border-white/20">
+          Back to Map
+        </button>
+      </div>
+    );
+  }
+
   // Countdown phase
   if (competition.phase === 'countdown') {
     return (
@@ -217,6 +240,7 @@ export default function CompetitionPage() {
         <div className="mt-6 bg-black/30 rounded-xl p-4 text-center">
           <p className="text-christmasGold font-bold">Your Group: {playerEntry.group_letter || 'Final'}</p>
         </div>
+
       </div>
     );
   }
