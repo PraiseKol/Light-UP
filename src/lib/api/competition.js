@@ -164,7 +164,7 @@ export async function getCompetitionById(id) {
 
 // ============= AUTOMATED COMPETITION FLOW =============
 
-// Step 1: Group players into initial groups (A & B)
+// Step 1: Group players into initial groups (A & B). Supports 16 or 24 players.
 export async function groupPlayersForCompetition(competitionId) {
   const { data: players } = await supabase
     .from('competition_players')
@@ -172,16 +172,18 @@ export async function groupPlayersForCompetition(competitionId) {
     .eq('competition_id', competitionId)
     .eq('is_qualified', true);
 
-  if (!players || players.length !== 24) {
-    console.error('Need exactly 24 players to group');
+  const count = players?.length || 0;
+  if (count !== 16 && count !== 24) {
+    console.error(`Need exactly 16 or 24 players to group (got ${count})`);
     return false;
   }
 
-  // Shuffle and assign to groups A and B
+  // Shuffle and assign evenly to groups A and B
   const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
-  
+  const half = count / 2;
+
   for (let i = 0; i < shuffledPlayers.length; i++) {
-    const groupLetter = i < 12 ? 'A' : 'B';
+    const groupLetter = i < half ? 'A' : 'B';
     await supabase
       .from('competition_players')
       .update({ group_letter: groupLetter })
@@ -196,6 +198,7 @@ export async function groupPlayersForCompetition(competitionId) {
 
   return true;
 }
+
 
 // Step 2: Start the automated competition (30-second countdown then Round 1)
 export async function startAutomatedCompetition(competitionId) {
