@@ -24,6 +24,8 @@ import { getScriptureMatchActive, setScriptureMatchActive } from '@/lib/api/scri
 import { Trophy, Users, Play, Search, Plus, X, Crown, Clock, Gamepad2, Puzzle, XCircle, Check, Zap, Timer, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Switch from '@/components/ui/Switch';
+import MonthlyCompetitionPanel from '@/admin/MonthlyCompetitionPanel';
+
 
 export default function CompetitionManager() {
   const [activeCompetition, setActiveCompetition] = useState(null);
@@ -613,7 +615,10 @@ export default function CompetitionManager() {
       <ScriptureMatchToggle />
       <PopGameToggle />
 
+      <MonthlyCompetitionPanel onCreated={loadData} />
+
       <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl p-6 border border-amber-500/30">
+
         <h2 className="text-xl font-bold text-amber-400 flex items-center gap-2 mb-4">
           <Trophy className="w-6 h-6" />
           Create New Competition
