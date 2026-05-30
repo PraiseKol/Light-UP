@@ -268,6 +268,7 @@ function AppContent() {
         {/* Default */}
         <Route path="*" element={<Navigate to="/map" replace />} />
       </Routes>
+      </Suspense>
 
       {/* ✅ Add Vercel Analytics at the root */}
       <Analytics />
