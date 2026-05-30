@@ -531,6 +531,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       score,
     });
 
+    // Daily quests: score earned + perfect score
+    if (user?.id) {
+      if (score > 0) updateQuestProgress(user.id, "score_earned", score).catch(() => {});
+      if (score >= 100) updateQuestProgress(user.id, "perfect_score", 1).catch(() => {});
+    }
+
     // Update perfect streak and check for accuracy bonuses
     const streakResult = await updatePerfectStreak(user.id, score);
     if (streakResult) {
