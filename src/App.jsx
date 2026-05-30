@@ -133,8 +133,17 @@ function AppContent() {
       <PWAInstallPrompt />
       <PWAUpdatePrompt />
       <BackgroundMusic sound={sound} />
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         {/* Auth */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Payment redirect */}
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+
+        {/* Game routes */}
+        <Route
+          path="/map"
         <Route path="/login" element={<LoginPage />} />
 
         {/* Payment redirect */}
