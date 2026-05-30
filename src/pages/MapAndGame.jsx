@@ -32,6 +32,10 @@ import GlobalChat from "@/components/GlobalChat";
 import LeaderboardModal from "@/components/LeaderboardModal";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ExplainerVideoModal from "@/components/ExplainerVideoModal";
+import DailyQuestsModal from "@/components/DailyQuestsModal";
+import ProfileBadgesModal from "@/components/ProfileBadgesModal";
+import { updateQuestProgress } from "@/lib/quests";
+import { checkAndGrantAchievements } from "@/lib/achievements";
 import {
   determineUnlockedPhases,
   wrapLevelsWithStatus,
@@ -84,6 +88,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   });
   const [popGameActive, setPopGameActive] = useState(false);
   const [scriptureMatchActive, setScriptureMatchActive] = useState(false);
+  const [showQuestsModal, setShowQuestsModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
@@ -458,6 +464,18 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       score: 0,
     });
 
+    // Update daily quest progress + check achievements (non-blocking)
+    if (user?.id) {
+      updateQuestProgress(user.id, "level_complete", 1).catch(() => {});
+      checkAndGrantAchievements(user.id)
+        .then((newly) => {
+          newly?.forEach((a) =>
+            toast.success(`🏅 Achievement unlocked: ${a.title}`, { duration: 4000 })
+          );
+        })
+        .catch(() => {});
+    }
+
     const updatedCompleted = [...completedLevels, selectedLevel.id];
     setSelectedLevel(null);
 
@@ -512,6 +530,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       mode: selectedLevel.mode,
       score,
     });
+
+    // Daily quests: score earned + perfect score
+    if (user?.id) {
+      if (score > 0) updateQuestProgress(user.id, "score_earned", score).catch(() => {});
+      if (score >= 100) updateQuestProgress(user.id, "perfect_score", 1).catch(() => {});
+    }
 
     // Update perfect streak and check for accuracy bonuses
     const streakResult = await updatePerfectStreak(user.id, score);
@@ -1304,6 +1328,28 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             onClick={() => {
               playSound("optionSelect", effectsOn);
               setShowMoreModal(false);
+              setShowQuestsModal(true);
+            }}
+            className="w-full btn-3d bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold px-6 py-4 rounded-xl shadow-lg hover:scale-105 transition-all"
+          >
+            ✨ Daily Quests
+          </button>
+
+          <button
+            onClick={() => {
+              playSound("optionSelect", effectsOn);
+              setShowMoreModal(false);
+              setShowProfileModal(true);
+            }}
+            className="w-full btn-3d bg-gradient-to-r from-amber-500 to-yellow-600 text-white font-bold px-6 py-4 rounded-xl shadow-lg hover:scale-105 transition-all"
+          >
+            🏅 Profile & Badges
+          </button>
+
+          <button
+            onClick={() => {
+              playSound("optionSelect", effectsOn);
+              setShowMoreModal(false);
               setShowExplainerVideo(true);
             }}
             className="w-full btn-3d bg-gradient-to-r from-purple-500 to-purple-700 text-white font-bold px-6 py-4 rounded-xl shadow-lg hover:scale-105 transition-all"
@@ -1440,6 +1486,16 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         isOpen={showExplainerVideo}
         onClose={() => setShowExplainerVideo(false)}
         userId={user?.id}
+      />
+
+      <DailyQuestsModal
+        isOpen={showQuestsModal}
+        onClose={() => setShowQuestsModal(false)}
+      />
+
+      <ProfileBadgesModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
       />
 
       <AppToaster />

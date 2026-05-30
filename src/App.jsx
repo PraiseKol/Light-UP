@@ -24,12 +24,21 @@ import MultiplayerGame from "@/components/MultiplayerGame";
 import CreateAdmin from "@/CreateAdmin";
 import AdminRoute from "@/components/AdminRoute";
 import AdminLogin from "@/pages/AdminLogin";
-import AdminDashboard from "@/pages/AdminDashboard";
 import PaymentSuccess from "@/pages/PaymentSuccess";
-import CompetitionPage from "@/pages/CompetitionPage";
-import CompetitionViewerPage from "@/pages/CompetitionViewerPage";
-import PopGamePage from "@/pages/PopGamePage";
-import ScriptureMatchPage from "@/pages/ScriptureMatchPage";
+import { lazy, Suspense } from "react";
+
+// Lazy-load heavy/admin/competition routes for faster initial load
+const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
+const CompetitionPage = lazy(() => import("@/pages/CompetitionPage"));
+const CompetitionViewerPage = lazy(() => import("@/pages/CompetitionViewerPage"));
+const PopGamePage = lazy(() => import("@/pages/PopGamePage"));
+const ScriptureMatchPage = lazy(() => import("@/pages/ScriptureMatchPage"));
+
+const RouteFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0c1445] via-[#1e3a5f] to-[#0d1b2a]">
+    <div className="animate-spin w-12 h-12 border-4 border-yellow-300 border-t-transparent rounded-full" />
+  </div>
+);
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
@@ -124,6 +133,7 @@ function AppContent() {
       <PWAInstallPrompt />
       <PWAUpdatePrompt />
       <BackgroundMusic sound={sound} />
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
@@ -258,6 +268,7 @@ function AppContent() {
         {/* Default */}
         <Route path="*" element={<Navigate to="/map" replace />} />
       </Routes>
+      </Suspense>
 
       {/* ✅ Add Vercel Analytics at the root */}
       <Analytics />

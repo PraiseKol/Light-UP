@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          created_at: string
+          criteria_type: string
+          criteria_value: number
+          description: string
+          icon: string
+          key: string
+          tier: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          criteria_type: string
+          criteria_value?: number
+          description: string
+          icon?: string
+          key: string
+          tier?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          criteria_type?: string
+          criteria_value?: number
+          description?: string
+          icon?: string
+          key?: string
+          tier?: string
+          title?: string
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           created_at: string | null
@@ -326,6 +359,33 @@ export type Database = {
           status?: Database["public"]["Enums"]["competition_status"]
           third_place_user_id?: string | null
           winner_user_id?: string | null
+        }
+        Relationships: []
+      }
+      daily_quests_log: {
+        Row: {
+          created_at: string
+          id: string
+          quest_date: string
+          quests: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          quest_date?: string
+          quests?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          quest_date?: string
+          quests?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1295,6 +1355,35 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_achievements: {
+        Row: {
+          achievement_key: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_key: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_key?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_key_fkey"
+            columns: ["achievement_key"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["key"]
           },
         ]
       }
