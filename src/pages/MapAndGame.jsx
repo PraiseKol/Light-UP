@@ -32,6 +32,10 @@ import GlobalChat from "@/components/GlobalChat";
 import LeaderboardModal from "@/components/LeaderboardModal";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ExplainerVideoModal from "@/components/ExplainerVideoModal";
+import DailyQuestsModal from "@/components/DailyQuestsModal";
+import ProfileBadgesModal from "@/components/ProfileBadgesModal";
+import { updateQuestProgress } from "@/lib/quests";
+import { checkAndGrantAchievements } from "@/lib/achievements";
 import {
   determineUnlockedPhases,
   wrapLevelsWithStatus,
@@ -84,6 +88,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   });
   const [popGameActive, setPopGameActive] = useState(false);
   const [scriptureMatchActive, setScriptureMatchActive] = useState(false);
+  const [showQuestsModal, setShowQuestsModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
