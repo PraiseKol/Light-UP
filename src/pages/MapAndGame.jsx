@@ -464,6 +464,18 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       score: 0,
     });
 
+    // Update daily quest progress + check achievements (non-blocking)
+    if (user?.id) {
+      updateQuestProgress(user.id, "level_complete", 1).catch(() => {});
+      checkAndGrantAchievements(user.id)
+        .then((newly) => {
+          newly?.forEach((a) =>
+            toast.success(`🏅 Achievement unlocked: ${a.title}`, { duration: 4000 })
+          );
+        })
+        .catch(() => {});
+    }
+
     const updatedCompleted = [...completedLevels, selectedLevel.id];
     setSelectedLevel(null);
 
