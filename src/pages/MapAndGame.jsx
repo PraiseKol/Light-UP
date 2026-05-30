@@ -1328,6 +1328,28 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
             onClick={() => {
               playSound("optionSelect", effectsOn);
               setShowMoreModal(false);
+              setShowQuestsModal(true);
+            }}
+            className="w-full btn-3d bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold px-6 py-4 rounded-xl shadow-lg hover:scale-105 transition-all"
+          >
+            ✨ Daily Quests
+          </button>
+
+          <button
+            onClick={() => {
+              playSound("optionSelect", effectsOn);
+              setShowMoreModal(false);
+              setShowProfileModal(true);
+            }}
+            className="w-full btn-3d bg-gradient-to-r from-amber-500 to-yellow-600 text-white font-bold px-6 py-4 rounded-xl shadow-lg hover:scale-105 transition-all"
+          >
+            🏅 Profile & Badges
+          </button>
+
+          <button
+            onClick={() => {
+              playSound("optionSelect", effectsOn);
+              setShowMoreModal(false);
               setShowExplainerVideo(true);
             }}
             className="w-full btn-3d bg-gradient-to-r from-purple-500 to-purple-700 text-white font-bold px-6 py-4 rounded-xl shadow-lg hover:scale-105 transition-all"
@@ -1464,6 +1486,16 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         isOpen={showExplainerVideo}
         onClose={() => setShowExplainerVideo(false)}
         userId={user?.id}
+      />
+
+      <DailyQuestsModal
+        isOpen={showQuestsModal}
+        onClose={() => setShowQuestsModal(false)}
+      />
+
+      <ProfileBadgesModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
       />
 
       <AppToaster />
