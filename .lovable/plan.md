@@ -1,54 +1,32 @@
-## Monthly Competition: Auto-Selection of 16 Players
+## Goal
+Strip the previous (24-player, manual dual-leaderboard + search) competition setup out of the admin UI and codebase so only the new **MonthlyCompetitionPanel** (16-player auto-selection) is functional and referenced.
 
-### Selection rule
-- **12 slots**: top scorers by `total_user_score` for the **current calendar month** (sum of `progress.score` where `completed_at` is in this UTC month).
-- **4 wildcard slots**: randomly picked from "active but not in top 12" players. *Active* = at least 3 `progress` entries in the last 14 days.
-- **Excluded**: anyone in `main_leaderboard_bans` or `weekly_leaderboard_bans`, plus players already in the top 12.
+## Changes
 
-### Admin flow
-1. New **"Monthly Competition"** panel inside `CompetitionManager` with a **"Generate 16 Players"** button.
-2. Calls a new edge function `monthly-competition-select` that returns the 12 + 4 list (with name, score, selection_type: `top_score` / `wildcard`).
-3. Admin sees a **preview table** with swap controls:
-   - Remove any player → pick replacement from a searchable list of eligible alternates.
-   - Re-roll wildcards button.
-4. Admin clicks **"Confirm & Notify"** → inserts rows into `competition_players` (reusing existing table; add `selection_type` value `monthly_auto`), sends push notifications via existing `send-push-notification`.
-5. **"Start Competition"** button (separate, only enabled after confirm) launches the existing 4-round engine.
+### 1. `src/admin/CompetitionManager.jsx` (the main cleanup)
+Remove everything related to the old "Create New Competition" flow:
+- Delete the Monthly Top 20 + Free Fall Top 10 dual-leaderboard selection UI (lines ~636–718).
+- Delete the "Search & Add Players" manual section (lines ~720–777).
+- Delete the "Create Competition" button + selection counter (lines ~627–633, ~779–798).
+- Delete the "Fully Automated Competition Flow" explainer card (lines ~801–end).
+- Remove all related state: `monthlyTopPlayers`, `popGameLeaderboard`, `manualPlayers`, `searchTerm`, `searchResults`, `selectedMonthlyIds`, `selectedPopGameIds`.
+- Remove handlers: `handleSearch`, `getUniqueSelectedIds`, `getTotalSelected`, `toggleMonthlySelection`, `togglePopGameSelection`, `isPlayerSelected`, `addManualPlayer`, `removeManualPlayer`, `handleCreateCompetition`.
+- Remove now-unused imports: `fetchMonthlyTopPlayers`, `createCompetition`, `searchPlayers`, `fetchPopGameTopForCompetition`, and unused icons (`Search`, `Plus`, `X`, `Check`).
+- Trim `loadData` so it no longer fetches monthly top players / pop-game top.
+- Keep: `ScriptureMatchToggle`, `PopGameToggle`, active-competition view (grouping/start/cancel/live scores), and `<MonthlyCompetitionPanel onCreated={loadData} />` as the **only** way to create a new competition.
 
-### Player-side experience
-- **Qualified players**: Footer Compete button shows a **"You're In! Prepare for battle"** badge + countdown card on the map.
-- **Non-qualified players**: Compete button shows **"Watch Live"** with a spectator entry — reuses `CompetitionViewerPage` with real-time scoreboard and elimination list (already exists; just wire entry point + label).
-- Real-time updates already handled by `competition_players` / `competition_rounds` subscriptions.
+### 2. `src/lib/api/competition.js`
+- Mark/remove dead helpers no longer referenced after cleanup: `fetchMonthlyTopPlayers`, `searchPlayers`, plus the legacy `startRound`, `endRound`, `completeCompetition` already labeled "legacy". Verify they aren't used elsewhere (quick rg) before deletion; keep `createCompetition` since the edge function path still uses similar inserts — actually the new panel inserts directly, so confirm and remove if unused.
+- Keep all functions used by the new flow: `getActiveCompetition`, `cancelCompetition`, `groupPlayersForCompetition`, `startAutomatedCompetition`, `processPhaseTransition`, `getCompetitionById`, `getPlayerCompetitionEntry`, `getAllCompetitionPlayersSorted`, `submitCompetitionAnswer`, `getCompetitionQuestions`, timing constants.
 
-### Technical pieces
-- **Edge function** `monthly-competition-select/index.ts`:
-  - Query monthly totals (UTC), exclude bans, return top 12.
-  - Query active players (progress count ≥ 3 in 14d), exclude bans + top 12, random sample 4.
-- **Migration**:
-  - Add `competition_players.selection_type` allowed values include `'monthly_top'`, `'monthly_wildcard'` (already a text col).
-  - Optional `monthly_competition_pool` table to persist the admin's draft pre-confirm (so reloads don't lose the list).
-- **Admin UI**: extend `src/admin/CompetitionManager.jsx` with the new panel.
-- **Player UI**: update footer Compete button + map badge to read qualification state from `competition_players` for the upcoming (status='waiting') competition.
+### 3. Data check (no DB migration)
+No schema changes needed. `competition_players.selection_type` already supports the new values. No old competition rows currently exist in `competitions` that need cleanup (will verify with a read query before/after if you want).
 
----
+## Result
+Admin "Competition" tab will show:
+1. Memory Challenge toggle
+2. Free Fall toggle
+3. **Monthly Competition Panel** (generate 16, preview, swap, confirm & notify) — the only entry point
+4. Active competition view once one exists (group → start → live → cancel)
 
-## App Improvements
-
-### Engagement (Phase 1)
-- **Daily Quests**: 3 rotating quests per day (e.g., "Complete 2 levels", "Get a perfect score", "Play Weekend Challenge"). New `daily_quests` + `user_quest_progress` tables. Reward: talents/lives. Surfaces in a new map header tile.
-- **Achievements & Badges**: ~25 milestones (first perfect, 10-day streak, finish phase X, tournament finalist). New `achievements` + `user_achievements` tables. Display on a profile/badges modal accessible from Settings.
-- **Profile/Stats screen**: collects total score, streak, badges, tournament history — gives players something to show off.
-
-### Polish (Phase 2)
-- **Onboarding**: short interactive tutorial after the explainer video — guided first level + tooltip on lives/talents/footer buttons. Tracked via new `has_completed_tutorial` flag on `game_users`.
-- **Accessibility**: add `aria-label`s to orb buttons, focus rings on interactive map nodes, prefers-reduced-motion handling for animations, color-contrast pass on glass cards.
-- **Performance**: lazy-load admin bundle and competition viewer, image `loading="lazy"` on four-pics, memoize map node list, defer audio preload until first interaction.
-
----
-
-## Suggested Build Order
-1. Monthly auto-selection (edge function + admin preview/confirm + player qualification UI).
-2. Daily Quests system.
-3. Achievements/Badges + Profile screen.
-4. Onboarding tutorial + a11y/perf polish pass.
-
-Want me to start with **Step 1 (monthly auto-selection end-to-end)**, or split it differently?
+No leftover references to the old 24-player manual selection anywhere in the UI or imports.
