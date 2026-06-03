@@ -11,59 +11,8 @@ export const ROUND_DURATIONS = {
 export const COUNTDOWN_DURATION = 30;  // 30 seconds before round starts
 export const BREAK_DURATION = 30;      // 30 seconds between rounds
 
-// ============= LEADERBOARD FUNCTIONS =============
 
-// Fetch top players from monthly leaderboard (default 20 for competition)
-export async function fetchMonthlyTopPlayers(limit = 20) {
-  const now = new Date();
-  const startOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-  const endOfMonth = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59));
 
-  const { data: progressData, error: progressError } = await supabase
-    .from('progress')
-    .select('user_id, score')
-    .gte('completed_at', startOfMonth.toISOString())
-    .lte('completed_at', endOfMonth.toISOString());
-
-  if (progressError) {
-    console.error('Error fetching monthly progress:', progressError);
-    return [];
-  }
-
-  // Aggregate scores by user
-  const userScores = {};
-  progressData.forEach(entry => {
-    if (!userScores[entry.user_id]) {
-      userScores[entry.user_id] = 0;
-    }
-    userScores[entry.user_id] += entry.score || 0;
-  });
-
-  // Sort and get top players
-  const sortedUsers = Object.entries(userScores)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit);
-
-  // Fetch player names
-  const userIds = sortedUsers.map(([userId]) => userId);
-  const { data: usersData } = await supabase
-    .from('game_users')
-    .select('user_id, player_name')
-    .in('user_id', userIds);
-
-  const userMap = {};
-  usersData?.forEach(u => {
-    userMap[u.user_id] = u.player_name;
-  });
-
-  return sortedUsers.map(([userId, score], idx) => ({
-    user_id: userId,
-    player_name: userMap[userId] || 'Unknown Player',
-    score,
-    rank: idx + 1,
-    selection_type: 'monthly_top'
-  }));
-}
 
 // ============= COMPETITION MANAGEMENT =============
 
