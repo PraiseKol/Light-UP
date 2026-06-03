@@ -465,20 +465,8 @@ export async function getCompetitionQuestions(limit = 10) {
   return data;
 }
 
-// Search players for manual selection
-export async function searchPlayers(searchTerm) {
-  const { data, error } = await supabase
-    .from('game_users')
-    .select('user_id, player_name')
-    .ilike('player_name', `%${searchTerm}%`)
-    .limit(10);
 
-  if (error) {
-    console.error('Error searching players:', error);
-    return [];
-  }
-  return data;
-}
+
 
 // Get all players sorted by total_score (for Top 7 display)
 export async function getAllCompetitionPlayersSorted(competitionId) {
