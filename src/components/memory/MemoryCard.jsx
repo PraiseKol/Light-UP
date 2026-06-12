@@ -50,8 +50,8 @@ const MemoryCard = ({
   };
 
   return (
-    <div 
-      className="relative w-full aspect-[3/4] cursor-pointer perspective-1000"
+    <div
+      className="relative w-full h-full cursor-pointer perspective-1000"
       onClick={handleClick}
     >
       <motion.div
