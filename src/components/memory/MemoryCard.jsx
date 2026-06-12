@@ -17,36 +17,36 @@ const MemoryCard = ({
   const renderCardContent = () => {
     if (card.type === 'symbol') {
       return (
-        <div className="flex flex-col items-center justify-center h-full">
-          <span className="text-3xl sm:text-4xl">{card.content}</span>
-          <span className="text-[10px] sm:text-xs text-amber-800 mt-1 font-medium">{card.label}</span>
+        <div className="flex flex-col items-center justify-center h-full p-1">
+          <span className="text-2xl sm:text-3xl leading-none">{card.content}</span>
+          <span className="text-[9px] sm:text-[10px] text-amber-800 mt-1 font-medium leading-tight text-center line-clamp-1">{card.label}</span>
         </div>
       );
     }
 
     if (card.type === 'verse_first' || card.type === 'verse_second') {
       return (
-        <div className="flex flex-col items-center justify-center h-full p-2">
-          <span className="text-xs sm:text-sm text-amber-900 text-center font-medium leading-tight">
+        <div className="flex flex-col items-center justify-center h-full p-1 sm:p-1.5">
+          <span className="text-[10px] sm:text-xs text-amber-900 text-center font-medium leading-tight line-clamp-4">
             {card.content}...
           </span>
-          <span className="text-[9px] sm:text-[10px] text-amber-600 mt-1 italic">{card.reference}</span>
+          <span className="text-[8px] sm:text-[9px] text-amber-600 mt-1 italic leading-tight line-clamp-1">{card.reference}</span>
         </div>
       );
     }
 
     if (card.type === 'symbol_verse') {
       return (
-        <div className="flex flex-col items-center justify-center h-full p-2">
-          <span className="text-[10px] sm:text-xs text-amber-900 text-center font-medium leading-tight">
+        <div className="flex flex-col items-center justify-center h-full p-1 sm:p-1.5">
+          <span className="text-[9px] sm:text-[11px] text-amber-900 text-center font-medium leading-tight line-clamp-4">
             {card.content}
           </span>
-          <span className="text-[8px] sm:text-[9px] text-amber-600 mt-1 italic">{card.reference}</span>
+          <span className="text-[7px] sm:text-[8px] text-amber-600 mt-1 italic leading-tight line-clamp-1">{card.reference}</span>
         </div>
       );
     }
 
-    return <span className="text-2xl">{card.content}</span>;
+    return <span className="text-xl sm:text-2xl">{card.content}</span>;
   };
 
   return (
