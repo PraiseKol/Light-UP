@@ -1,32 +1,42 @@
-## Goal
-Strip the previous (24-player, manual dual-leaderboard + search) competition setup out of the admin UI and codebase so only the new **MonthlyCompetitionPanel** (16-player auto-selection) is functional and referenced.
+# Memory Challenge: Responsive Tile Sizing Fix
 
-## Changes
+## Problem
+On the Memory Challenge screen, larger levels (4–6 column grids) push tiles below the HUD/power-up bar, causing the top tiles to be clipped or overlapped. The current `aspect-[3/4]` cards are too tall, and the board only constrains width (`max-w-2xl`), not height.
 
-### 1. `src/admin/CompetitionManager.jsx` (the main cleanup)
-Remove everything related to the old "Create New Competition" flow:
-- Delete the Monthly Top 20 + Free Fall Top 10 dual-leaderboard selection UI (lines ~636–718).
-- Delete the "Search & Add Players" manual section (lines ~720–777).
-- Delete the "Create Competition" button + selection counter (lines ~627–633, ~779–798).
-- Delete the "Fully Automated Competition Flow" explainer card (lines ~801–end).
-- Remove all related state: `monthlyTopPlayers`, `popGameLeaderboard`, `manualPlayers`, `searchTerm`, `searchResults`, `selectedMonthlyIds`, `selectedPopGameIds`.
-- Remove handlers: `handleSearch`, `getUniqueSelectedIds`, `getTotalSelected`, `toggleMonthlySelection`, `togglePopGameSelection`, `isPlayerSelected`, `addManualPlayer`, `removeManualPlayer`, `handleCreateCompetition`.
-- Remove now-unused imports: `fetchMonthlyTopPlayers`, `createCompetition`, `searchPlayers`, `fetchPopGameTopForCompetition`, and unused icons (`Search`, `Plus`, `X`, `Check`).
-- Trim `loadData` so it no longer fetches monthly top players / pop-game top.
-- Keep: `ScriptureMatchToggle`, `PopGameToggle`, active-competition view (grouping/start/cancel/live scores), and `<MonthlyCompetitionPanel onCreated={loadData} />` as the **only** way to create a new competition.
+## Fix Scope
+Visual/layout only. No game logic, scoring, or data changes.
 
-### 2. `src/lib/api/competition.js`
-- Mark/remove dead helpers no longer referenced after cleanup: `fetchMonthlyTopPlayers`, `searchPlayers`, plus the legacy `startRound`, `endRound`, `completeCompetition` already labeled "legacy". Verify they aren't used elsewhere (quick rg) before deletion; keep `createCompetition` since the edge function path still uses similar inserts — actually the new panel inserts directly, so confirm and remove if unused.
-- Keep all functions used by the new flow: `getActiveCompetition`, `cancelCompetition`, `groupPlayersForCompetition`, `startAutomatedCompetition`, `processPhaseTransition`, `getCompetitionById`, `getPlayerCompetitionEntry`, `getAllCompetitionPlayersSorted`, `submitCompetitionAnswer`, `getCompetitionQuestions`, timing constants.
+### 1. `src/components/memory/GameBoard.jsx`
+- Make the board fully height-aware so the grid always fits between HUD and power-up bar.
+- Wrap the grid in a flex container that uses the available height (`h-full min-h-0`) and centers content.
+- Change card aspect from `aspect-[3/4]` to a more compact `aspect-square` (or `aspect-[4/5]` for verse-heavy levels) so tall grids don't overflow.
+- Cap the grid width based on column count so 2–3 column levels don't render giant tiles on desktop:
+  - 2 cols → `max-w-xs`
+  - 3 cols → `max-w-sm`
+  - 4 cols → `max-w-md`
+  - 5 cols → `max-w-lg`
+  - 6 cols → `max-w-xl`
+- Reduce gap on dense grids (`gap-1` for ≥5 cols, `gap-1.5` for 4, `gap-2` for ≤3).
+- Add an outer `overflow-hidden` and inner safe padding so nothing clips under the HUD.
 
-### 3. Data check (no DB migration)
-No schema changes needed. `competition_players.selection_type` already supports the new values. No old competition rows currently exist in `competitions` that need cleanup (will verify with a read query before/after if you want).
+### 2. `src/components/memory/MemoryCard.jsx`
+- Shrink content typography so text/symbols never spill past the smaller tile:
+  - `symbol`: `text-2xl sm:text-3xl` (was 3xl/4xl), label `text-[9px] sm:text-[10px]`.
+  - `verse_first` / `verse_second`: `text-[10px] sm:text-xs`, reference `text-[8px] sm:text-[9px]`.
+  - `symbol_verse`: `text-[9px] sm:text-[11px]`, reference `text-[7px] sm:text-[8px]`.
+- Tighten inner padding to `p-1 sm:p-1.5`, add `leading-tight`, and `line-clamp-4` to avoid awkward overflow.
+- Keep flip animation and matched/back styling unchanged.
 
-## Result
-Admin "Competition" tab will show:
-1. Memory Challenge toggle
-2. Free Fall toggle
-3. **Monthly Competition Panel** (generate 16, preview, swap, confirm & notify) — the only entry point
-4. Active competition view once one exists (group → start → live → cancel)
+### 3. `src/pages/ScriptureMatchPage.jsx` (minor)
+- Ensure the playing container uses `h-[100dvh] flex flex-col overflow-hidden` (already present) and that `<GameBoard />` is wrapped to consume remaining height (`flex-1 min-h-0`). Add `min-h-0` if missing so the grid actually shrinks instead of pushing the power-up bar off-screen.
 
-No leftover references to the old 24-player manual selection anywhere in the UI or imports.
+## Verification
+- Open Memory Challenge on mobile (375×812) and desktop (1280×720) preview.
+- Step through levels with 2, 3, 4, 5, and 6 column grids; confirm:
+  - HUD, board, and power-up bar all visible without scrolling.
+  - No tile clipped at top or bottom.
+  - Tile content (symbol, label, verse, reference) stays inside the card.
+- Re-screenshot a 6-column level on mobile to confirm the densest case fits.
+
+## Out of scope
+Game rules, level definitions, scoring, power-ups, sounds, and any non-Memory-Challenge screens stay untouched.
