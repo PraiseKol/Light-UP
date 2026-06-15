@@ -1,6 +1,6 @@
 // src/screens/GameScreen.jsx
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import { useGameUser } from "@/hooks/useGameUser";
 import { supabase } from "@/lib/supabaseClient";
@@ -86,7 +86,28 @@ function GameScreenContent({
   const [loadingQuestion, setLoadingQuestion] = useState(true);
   const [userScore, setUserScore] = useState(0);
   const [activePowerups, setActivePowerups] = useState({});
+  const [idleHint, setIdleHint] = useState(false);
+  const idleTimerRef = useRef(null);
   const navigate = useNavigate();
+
+  // Idle detector: nudge player toward power-ups after 5s of inactivity per question
+  useEffect(() => {
+    if (!questionData) return;
+    const reset = () => {
+      setIdleHint(false);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => setIdleHint(true), 5000);
+    };
+    reset();
+    const handler = () => reset();
+    window.addEventListener("pointerdown", handler);
+    window.addEventListener("keydown", handler);
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      window.removeEventListener("pointerdown", handler);
+      window.removeEventListener("keydown", handler);
+    };
+  }, [questionData]);
 
   // Load current question
   useEffect(() => {
