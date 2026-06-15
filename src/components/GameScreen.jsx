@@ -1,6 +1,6 @@
 // src/screens/GameScreen.jsx
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useUser } from "@supabase/auth-helpers-react";
 import { useGameUser } from "@/hooks/useGameUser";
 import { supabase } from "@/lib/supabaseClient";
@@ -86,7 +86,28 @@ function GameScreenContent({
   const [loadingQuestion, setLoadingQuestion] = useState(true);
   const [userScore, setUserScore] = useState(0);
   const [activePowerups, setActivePowerups] = useState({});
+  const [idleHint, setIdleHint] = useState(false);
+  const idleTimerRef = useRef(null);
   const navigate = useNavigate();
+
+  // Idle detector: nudge player toward power-ups after 5s of inactivity per question
+  useEffect(() => {
+    if (!questionData) return;
+    const reset = () => {
+      setIdleHint(false);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => setIdleHint(true), 5000);
+    };
+    reset();
+    const handler = () => reset();
+    window.addEventListener("pointerdown", handler);
+    window.addEventListener("keydown", handler);
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      window.removeEventListener("pointerdown", handler);
+      window.removeEventListener("keydown", handler);
+    };
+  }, [questionData]);
 
   // Load current question
   useEffect(() => {
@@ -444,13 +465,22 @@ function GameScreenContent({
         </div>
       </div>
 
+      {/* Idle hint caption */}
+      {idleHint && gameUser?.powerups_inventory && (
+        <div className="pointer-events-none absolute bottom-16 sm:bottom-20 left-1/2 -translate-x-1/2 z-20 animate-fade-in">
+          <div className="px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 text-purple-900 text-[11px] sm:text-xs font-extrabold shadow-[0_4px_12px_rgba(168,85,247,0.45)] border border-white/60 backdrop-blur-sm whitespace-nowrap">
+            💡 Need help? Try a power-up
+          </div>
+        </div>
+      )}
+
       {/* Power-Up Bar */}
       {gameUser?.powerups_inventory && (
         <div className="flex-shrink-0 bg-gradient-to-r from-pink-200 via-purple-200 to-blue-200 backdrop-blur-lg border-t-2 border-pink-300 p-2 flex justify-around items-center shadow-[0_-4px_10px_rgba(190,24,93,0.3)] relative z-10">
           <button
             onClick={handleDivineHint}
             disabled={!gameUser.powerups_inventory.divine_hint}
-            className="flex flex-col items-center font-semibold w-[22%] px-1 py-1 rounded-full bg-gradient-to-b from-blue-300 to-blue-400 hover:scale-105 shadow-[0_3px_0_#1e40af] active:translate-y-1 active:shadow-[0_1px_0_#1e40af] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs"
+            className={`flex flex-col items-center font-semibold w-[22%] px-1 py-1 rounded-full bg-gradient-to-b from-blue-300 to-blue-400 hover:scale-105 shadow-[0_3px_0_#1e40af] active:translate-y-1 active:shadow-[0_1px_0_#1e40af] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.divine_hint ? "animate-powerup-glow" : ""}`}
           >
             <span className="text-sm sm:text-base">🧩</span>
             <span className="hidden sm:inline">Hint</span>
@@ -459,7 +489,7 @@ function GameScreenContent({
           <button
             onClick={handleGracePeriod}
             disabled={!gameUser.powerups_inventory.grace_period}
-            className="flex flex-col items-center font-semibold w-[23%] px-1 py-1 rounded-full bg-gradient-to-b from-purple-300 to-purple-400 hover:scale-105 shadow-[0_3px_0_#7c3aed] active:translate-y-1 active:shadow-[0_1px_0_#7c3aed] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs"
+            className={`flex flex-col items-center font-semibold w-[23%] px-1 py-1 rounded-full bg-gradient-to-b from-purple-300 to-purple-400 hover:scale-105 shadow-[0_3px_0_#7c3aed] active:translate-y-1 active:shadow-[0_1px_0_#7c3aed] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.grace_period ? "animate-powerup-glow" : ""}`}
           >
             <span className="text-sm sm:text-base">⏳</span>
             <span className="hidden sm:inline">Grace</span>
@@ -476,7 +506,7 @@ function GameScreenContent({
           <button
             onClick={handleHeavenlyMatch}
             disabled={!gameUser.powerups_inventory.heavenly_match}
-            className="flex flex-col items-center font-semibold w-[22%] px-1 py-1 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 hover:scale-105 shadow-[0_3px_0_#ca8a04] active:translate-y-1 active:shadow-[0_1px_0_#ca8a04] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs"
+            className={`flex flex-col items-center font-semibold w-[22%] px-1 py-1 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 hover:scale-105 shadow-[0_3px_0_#ca8a04] active:translate-y-1 active:shadow-[0_1px_0_#ca8a04] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.heavenly_match ? "animate-powerup-glow" : ""}`}
           >
             <span className="text-sm sm:text-base">👑</span>
             <span className="hidden sm:inline">Match</span>

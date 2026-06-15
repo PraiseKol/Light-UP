@@ -34,6 +34,8 @@ module.exports = {
         sparkle: 'sparkle 1.5s ease-in-out infinite',
         cloudDrift: 'cloudDrift 60s linear infinite',
         superGlow: 'superGlow 2s ease-in-out infinite',
+        'powerup-glow': 'powerupGlow 1.6s ease-in-out infinite',
+        'fade-in': 'fadeInUp 0.35s ease-out',
       },
       keyframes: {
         flicker: {
@@ -86,6 +88,16 @@ module.exports = {
           },
           '50%': {
             boxShadow: '0 0 30px rgba(255, 217, 61, 0.8), 0 0 60px rgba(255, 217, 61, 0.6), 0 0 90px rgba(255, 217, 61, 0.4)'
+          }
+        },
+        powerupGlow: {
+          '0%, 100%': {
+            transform: 'scale(1)',
+            boxShadow: '0 3px 0 rgba(0,0,0,0.15), 0 0 0 0 rgba(255,217,61,0.0), 0 0 14px rgba(255,217,61,0.55)'
+          },
+          '50%': {
+            transform: 'scale(1.06)',
+            boxShadow: '0 3px 0 rgba(0,0,0,0.15), 0 0 0 4px rgba(255,217,61,0.35), 0 0 28px rgba(255,217,61,0.9)'
           }
         },
       },

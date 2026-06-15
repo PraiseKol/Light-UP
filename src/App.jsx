@@ -26,6 +26,7 @@ import AdminRoute from "@/components/AdminRoute";
 import AdminLogin from "@/pages/AdminLogin";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import { lazy, Suspense } from "react";
+import LoadingScreen from "@/components/LoadingScreen";
 
 // Lazy-load heavy/admin/competition routes for faster initial load
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
@@ -34,11 +35,7 @@ const CompetitionViewerPage = lazy(() => import("@/pages/CompetitionViewerPage")
 const PopGamePage = lazy(() => import("@/pages/PopGamePage"));
 const ScriptureMatchPage = lazy(() => import("@/pages/ScriptureMatchPage"));
 
-const RouteFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0c1445] via-[#1e3a5f] to-[#0d1b2a]">
-    <div className="animate-spin w-12 h-12 border-4 border-yellow-300 border-t-transparent rounded-full" />
-  </div>
-);
+const RouteFallback = () => <LoadingScreen />;
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
@@ -54,7 +51,7 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }) {
   const { user, authLoading } = useAuth();
-  if (authLoading) return <div className="text-center p-6">Loading...</div>;
+  if (authLoading) return <LoadingScreen />;
   return user ? children : <Navigate to="/login" replace />;
 }
 

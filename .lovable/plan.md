@@ -1,42 +1,44 @@
-# Memory Challenge: Responsive Tile Sizing Fix
+## Goals
 
-## Problem
-On the Memory Challenge screen, larger levels (4–6 column grids) push tiles below the HUD/power-up bar, causing the top tiles to be clipped or overlapped. The current `aspect-[3/4]` cards are too tall, and the board only constrains width (`max-w-2xl`), not height.
+Three independent enhancements:
 
-## Fix Scope
-Visual/layout only. No game logic, scoring, or data changes.
+1. **Idle power-up hint** — In main-game play (Trivia/FourPics/WordFill/ScriptureMatch via `GameScreen.jsx`), when a player has not selected an answer for 5 seconds on the current question, gently glow/pulse the power-up buttons (only the ones they actually own) to nudge them to use power-ups.
+2. **Upgraded global loading screen** — Replace the bare spinner (`RouteFallback` in `src/App.jsx`, line 37–41, and the "Loading..." text in `ProtectedRoute` at line 57) with a polished branded "LightUP" loading screen using a freshly generated themed illustration, taking visual cues (not a copy) from the attached Magic Sort reference: a vibrant, candy-style biblical scene with the LightUP logo treatment and an animated "Loading" indicator.
+3. **Free Fall background** — Update the `PopGamePage` playing-area background (currently a sky→sand gradient at lines 466–468) to a richer themed board-game-style backdrop inspired by the attached Monopoly reference (greenish board surface, foliage at corners, tape/paper decorations, subtle vignette), but biblically themed and brand-aligned — generated as an image asset, not a literal Monopoly clone.
 
-### 1. `src/components/memory/GameBoard.jsx`
-- Make the board fully height-aware so the grid always fits between HUD and power-up bar.
-- Wrap the grid in a flex container that uses the available height (`h-full min-h-0`) and centers content.
-- Change card aspect from `aspect-[3/4]` to a more compact `aspect-square` (or `aspect-[4/5]` for verse-heavy levels) so tall grids don't overflow.
-- Cap the grid width based on column count so 2–3 column levels don't render giant tiles on desktop:
-  - 2 cols → `max-w-xs`
-  - 3 cols → `max-w-sm`
-  - 4 cols → `max-w-md`
-  - 5 cols → `max-w-lg`
-  - 6 cols → `max-w-xl`
-- Reduce gap on dense grids (`gap-1` for ≥5 cols, `gap-1.5` for 4, `gap-2` for ≤3).
-- Add an outer `overflow-hidden` and inner safe padding so nothing clips under the HUD.
+## Technical Details
 
-### 2. `src/components/memory/MemoryCard.jsx`
-- Shrink content typography so text/symbols never spill past the smaller tile:
-  - `symbol`: `text-2xl sm:text-3xl` (was 3xl/4xl), label `text-[9px] sm:text-[10px]`.
-  - `verse_first` / `verse_second`: `text-[10px] sm:text-xs`, reference `text-[8px] sm:text-[9px]`.
-  - `symbol_verse`: `text-[9px] sm:text-[11px]`, reference `text-[7px] sm:text-[8px]`.
-- Tighten inner padding to `p-1 sm:p-1.5`, add `leading-tight`, and `line-clamp-4` to avoid awkward overflow.
-- Keep flip animation and matched/back styling unchanged.
+### 1. Idle power-up hint (`src/components/GameScreen.jsx`)
+- Add state `idleHint` (bool) and a `useRef` timer.
+- `useEffect` keyed on `currentQuestionIndex` (or equivalent question identifier already in scope) resets `idleHint` to `false` and starts a 5s timeout that sets it to `true`.
+- A global `pointerdown`/`keydown` listener on the game container also resets the timer (so interacting without answering still nudges them eventually, but tapping an option still triggers the next-question reset).
+- When `idleHint` is true, add a conditional class on each owned power-up button: a soft pulsing glow ring + gentle scale breathing using Tailwind + a tiny keyframe added in `src/index.css` (`@keyframes powerup-glow`). Disabled (owned=0) buttons do NOT glow.
+- A small floating "💡 Try a power-up?" caption fades in above the bar via Framer Motion `AnimatePresence`, auto-hides on next interaction.
+- No business-logic changes (scoring, lives, timers untouched).
 
-### 3. `src/pages/ScriptureMatchPage.jsx` (minor)
-- Ensure the playing container uses `h-[100dvh] flex flex-col overflow-hidden` (already present) and that `<GameBoard />` is wrapped to consume remaining height (`flex-1 min-h-0`). Add `min-h-0` if missing so the grid actually shrinks instead of pushing the power-up bar off-screen.
+### 2. Loading screen
+- Generate `src/assets/lightup-loading.jpg` (premium quality) — vibrant candy-crush biblical illustration: glowing oil lamp, scrolls, doves, golden coins, soft purple/blue/pink gradient sky with castle silhouette, in the visual energy of the Magic Sort reference. No copyrighted characters.
+- Create `src/components/LoadingScreen.jsx` — full-screen component: background image, animated "LightUP" wordmark (gradient + drop-shadow already used elsewhere), bouncing dots "Loading…", subtle floating sparkles using Framer Motion. Uses existing brand tokens (candyYellow / candyPink / candyPurple).
+- Wire it into `src/App.jsx`:
+  - Replace `RouteFallback` body with `<LoadingScreen />`.
+  - Replace the `ProtectedRoute` "Loading..." text with `<LoadingScreen />`.
+- Keep it lightweight: the component is small; the image is the only heavy asset and is lazy via `<img loading="eager">` only inside the loader.
+
+### 3. Free Fall background
+- Generate `src/assets/freefall-bg.jpg` (premium) — biblical-board-game backdrop: warm muted parchment/green play surface, scrolls and olive-branch foliage at the corners, subtle taped paper notes & gift icons in top corners (echoing the Monopoly reference layout without copying it), soft vignette so falling items remain readable, no logos/text.
+- In `src/pages/PopGamePage.jsx` line 466–468, swap the inline gradient style for:
+  ```jsx
+  style={{ backgroundImage: `url(${freefallBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+  ```
+  and import the asset at the top of the file.
+- Keep all gameplay overlays, HUD, timer, items, modals, and the existing dark loading fallback at line 457 unchanged.
+
+## Out of Scope
+- No changes to scoring, lives, power-up effects, leaderboards, multiplayer, weekly, scripture-match memory, admin, or DB.
+- No new power-ups added; only owned ones glow.
+- No change to login/landing visuals beyond the loading state.
 
 ## Verification
-- Open Memory Challenge on mobile (375×812) and desktop (1280×720) preview.
-- Step through levels with 2, 3, 4, 5, and 6 column grids; confirm:
-  - HUD, board, and power-up bar all visible without scrolling.
-  - No tile clipped at top or bottom.
-  - Tile content (symbol, label, verse, reference) stays inside the card.
-- Re-screenshot a 6-column level on mobile to confirm the densest case fits.
-
-## Out of scope
-Game rules, level definitions, scoring, power-ups, sounds, and any non-Memory-Challenge screens stay untouched.
+- Open a main-game level; wait 5s without tapping → power-up buttons gently glow, caption fades in; tap any option or another button → glow stops; advance question → reset cleanly.
+- Refresh the app and navigate between lazy routes (`/pop-game`, `/scripture-match`, `/admin/dashboard`) → branded loading screen appears instead of bare spinner.
+- Open Free Fall → new themed background renders, items still legible, no layout shift, dark loading fallback still shows briefly while user loads.
