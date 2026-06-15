@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { useGameUser } from '../hooks/useGameUser';
 import { loseLife } from '../utils/loseLife';
 import HolyShieldButton from '../components/HolyShieldButton';
+import freefallBg from '@/assets/freefall-bg.jpg';
 
 const GAME_DURATION = 30;
 const COMBO_TIMEOUT = 750; // 0.75 seconds to maintain combo
@@ -465,7 +466,10 @@ const PopGamePage = () => {
       ref={gameAreaRef}
       className="min-h-[100dvh] relative overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, #87CEEB 0%, #E6D5AC 50%, #D4C4A8 100%)'
+        backgroundImage: `url(${freefallBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundColor: '#a8b89a',
       }}
     >
       {/* Decorative clouds */}
