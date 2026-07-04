@@ -2,6 +2,156 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   3D GAME PRIMITIVES — reusable Candy Crush / Royal Match style
+   ============================================================ */
+@layer components {
+  .btn-orb {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 2px solid rgba(255, 255, 255, 0.65);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.55),
+      inset 0 -6px 10px rgba(0, 0, 0, 0.18),
+      0 5px 0 rgba(0, 0, 0, 0.22),
+      0 10px 20px -6px rgba(0, 0, 0, 0.35);
+    transition: transform 120ms ease, box-shadow 120ms ease, filter 200ms ease;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .btn-orb::before {
+    content: "";
+    position: absolute;
+    inset: 4% 8% auto 8%;
+    height: 42%;
+    border-radius: 9999px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.55), rgba(255,255,255,0));
+    pointer-events: none;
+    z-index: 1;
+  }
+  .btn-orb > * { position: relative; z-index: 2; }
+  .btn-orb:hover:not(:disabled) { transform: translateY(-1px) scale(1.03); filter: brightness(1.05); }
+  .btn-orb:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -3px 6px rgba(0, 0, 0, 0.2),
+      0 1px 0 rgba(0, 0, 0, 0.2),
+      0 3px 6px -2px rgba(0, 0, 0, 0.3);
+  }
+  .btn-orb:disabled {
+    filter: grayscale(0.6) brightness(0.85);
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-orb-blue    { background: linear-gradient(180deg, #7dd3fc 0%, #3b82f6 55%, #1d4ed8 100%); color: #fff; }
+  .btn-orb-purple  { background: linear-gradient(180deg, #d8b4fe 0%, #9333ea 55%, #6b21a8 100%); color: #fff; }
+  .btn-orb-pink    { background: linear-gradient(180deg, #fbcfe8 0%, #ec4899 55%, #be185d 100%); color: #fff; }
+  .btn-orb-yellow  { background: linear-gradient(180deg, #fef08a 0%, #facc15 55%, #a16207 100%); color: #78350f; }
+  .btn-orb-green   { background: linear-gradient(180deg, #bbf7d0 0%, #22c55e 55%, #15803d 100%); color: #fff; }
+  .btn-orb-red     { background: linear-gradient(180deg, #fecaca 0%, #ef4444 55%, #991b1b 100%); color: #fff; }
+  .btn-orb-amber   { background: linear-gradient(180deg, #fde68a 0%, #f59e0b 55%, #b45309 100%); color: #78350f; }
+  .btn-orb-white   { background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 55%, #d1d5db 100%); color: #1f2937; }
+
+  .card-3d {
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.92));
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    border-radius: 1.25rem;
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -3px 6px rgba(0, 0, 0, 0.05),
+      0 6px 0 rgba(0, 0, 0, 0.08),
+      0 20px 40px -12px rgba(80, 30, 130, 0.35);
+  }
+
+  .chip-3d {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.28rem 0.7rem;
+    border-radius: 9999px;
+    font-weight: 800;
+    border: 2px solid rgba(255,255,255,0.7);
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.8));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.9),
+      0 3px 0 rgba(0,0,0,0.15),
+      0 6px 10px -4px rgba(0,0,0,0.25);
+    color: #4c1d95;
+  }
+  .chip-3d-heart { color: #be123c; background: linear-gradient(180deg, #fff1f2, #ffe4e6); }
+  .chip-3d-star  { color: #a16207; background: linear-gradient(180deg, #fefce8, #fef08a); }
+
+  .level-node-3d {
+    position: relative;
+    border-radius: 9999px;
+    border: 3px solid #fef3c7;
+    background: radial-gradient(circle at 35% 30%, #60a5fa 0%, #2563eb 55%, #1e3a8a 100%);
+    box-shadow:
+      inset 0 4px 0 rgba(255,255,255,0.5),
+      inset 0 -6px 10px rgba(0,0,0,0.35),
+      0 6px 0 #1e3a8a,
+      0 14px 24px -6px rgba(0,0,0,0.55);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  .level-node-3d::before {
+    content: "";
+    position: absolute;
+    inset: 8% 18% auto 18%;
+    height: 34%;
+    border-radius: 9999px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(255,255,255,0));
+    pointer-events: none;
+  }
+  .level-node-3d:hover:not(:disabled) { transform: translateY(-2px) scale(1.06); }
+  .level-node-3d:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow:
+      inset 0 3px 0 rgba(255,255,255,0.4),
+      inset 0 -4px 8px rgba(0,0,0,0.3),
+      0 2px 0 #1e3a8a,
+      0 6px 10px -4px rgba(0,0,0,0.45);
+  }
+  .level-node-3d.is-locked {
+    background: radial-gradient(circle at 35% 30%, #9ca3af 0%, #4b5563 55%, #1f2937 100%);
+    border-color: #6b7280;
+    box-shadow:
+      inset 0 4px 0 rgba(255,255,255,0.25),
+      inset 0 -6px 10px rgba(0,0,0,0.4),
+      0 4px 0 #111827,
+      0 10px 18px -6px rgba(0,0,0,0.5);
+  }
+  .level-node-3d.is-completed {
+    background: radial-gradient(circle at 35% 30%, #86efac 0%, #22c55e 55%, #14532d 100%);
+    box-shadow:
+      inset 0 4px 0 rgba(255,255,255,0.55),
+      inset 0 -6px 10px rgba(0,0,0,0.3),
+      0 6px 0 #14532d,
+      0 14px 24px -6px rgba(0,0,0,0.5);
+  }
+  .level-node-3d.is-current { animation: nodeBob 2.4s ease-in-out infinite; }
+
+  .phase-ribbon-3d {
+    background: linear-gradient(180deg, #fde68a 0%, #f59e0b 55%, #b45309 100%);
+    border: 3px solid rgba(255,255,255,0.85);
+    border-radius: 9999px;
+    box-shadow:
+      inset 0 2px 0 rgba(255,255,255,0.7),
+      inset 0 -4px 8px rgba(0,0,0,0.2),
+      0 5px 0 #92400e,
+      0 14px 24px -6px rgba(146,64,14,0.5);
+  }
+}
+
+@keyframes nodeBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
 @keyframes glowRing {
     0% {
       box-shadow: 0 0 0 0 rgba(255, 223, 0, 0.6);
