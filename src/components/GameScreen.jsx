@@ -481,7 +481,7 @@ function GameScreenContent({
           <button
             onClick={handleDivineHint}
             disabled={!gameUser.powerups_inventory.divine_hint}
-            className={`flex flex-col items-center font-semibold w-[22%] px-1 py-1 rounded-full bg-gradient-to-b from-blue-300 to-blue-400 hover:scale-105 shadow-[0_3px_0_#1e40af] active:translate-y-1 active:shadow-[0_1px_0_#1e40af] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.divine_hint ? "animate-powerup-glow" : ""}`}
+            className={`btn-orb btn-orb-blue flex flex-col items-center font-semibold w-[22%] px-1 py-1.5 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.divine_hint ? "animate-powerup-glow" : ""}`}
           >
             <span className="text-sm sm:text-base">🧩</span>
             <span className="hidden sm:inline">Hint</span>
@@ -490,7 +490,7 @@ function GameScreenContent({
           <button
             onClick={handleGracePeriod}
             disabled={!gameUser.powerups_inventory.grace_period}
-            className={`flex flex-col items-center font-semibold w-[23%] px-1 py-1 rounded-full bg-gradient-to-b from-purple-300 to-purple-400 hover:scale-105 shadow-[0_3px_0_#7c3aed] active:translate-y-1 active:shadow-[0_1px_0_#7c3aed] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.grace_period ? "animate-powerup-glow" : ""}`}
+            className={`btn-orb btn-orb-purple flex flex-col items-center font-semibold w-[23%] px-1 py-1.5 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.grace_period ? "animate-powerup-glow" : ""}`}
           >
             <span className="text-sm sm:text-base">⏳</span>
             <span className="hidden sm:inline">Grace</span>
@@ -507,7 +507,7 @@ function GameScreenContent({
           <button
             onClick={handleHeavenlyMatch}
             disabled={!gameUser.powerups_inventory.heavenly_match}
-            className={`flex flex-col items-center font-semibold w-[22%] px-1 py-1 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 hover:scale-105 shadow-[0_3px_0_#ca8a04] active:translate-y-1 active:shadow-[0_1px_0_#ca8a04] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.heavenly_match ? "animate-powerup-glow" : ""}`}
+            className={`btn-orb btn-orb-yellow flex flex-col items-center font-semibold w-[22%] px-1 py-1.5 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.heavenly_match ? "animate-powerup-glow" : ""}`}
           >
             <span className="text-sm sm:text-base">👑</span>
             <span className="hidden sm:inline">Match</span>
@@ -515,6 +515,7 @@ function GameScreenContent({
           </button>
         </div>
       )}
+
     </div>
   );
 }
