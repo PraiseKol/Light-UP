@@ -1,44 +1,55 @@
-## Goals
+## Goal
 
-Three independent enhancements:
+Upgrade the visual layer of the main phase/level game so it feels like a polished 3D casual game (Candy Crush / Monopoly / Royal Match). Pure presentation — no gameplay, scoring, backend, or data changes. Mobile no-scroll rule and existing routes preserved.
 
-1. **Idle power-up hint** — In main-game play (Trivia/FourPics/WordFill/ScriptureMatch via `GameScreen.jsx`), when a player has not selected an answer for 5 seconds on the current question, gently glow/pulse the power-up buttons (only the ones they actually own) to nudge them to use power-ups.
-2. **Upgraded global loading screen** — Replace the bare spinner (`RouteFallback` in `src/App.jsx`, line 37–41, and the "Loading..." text in `ProtectedRoute` at line 57) with a polished branded "LightUP" loading screen using a freshly generated themed illustration, taking visual cues (not a copy) from the attached Magic Sort reference: a vibrant, candy-style biblical scene with the LightUP logo treatment and an animated "Loading" indicator.
-3. **Free Fall background** — Update the `PopGamePage` playing-area background (currently a sky→sand gradient at lines 466–468) to a richer themed board-game-style backdrop inspired by the attached Monopoly reference (greenish board surface, foliage at corners, tape/paper decorations, subtle vignette), but biblically themed and brand-aligned — generated as an image asset, not a literal Monopoly clone.
+## Scope (in)
 
-## Technical Details
+1. **Map screen (`src/pages/MapAndGame.jsx` + `src/components/MapBackground.jsx`)** — richer 3D level nodes, glossy phase headers, deeper parallax, stronger path with beveled edges.
+2. **In-level HUD & shell (`src/components/GameScreen.jsx`)** — chunky 3D top bar (level chip, score coin, heart pill), 3D power-up dock with glossy orbs, refined idle-glow.
+3. **Question surfaces (`src/modes/TriviaMode.jsx`, `WordFillMode.jsx`, `FourPicsMode.jsx`)** — 3D question card, embossed option buttons with press-down shadow, subtle tilt on hover, celebratory correct/incorrect states.
+4. **Shared 3D primitive utilities in `src/index.css` + `tailwind.config.js`** — reusable classes: `.btn-orb`, `.card-3d`, `.chip-3d`, `.coin-3d`, `.press-3d`, plus keyframes for `bob`, `sheen`, `press`, `pop-in`.
 
-### 1. Idle power-up hint (`src/components/GameScreen.jsx`)
-- Add state `idleHint` (bool) and a `useRef` timer.
-- `useEffect` keyed on `currentQuestionIndex` (or equivalent question identifier already in scope) resets `idleHint` to `false` and starts a 5s timeout that sets it to `true`.
-- A global `pointerdown`/`keydown` listener on the game container also resets the timer (so interacting without answering still nudges them eventually, but tapping an option still triggers the next-question reset).
-- When `idleHint` is true, add a conditional class on each owned power-up button: a soft pulsing glow ring + gentle scale breathing using Tailwind + a tiny keyframe added in `src/index.css` (`@keyframes powerup-glow`). Disabled (owned=0) buttons do NOT glow.
-- A small floating "💡 Try a power-up?" caption fades in above the bar via Framer Motion `AnimatePresence`, auto-hides on next interaction.
-- No business-logic changes (scoring, lives, timers untouched).
+## Scope (out)
 
-### 2. Loading screen
-- Generate `src/assets/lightup-loading.jpg` (premium quality) — vibrant candy-crush biblical illustration: glowing oil lamp, scrolls, doves, golden coins, soft purple/blue/pink gradient sky with castle silhouette, in the visual energy of the Magic Sort reference. No copyrighted characters.
-- Create `src/components/LoadingScreen.jsx` — full-screen component: background image, animated "LightUP" wordmark (gradient + drop-shadow already used elsewhere), bouncing dots "Loading…", subtle floating sparkles using Framer Motion. Uses existing brand tokens (candyYellow / candyPink / candyPurple).
-- Wire it into `src/App.jsx`:
-  - Replace `RouteFallback` body with `<LoadingScreen />`.
-  - Replace the `ProtectedRoute` "Loading..." text with `<LoadingScreen />`.
-- Keep it lightweight: the component is small; the image is the only heavy asset and is lazy via `<img loading="eager">` only inside the loader.
+- Memory Challenge, Free Fall, Multiplayer, Weekly, Competition, Admin, Auth, LoadingScreen (already themed).
+- Any scoring, lives, power-up logic, DB schema, routing, or API changes.
+- New assets/images (all effects done in CSS + Framer Motion already installed).
 
-### 3. Free Fall background
-- Generate `src/assets/freefall-bg.jpg` (premium) — biblical-board-game backdrop: warm muted parchment/green play surface, scrolls and olive-branch foliage at the corners, subtle taped paper notes & gift icons in top corners (echoing the Monopoly reference layout without copying it), soft vignette so falling items remain readable, no logos/text.
-- In `src/pages/PopGamePage.jsx` line 466–468, swap the inline gradient style for:
-  ```jsx
-  style={{ backgroundImage: `url(${freefallBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-  ```
-  and import the asset at the top of the file.
-- Keep all gameplay overlays, HUD, timer, items, modals, and the existing dark loading fallback at line 457 unchanged.
+## Design language
 
-## Out of Scope
-- No changes to scoring, lives, power-up effects, leaderboards, multiplayer, weekly, scripture-match memory, admin, or DB.
-- No new power-ups added; only owned ones glow.
-- No change to login/landing visuals beyond the loading state.
+- **Depth:** layered inner-highlight + outer drop-shadow (`inset 0 2px 0 rgba(255,255,255,.6), 0 6px 0 rgba(0,0,0,.25), 0 12px 20px -6px rgba(0,0,0,.35)`).
+- **Gloss:** top-half radial white 12–20% overlay on every orb/button.
+- **Press:** `active:translate-y-[3px]` + shadow collapse, 120ms ease.
+- **Motion:** idle bob (2–3px, 3s), sheen sweep on hover, pop-in on mount via existing `popIn` keyframe.
+- **Palette:** keep current candy tokens (`candyBlue/Purple/Yellow/Pink/Green`) — no new colors, works with all seasonal themes.
+- **A11y:** all effects respect existing `prefers-reduced-motion` block; focus-visible ring preserved.
 
-## Verification
-- Open a main-game level; wait 5s without tapping → power-up buttons gently glow, caption fades in; tap any option or another button → glow stops; advance question → reset cleanly.
-- Refresh the app and navigate between lazy routes (`/pop-game`, `/scripture-match`, `/admin/dashboard`) → branded loading screen appears instead of bare spinner.
-- Open Free Fall → new themed background renders, items still legible, no layout shift, dark loading fallback still shows briefly while user loads.
+## File-by-file changes
+
+**`src/index.css`** — add reusable primitives:
+- `.btn-orb-{color}` (blue/purple/yellow/pink/green) with layered shadows + gloss pseudo-element.
+- `.card-3d` (raised panel with inner highlight + soft outer shadow).
+- `.chip-3d` (small pill for level/score/heart badges).
+- `.coin-3d` (circular star/coin with rim highlight).
+- Keyframes: `bob`, `sheen`, `pressDown`, plus utility `.tilt-hover` (rotateX/Y on hover via transform-style: preserve-3d).
+
+**`tailwind.config.js`** — register `bob`, `sheen` animations. Extend `boxShadow` with `orb`, `orb-pressed`, `card-3d` tokens so components stay declarative.
+
+**`src/components/GameScreen.jsx`** — swap top HUD `<span>`s for `chip-3d` / `coin-3d`; wrap power-up buttons in `.btn-orb-*` classes; keep existing handlers, idle-hint, disabled logic untouched. No JS logic touched beyond className strings.
+
+**`src/pages/MapAndGame.jsx`** — replace flat level node markup with `.btn-orb` + inner star badge; give phase title banners `.card-3d` treatment with a small ribbon; leave scroll, refs, and unlock logic untouched.
+
+**`src/components/MapBackground.jsx`** — deepen gradient stops, add a second parallax hill layer with beveled highlight, keep existing SVG paths.
+
+**`src/modes/TriviaMode.jsx` / `WordFillMode.jsx` / `FourPicsMode.jsx`** — wrap question in `.card-3d`; convert option buttons to `.btn-orb-*` with `.press-3d`; add `motion.div` `whileTap={{ scale: 0.96 }}` where a button already exists. Correct/incorrect state uses a green/red variant of the same orb class. Keep all answer-handling code identical.
+
+## Technical notes
+
+- All shadow/gloss values live in `index.css` as CSS custom properties so themes (`ThemeContext`) can override per season later without component edits.
+- No new npm packages. Framer Motion and Tailwind already present.
+- Every className swap keeps existing responsive breakpoints (`sm:`, `text-[9px]`, etc.) so mobile no-scroll behavior is preserved.
+- Verification: after edits, load `/` (map), click any unlocked level to enter `GameScreen`, run Playwright screenshot on mobile viewport (390×844) and desktop (1280×800) to confirm nothing overflows and tiles/buttons render with 3D depth.
+
+## Out-of-scope guardrails
+
+If while editing I find broken logic, I will NOT fix it in this task — I'll note it and stop. This PR is presentation only.
