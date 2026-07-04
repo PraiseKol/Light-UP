@@ -395,25 +395,26 @@ function GameScreenContent({
       
       {/* Top HUD */}
       <div className="flex-shrink-0 flex justify-between items-center px-3 py-2 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md shadow-md text-xs sm:text-sm relative z-10">
-        <span className="flex items-center gap-2">
-          <span className="text-base sm:text-lg">📜</span> 
-          <span className="font-bold">Level {level?.number}</span>
+        <span className="chip-3d text-xs sm:text-sm">
+          <span className="text-base sm:text-lg">📜</span>
+          <span>Level {level?.number}</span>
         </span>
-        <span className="flex items-center gap-2 sm:gap-4">
-          <span className="flex items-center gap-1">
-            ⭐ <span className="font-bold">{userScore}</span>
+        <span className="flex items-center gap-2 sm:gap-3">
+          <span className="chip-3d chip-3d-star text-xs sm:text-sm">
+            ⭐ <span>{userScore}</span>
           </span>
           <span
-            className={`flex items-center gap-1 font-bold ${
+            className={`chip-3d chip-3d-heart text-xs sm:text-sm ${
               isHolyShieldActive
-                ? "animate-pulse text-yellow-500 drop-shadow-[0_0_6px_rgba(255,223,0,0.8)]"
+                ? "animate-pulse ring-2 ring-yellow-400 shadow-[0_0_10px_rgba(255,223,0,0.8)]"
                 : ""
             }`}
           >
-            ❤️ {gameUser?.lives ?? "?"}
+            ❤️ <span>{gameUser?.lives ?? "?"}</span>
           </span>
         </span>
       </div>
+
 
       {/* Game content - fills remaining space */}
       <div className="flex-1 overflow-hidden p-2 relative z-10">
