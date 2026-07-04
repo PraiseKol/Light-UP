@@ -172,14 +172,14 @@ export default function WordFillMode({
   return (
     <div className="h-full flex justify-center items-center p-2 sm:p-4">
       <div className="w-full max-w-xl">
-        <Card className="bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(255,255,255,0.2),0_0_80px_rgba(236,72,153,0.15)] border-2 border-pink-300/50 rounded-2xl p-3 sm:p-4">
+        <div className="card-3d p-3 sm:p-4">
           <div className="space-y-2 mb-3">
             <div className="flex justify-between items-center">
-              <div className="text-[10px] sm:text-xs text-gray-600 font-medium">
+              <div className="text-[10px] sm:text-xs text-gray-600 font-bold">
                 Phase {level?.phaseNumber} • Level {level?.number} • Word Fill
               </div>
-              <div className="text-xs sm:text-sm text-gray-500 font-semibold">
-                {timeLeft}s
+              <div className="chip-3d chip-3d-star text-xs sm:text-sm">
+                ⏱️ {timeLeft}s
               </div>
             </div>
             <ProgressBar value={timeLeft} max={30} />
@@ -219,12 +219,12 @@ export default function WordFillMode({
                   ? "Out of lives. Please wait..."
                   : "Type your answer..."
               }
-              className={`mb-3 text-sm sm:text-base ${
+              className={`mb-3 text-sm sm:text-base rounded-2xl border-2 shadow-inner ${
                 status === "wrong"
                   ? "border-red-500"
                   : status === "correct"
                   ? "border-green-500"
-                  : ""
+                  : "border-purple-200"
               }`}
             />
 
@@ -234,17 +234,16 @@ export default function WordFillMode({
                 checkAnswer();
               }}
               disabled={hasAnsweredCorrectly.current || disableIfNoLives}
-              className={`w-full py-2 sm:py-3 rounded-full font-bold text-sm sm:text-base transition-all ${
-                disableIfNoLives
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d]"
+              className={`btn-orb w-full py-2.5 sm:py-3 font-black text-sm sm:text-base ${
+                disableIfNoLives ? "btn-orb-white" : "btn-orb-pink"
               }`}
             >
               {disableIfNoLives ? "⏰ No Lives Left" : "✅ Submit Answer"}
             </button>
           </CardContent>
-        </Card>
+        </div>
       </div>
+
 
   <RightAnswerModal
     isOpen={showRightModal}
