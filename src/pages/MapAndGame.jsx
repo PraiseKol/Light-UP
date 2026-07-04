@@ -846,12 +846,13 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 >
                   {/* Phase Title Banner */}
                   <div className="sticky top-20 z-10 mb-8">
-                    <div className="bg-gradient-to-r from-[#FFD93D] via-[#FFC107] to-[#FFD93D] py-3 px-6 rounded-full shadow-[0_4px_20px_rgba(255,193,7,0.6)] border-4 border-white/50 text-center">
-                      <h2 className="text-white font-black text-xl lg:text-2xl drop-shadow-lg">
+                    <div className="phase-ribbon-3d py-3 px-6 text-center">
+                      <h2 className="text-white font-black text-xl lg:text-2xl drop-shadow-[0_2px_2px_rgba(120,53,15,0.8)]">
                         📜 {phase.title}
                       </h2>
                     </div>
                   </div>
+
 
                   {/* Map Container */}
                   <div className="relative w-full" style={{ minHeight: `${containerHeight}px` }}>
