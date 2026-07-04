@@ -276,14 +276,14 @@ export default function FourPicsMode({
 
   return (
     <div className="h-full p-3 sm:p-4 overflow-auto">
-      <div className="bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(255,255,255,0.2),0_0_80px_rgba(236,72,153,0.15)] border-2 border-pink-300/50 rounded-2xl p-3 sm:p-4">
+      <div className="card-3d p-3 sm:p-4">
       <div className="space-y-2 mb-3">
         <div className="flex justify-between items-center">
-          <div className="text-[10px] sm:text-xs text-gray-500">
+          <div className="text-[10px] sm:text-xs text-gray-600 font-bold">
             Phase {level?.phaseNumber} • Level {level?.number} • Four Pics One Word
           </div>
-          <span className="text-xs sm:text-sm text-gray-600 font-semibold">
-            {timeLeft}s
+          <span className="chip-3d chip-3d-star text-xs sm:text-sm">
+            ⏱️ {timeLeft}s
           </span>
         </div>
         <ProgressBar value={timeLeft} max={INITIAL_TIME} />
@@ -295,14 +295,14 @@ export default function FourPicsMode({
             key={idx}
             src={src}
             alt={`Hint ${idx + 1}`}
-            className="w-full h-24 sm:h-32 object-contain rounded-lg border border-gray-200 shadow-sm"
+            className="w-full h-24 sm:h-32 object-contain rounded-xl border-2 border-white shadow-[0_4px_10px_rgba(0,0,0,0.15)] bg-white"
           />
         ))}
       </div>
 
-      <div className="flex justify-center gap-1 sm:gap-2 mb-3 text-base sm:text-xl font-semibold tracking-wide">
+      <div className="flex justify-center gap-1 sm:gap-2 mb-3 text-base sm:text-xl font-black tracking-wide">
         {input.map((ch, i) => (
-          <div key={i} className="w-8 h-8 sm:w-10 sm:h-10 border-b-4 border-gold text-center flex items-center justify-center">
+          <div key={i} className="w-8 h-8 sm:w-10 sm:h-10 border-b-4 border-amber-500 text-center flex items-center justify-center bg-white/60 rounded-t-md shadow-inner text-amber-900">
             {ch || ""}
           </div>
         ))}
@@ -317,10 +317,8 @@ export default function FourPicsMode({
               handleLetterClick(ltr, idx);
             }}
             disabled={usedIndexes.includes(idx) || hasAnswered.current}
-            className={`w-full aspect-square text-sm sm:text-lg font-bold rounded-lg transition shadow ${
-              usedIndexes.includes(idx)
-                ? "bg-gray-300 text-gray-500"
-                : "bg-gold text-black hover:bg-yellow-400"
+            className={`btn-orb w-full aspect-square text-sm sm:text-lg font-black !rounded-xl ${
+              usedIndexes.includes(idx) ? "btn-orb-white" : "btn-orb-yellow"
             }`}
           >
             {ltr}
@@ -329,29 +327,30 @@ export default function FourPicsMode({
       </div>
 
       <div className="flex justify-center gap-2 sm:gap-3">
-        <Button
+        <button
           onClick={() => {
             playSound("back", effectsOn);
             handleBackspace();
           }}
           disabled={input.every((slot) => slot === "") || hasAnswered.current}
-          className="bg-gradient-to-b from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-black font-bold rounded-full shadow-[0_4px_0_#6b7280] active:translate-y-1 active:shadow-[0_2px_0_#6b7280] px-4 py-2 text-sm sm:text-base"
+          className="btn-orb btn-orb-white font-black px-5 py-2 text-sm sm:text-base"
         >
           ⌫
-        </Button>
-        <Button
+        </button>
+        <button
           onClick={() => {
             playSound("submitAnswer", effectsOn);
             checkAnswer();
           }}
           disabled={hasAnswered.current || input.includes("")}
-          className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white font-bold rounded-full shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d] px-4 py-2 text-sm sm:text-base"
+          className="btn-orb btn-orb-pink font-black px-6 py-2 text-sm sm:text-base"
         >
           ✅ Submit
-        </Button>
+        </button>
       </div>
 
       </div>
+
       
       <RightAnswerModal
         isOpen={showRightModal}

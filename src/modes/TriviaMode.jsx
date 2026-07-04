@@ -179,19 +179,17 @@ export default function TriviaMode({
   return (
     <div className="h-full flex justify-center items-center p-2 sm:p-4">
       <div className="w-full max-w-xl">
-        <Card className="bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(255,255,255,0.2),0_0_80px_rgba(236,72,153,0.15)] border-2 border-pink-300/50 rounded-2xl p-3 sm:p-4">
+        <div className="card-3d p-3 sm:p-4">
           <div className="space-y-2 mb-3">
             <div className="flex justify-between items-center">
               <div className="text-[10px] sm:text-xs text-pink-700 font-bold">
                 Phase {level?.phaseNumber} • Level {level?.number} • Trivia
               </div>
-              <div className="text-xs sm:text-sm text-orange-600 font-black bg-yellow-100 px-2 py-0.5 rounded-full">
-                {timeLeft}s
+              <div className="chip-3d chip-3d-star text-xs sm:text-sm">
+                ⏱️ {timeLeft}s
               </div>
             </div>
-            
             <ProgressBar value={timeLeft} max={30} />
-          
           </div>
 
           <CardHeader className="text-sm sm:text-lg font-bold mb-3 leading-snug p-0">
@@ -212,31 +210,30 @@ export default function TriviaMode({
                       if (!hasAnswered.current) setSelected(opt);
                       playSound("optionSelect", effectsOn);
                     }}
-                    className={`w-full px-3 py-2 sm:py-3 rounded-xl text-left text-xs sm:text-sm font-semibold border-2 transition-all shadow-md ${
-                      isSelected
-                        ? "border-pink-500 bg-gradient-to-r from-pink-100 to-yellow-100 scale-105 shadow-pink-300"
-                        : "border-gray-300 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:border-blue-300"
+                    className={`btn-orb w-full px-3 py-2 sm:py-3 !rounded-2xl text-left text-xs sm:text-sm font-bold justify-start ${
+                      isSelected ? "btn-orb-pink" : "btn-orb-white"
                     }`}
                   >
-                    {opt}
+                    <span className="w-full">{opt}</span>
                   </button>
                 );
               })}
             </div>
 
-            <Button
+            <button
               onClick={() => {
                 playSound("submitAnswer", effectsOn);
                 checkAnswer();
               }}
               disabled={!selected || hasAnswered.current}
-              className="w-full bg-gradient-to-r from-green-400 to-emerald-500 text-white font-black text-sm sm:text-base py-2 sm:py-3 rounded-xl shadow-[0_4px_0_#059669] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#059669] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-orb btn-orb-green w-full font-black text-sm sm:text-base py-2.5 sm:py-3 !rounded-2xl"
             >
               ✅ Submit Answer
-            </Button>
+            </button>
           </CardContent>
-        </Card>
+        </div>
       </div>
+
 
       <RightAnswerModal
         isOpen={showRightModal}

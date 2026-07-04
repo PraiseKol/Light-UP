@@ -395,25 +395,26 @@ function GameScreenContent({
       
       {/* Top HUD */}
       <div className="flex-shrink-0 flex justify-between items-center px-3 py-2 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md shadow-md text-xs sm:text-sm relative z-10">
-        <span className="flex items-center gap-2">
-          <span className="text-base sm:text-lg">📜</span> 
-          <span className="font-bold">Level {level?.number}</span>
+        <span className="chip-3d text-xs sm:text-sm">
+          <span className="text-base sm:text-lg">📜</span>
+          <span>Level {level?.number}</span>
         </span>
-        <span className="flex items-center gap-2 sm:gap-4">
-          <span className="flex items-center gap-1">
-            ⭐ <span className="font-bold">{userScore}</span>
+        <span className="flex items-center gap-2 sm:gap-3">
+          <span className="chip-3d chip-3d-star text-xs sm:text-sm">
+            ⭐ <span>{userScore}</span>
           </span>
           <span
-            className={`flex items-center gap-1 font-bold ${
+            className={`chip-3d chip-3d-heart text-xs sm:text-sm ${
               isHolyShieldActive
-                ? "animate-pulse text-yellow-500 drop-shadow-[0_0_6px_rgba(255,223,0,0.8)]"
+                ? "animate-pulse ring-2 ring-yellow-400 shadow-[0_0_10px_rgba(255,223,0,0.8)]"
                 : ""
             }`}
           >
-            ❤️ {gameUser?.lives ?? "?"}
+            ❤️ <span>{gameUser?.lives ?? "?"}</span>
           </span>
         </span>
       </div>
+
 
       {/* Game content - fills remaining space */}
       <div className="flex-1 overflow-hidden p-2 relative z-10">
@@ -480,7 +481,7 @@ function GameScreenContent({
           <button
             onClick={handleDivineHint}
             disabled={!gameUser.powerups_inventory.divine_hint}
-            className={`flex flex-col items-center font-semibold w-[22%] px-1 py-1 rounded-full bg-gradient-to-b from-blue-300 to-blue-400 hover:scale-105 shadow-[0_3px_0_#1e40af] active:translate-y-1 active:shadow-[0_1px_0_#1e40af] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.divine_hint ? "animate-powerup-glow" : ""}`}
+            className={`btn-orb btn-orb-blue flex flex-col items-center font-semibold w-[22%] px-1 py-1.5 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.divine_hint ? "animate-powerup-glow" : ""}`}
           >
             <span className="text-sm sm:text-base">🧩</span>
             <span className="hidden sm:inline">Hint</span>
@@ -489,7 +490,7 @@ function GameScreenContent({
           <button
             onClick={handleGracePeriod}
             disabled={!gameUser.powerups_inventory.grace_period}
-            className={`flex flex-col items-center font-semibold w-[23%] px-1 py-1 rounded-full bg-gradient-to-b from-purple-300 to-purple-400 hover:scale-105 shadow-[0_3px_0_#7c3aed] active:translate-y-1 active:shadow-[0_1px_0_#7c3aed] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.grace_period ? "animate-powerup-glow" : ""}`}
+            className={`btn-orb btn-orb-purple flex flex-col items-center font-semibold w-[23%] px-1 py-1.5 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.grace_period ? "animate-powerup-glow" : ""}`}
           >
             <span className="text-sm sm:text-base">⏳</span>
             <span className="hidden sm:inline">Grace</span>
@@ -506,7 +507,7 @@ function GameScreenContent({
           <button
             onClick={handleHeavenlyMatch}
             disabled={!gameUser.powerups_inventory.heavenly_match}
-            className={`flex flex-col items-center font-semibold w-[22%] px-1 py-1 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 hover:scale-105 shadow-[0_3px_0_#ca8a04] active:translate-y-1 active:shadow-[0_1px_0_#ca8a04] disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 transition-all text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.heavenly_match ? "animate-powerup-glow" : ""}`}
+            className={`btn-orb btn-orb-yellow flex flex-col items-center font-semibold w-[22%] px-1 py-1.5 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.heavenly_match ? "animate-powerup-glow" : ""}`}
           >
             <span className="text-sm sm:text-base">👑</span>
             <span className="hidden sm:inline">Match</span>
@@ -514,6 +515,7 @@ function GameScreenContent({
           </button>
         </div>
       )}
+
     </div>
   );
 }

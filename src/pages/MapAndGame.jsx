@@ -846,12 +846,13 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 >
                   {/* Phase Title Banner */}
                   <div className="sticky top-20 z-10 mb-8">
-                    <div className="bg-gradient-to-r from-[#FFD93D] via-[#FFC107] to-[#FFD93D] py-3 px-6 rounded-full shadow-[0_4px_20px_rgba(255,193,7,0.6)] border-4 border-white/50 text-center">
-                      <h2 className="text-white font-black text-xl lg:text-2xl drop-shadow-lg">
+                    <div className="phase-ribbon-3d py-3 px-6 text-center">
+                      <h2 className="text-white font-black text-xl lg:text-2xl drop-shadow-[0_2px_2px_rgba(120,53,15,0.8)]">
                         📜 {phase.title}
                       </h2>
                     </div>
                   </div>
+
 
                   {/* Map Container */}
                   <div className="relative w-full" style={{ minHeight: `${containerHeight}px` }}>
@@ -943,42 +944,33 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                             }}
                             disabled={!isLevelUnlocked}
                             className={`
-                              relative rounded-full 
+                              level-node-3d
                               w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20
-                              border-2 sm:border-3 lg:border-4 
-                              shadow-2xl transition-all duration-200
-                              ${isLevelUnlocked 
-                                ? 'bg-[#2563eb] border-[#fbbf24] hover:scale-110 cursor-pointer' 
-                                : 'bg-gray-600 border-gray-700 cursor-not-allowed opacity-80'
-                              }
-                              ${isCurrentLevel ? 'ring-2 sm:ring-3 lg:ring-4 ring-yellow-300 animate-pulse shadow-[0_0_40px_rgba(251,191,36,0.9)]' : ''}
+                              flex items-center justify-center
+                              ${!isLevelUnlocked ? 'is-locked' : ''}
+                              ${isCompleted ? 'is-completed' : ''}
+                              ${isCurrentLevel ? 'is-current ring-4 ring-yellow-300/80' : ''}
                               ${shakingLevel === level.id ? 'animate-wiggle' : ''}
                             `}
-                            style={{
-                              boxShadow: isCurrentLevel 
-                                ? '0 0 40px rgba(251, 191, 36, 0.9), 0 10px 30px rgba(0, 0, 0, 0.5)' 
-                                : '0 10px 30px rgba(0, 0, 0, 0.4)',
-                            }}
                           >
                             {isLevelUnlocked ? (
                               <div className="relative flex items-center justify-center">
-                                {/* Light Bulb Icon */}
-                                <svg 
-                                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-yellow-300" 
-                                  viewBox="0 0 24 24" 
+                                <svg
+                                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-yellow-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]"
+                                  viewBox="0 0 24 24"
                                   fill="currentColor"
                                 >
                                   <path d="M12 2C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2 14h-4v-1h4v1zm0-2h-4v-1h4v1zm.85-3.5c-.26.21-.35.28-.85.5v1.5h-4v-1.5c-.5-.22-.59-.29-.85-.5C8.47 10.72 8 9.89 8 9c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .89-.47 1.72-1.15 2.5z"/>
                                 </svg>
-                                {/* Level Number inside bulb */}
-                                <span className="absolute text-[10px] sm:text-xs lg:text-sm font-black text-amber-900 drop-shadow-sm">
+                                <span className="absolute text-[10px] sm:text-xs lg:text-sm font-black text-amber-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
                                   {level.number}
                                 </span>
                               </div>
                             ) : (
-                              <Lock className="text-gray-400 w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 mx-auto" />
+                              <Lock className="text-gray-300 w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)]" />
                             )}
                           </button>
+
 
                           {/* Stars Display for Completed Levels */}
                           {isCompleted && (
