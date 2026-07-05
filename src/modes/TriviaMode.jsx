@@ -177,18 +177,62 @@ export default function TriviaMode({
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
   return (
-    <div className="h-full flex justify-center items-center p-2 sm:p-4">
-      <div className="w-full max-w-xl">
-        <div className="card-3d p-3 sm:p-4">
-          <div className="space-y-2 mb-3">
+    <div className="h-full flex flex-col justify-center items-center p-1.5 sm:p-3 overflow-hidden">
+      <div className="w-full max-w-md">
+        <div className="card-3d p-2.5 sm:p-4">
+          <div className="space-y-1.5 mb-2">
             <div className="flex justify-between items-center">
-              <div className="text-[10px] sm:text-xs text-pink-700 font-bold">
-                Phase {level?.phaseNumber} • Level {level?.number} • Trivia
+              <div className="text-[10px] sm:text-xs text-pink-700 font-bold truncate">
+                P{level?.phaseNumber} • L{level?.number} • Trivia
               </div>
-              <div className="chip-3d chip-3d-star text-xs sm:text-sm">
+              <div className="chip-3d chip-3d-star text-[10px] sm:text-sm !py-0.5 !px-2">
                 ⏱️ {timeLeft}s
               </div>
             </div>
+            <ProgressBar value={timeLeft} max={30} />
+          </div>
+
+          <CardHeader className="text-xs sm:text-base font-bold mb-2 leading-snug p-0 max-h-[22vh] overflow-auto">
+            {question}
+          </CardHeader>
+
+          <CardContent className="p-0">
+            <div className="space-y-1.5 mb-2">
+              {displayOptions.map((opt, i) => {
+                const isSelected = selected === opt;
+                const isDisabled = hasAnswered.current;
+
+                return (
+                  <button
+                    key={i}
+                    disabled={isDisabled}
+                    onClick={() => {
+                      if (!hasAnswered.current) setSelected(opt);
+                      playSound("optionSelect", effectsOn);
+                    }}
+                    className={`btn-orb w-full px-3 py-1.5 sm:py-2.5 !rounded-2xl text-left text-[12px] sm:text-sm font-bold justify-start ${
+                      isSelected ? "btn-orb-pink" : "btn-orb-white"
+                    }`}
+                  >
+                    <span className="w-full">{opt}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => {
+                playSound("submitAnswer", effectsOn);
+                checkAnswer();
+              }}
+              disabled={!selected || hasAnswered.current}
+              className="btn-orb btn-orb-green w-full font-black text-sm sm:text-base py-2 sm:py-3 !rounded-2xl"
+            >
+              ✅ Submit Answer
+            </button>
+          </CardContent>
+        </div>
+      </div>
             <ProgressBar value={timeLeft} max={30} />
           </div>
 
