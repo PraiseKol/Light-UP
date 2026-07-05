@@ -233,50 +233,6 @@ export default function TriviaMode({
           </CardContent>
         </div>
       </div>
-            <ProgressBar value={timeLeft} max={30} />
-          </div>
-
-          <CardHeader className="text-sm sm:text-lg font-bold mb-3 leading-snug p-0">
-            {question}
-          </CardHeader>
-
-          <CardContent className="p-0">
-            <div className="space-y-2 mb-4">
-              {displayOptions.map((opt, i) => {
-                const isSelected = selected === opt;
-                const isDisabled = hasAnswered.current;
-
-                return (
-                  <button
-                    key={i}
-                    disabled={isDisabled}
-                    onClick={() => {
-                      if (!hasAnswered.current) setSelected(opt);
-                      playSound("optionSelect", effectsOn);
-                    }}
-                    className={`btn-orb w-full px-3 py-2 sm:py-3 !rounded-2xl text-left text-xs sm:text-sm font-bold justify-start ${
-                      isSelected ? "btn-orb-pink" : "btn-orb-white"
-                    }`}
-                  >
-                    <span className="w-full">{opt}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={() => {
-                playSound("submitAnswer", effectsOn);
-                checkAnswer();
-              }}
-              disabled={!selected || hasAnswered.current}
-              className="btn-orb btn-orb-green w-full font-black text-sm sm:text-base py-2.5 sm:py-3 !rounded-2xl"
-            >
-              ✅ Submit Answer
-            </button>
-          </CardContent>
-        </div>
-      </div>
 
 
       <RightAnswerModal
