@@ -979,8 +979,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                             }}
                             disabled={!isLevelUnlocked}
                             className={`
-                              level-node-3d
-                              w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20
+                              level-node-3d sm
+                              w-11 h-11 sm:w-14 sm:h-14 lg:w-16 lg:h-16
                               flex items-center justify-center
                               ${!isLevelUnlocked ? 'is-locked' : ''}
                               ${isCompleted ? 'is-completed' : ''}
@@ -991,29 +991,29 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                             {isLevelUnlocked ? (
                               <div className="relative flex items-center justify-center">
                                 <svg
-                                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-yellow-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]"
+                                  className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-yellow-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]"
                                   viewBox="0 0 24 24"
                                   fill="currentColor"
                                 >
                                   <path d="M12 2C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2 14h-4v-1h4v1zm0-2h-4v-1h4v1zm.85-3.5c-.26.21-.35.28-.85.5v1.5h-4v-1.5c-.5-.22-.59-.29-.85-.5C8.47 10.72 8 9.89 8 9c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .89-.47 1.72-1.15 2.5z"/>
                                 </svg>
-                                <span className="absolute text-[10px] sm:text-xs lg:text-sm font-black text-amber-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
+                                <span className="absolute text-[9px] sm:text-[11px] lg:text-xs font-black text-amber-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
                                   {level.number}
                                 </span>
                               </div>
                             ) : (
-                              <Lock className="text-gray-300 w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)]" />
+                              <Lock className="text-gray-300 w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)]" />
                             )}
                           </button>
 
 
                           {/* Stars Display for Completed Levels */}
                           {isCompleted && (
-                            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-1">
+                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex gap-0.5">
                               {[...Array(3)].map((_, starIdx) => (
                                 <Star
                                   key={starIdx}
-                                  className={`w-5 h-5 ${
+                                  className={`w-3.5 h-3.5 ${
                                     starIdx < stars 
                                       ? 'text-yellow-400 fill-yellow-400' 
                                       : 'text-gray-500 fill-gray-500'
