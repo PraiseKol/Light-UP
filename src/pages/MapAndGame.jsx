@@ -836,18 +836,18 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
               const currentPhaseId = getCurrentLevelId(phase);
               const levelsPerPhase = phase.levels.length;
-              const containerHeight = (levelsPerPhase * 130) + 300;
+              const containerHeight = (levelsPerPhase * 92) + 180;
 
               return (
                 <div
                   key={originalIndex}
                   ref={(el) => (phaseRefs.current[originalIndex] = el)}
-                  className="relative mb-20"
+                  className="relative mb-10"
                 >
                   {/* Phase Title Banner */}
-                  <div className="sticky top-20 z-10 mb-8">
-                    <div className="phase-ribbon-3d py-3 px-6 text-center">
-                      <h2 className="text-white font-black text-xl lg:text-2xl drop-shadow-[0_2px_2px_rgba(120,53,15,0.8)]">
+                  <div className="sticky top-20 z-10 mb-5">
+                    <div className="phase-ribbon-3d py-2 px-4 text-center">
+                      <h2 className="text-white font-black text-base lg:text-xl drop-shadow-[0_2px_2px_rgba(120,53,15,0.8)]">
                         📜 {phase.title}
                       </h2>
                     </div>
@@ -856,7 +856,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
                   {/* Map Container */}
                   <div className="relative w-full" style={{ minHeight: `${containerHeight}px` }}>
-                    {/* Golden Path SVG - Using viewBox to allow percentage-based coordinates */}
+                    {/* Hilly 3D Path SVG - layered shadow + gold + rim highlight */}
                     <svg 
                       className="absolute inset-0 w-full h-full pointer-events-none" 
                       viewBox={`0 0 100 ${containerHeight}`}
@@ -870,6 +870,18 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                           <stop offset="100%" stopColor="#FFD93D" />
                         </linearGradient>
                       </defs>
+                      {/* Hill lumps behind path */}
+                      {wrappedLevels.map((level) => (
+                        <ellipse
+                          key={`hill-${level.id}`}
+                          cx={level.position.x}
+                          cy={level.position.y + 10}
+                          rx="18"
+                          ry="22"
+                          fill="#8b5a2b"
+                          opacity="0.15"
+                        />
+                      ))}
                       {wrappedLevels.map((level, idx) => {
                         if (idx === 0) return null;
                         const prevLevel = wrappedLevels[idx - 1];
@@ -878,17 +890,40 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                         const x2 = level.position.x;
                         const y2 = level.position.y;
                         const midY = (y1 + y2) / 2;
-                        
+                        const d = `M ${x1} ${y1} C ${x1} ${midY - 14}, ${x2} ${midY + 14}, ${x2} ${y2}`;
+
                         return (
-                          <path
-                            key={`path-${level.id}`}
-                            d={`M ${x1} ${y1} Q ${x1} ${midY}, ${x2} ${y2}`}
-                            fill="none"
-                            stroke={`url(#goldenPath-${originalIndex})`}
-                            strokeWidth="16"
-                            strokeLinecap="round"
-                            opacity="0.9"
-                          />
+                          <g key={`path-${level.id}`}>
+                            {/* Ground shadow */}
+                            <path
+                              d={d}
+                              fill="none"
+                              stroke="#5b3a1a"
+                              strokeWidth="18"
+                              strokeLinecap="round"
+                              opacity="0.45"
+                              transform="translate(0,4)"
+                            />
+                            {/* Base golden road */}
+                            <path
+                              d={d}
+                              fill="none"
+                              stroke={`url(#goldenPath-${originalIndex})`}
+                              strokeWidth="14"
+                              strokeLinecap="round"
+                              opacity="0.95"
+                            />
+                            {/* Top rim highlight */}
+                            <path
+                              d={d}
+                              fill="none"
+                              stroke="#FFF3B0"
+                              strokeWidth="4"
+                              strokeLinecap="round"
+                              opacity="0.85"
+                              transform="translate(0,-2)"
+                            />
+                          </g>
                         );
                       })}
                     </svg>
