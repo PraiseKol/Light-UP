@@ -1,55 +1,90 @@
 ## Goal
 
-Upgrade the visual layer of the main phase/level game so it feels like a polished 3D casual game (Candy Crush / Monopoly / Royal Match). Pure presentation — no gameplay, scoring, backend, or data changes. Mobile no-scroll rule and existing routes preserved.
+Two focused UI upgrades, no gameplay/logic changes:
 
-## Scope (in)
+1. **Game modes (WordFill, Trivia, FourPics, ScriptureMatch)** — everything visible in one screen on mobile: HUD, question, options, and power-up dock all fit within `100dvh` with no vertical scroll needed to reach the power-ups.
+2. **Main map** — shrink node/spacing on desktop + mobile so more levels are visible at once, and restyle the path + nodes to feel like a 3D Candy-Crush hill (up-and-over path with depth shading), not a flat bottom-to-top ribbon.
 
-1. **Map screen (`src/pages/MapAndGame.jsx` + `src/components/MapBackground.jsx`)** — richer 3D level nodes, glossy phase headers, deeper parallax, stronger path with beveled edges.
-2. **In-level HUD & shell (`src/components/GameScreen.jsx`)** — chunky 3D top bar (level chip, score coin, heart pill), 3D power-up dock with glossy orbs, refined idle-glow.
-3. **Question surfaces (`src/modes/TriviaMode.jsx`, `WordFillMode.jsx`, `FourPicsMode.jsx`)** — 3D question card, embossed option buttons with press-down shadow, subtle tilt on hover, celebratory correct/incorrect states.
-4. **Shared 3D primitive utilities in `src/index.css` + `tailwind.config.js`** — reusable classes: `.btn-orb`, `.card-3d`, `.chip-3d`, `.coin-3d`, `.press-3d`, plus keyframes for `bob`, `sheen`, `press`, `pop-in`.
+---
 
-## Scope (out)
+## Scope IN
 
-- Memory Challenge, Free Fall, Multiplayer, Weekly, Competition, Admin, Auth, LoadingScreen (already themed).
-- Any scoring, lives, power-up logic, DB schema, routing, or API changes.
-- New assets/images (all effects done in CSS + Framer Motion already installed).
+### A. Game mode fit-on-screen (no scroll)
 
-## Design language
+Root cause: `GameScreen.jsx` wraps modes in `<div class="h-full overflow-auto">`, and each mode wraps in `h-full flex items-center` / `overflow-auto`. On short mobile viewports the question card grows past the HUD's remaining space, pushing the power-up dock off-screen or forcing scroll before power-ups.
 
-- **Depth:** layered inner-highlight + outer drop-shadow (`inset 0 2px 0 rgba(255,255,255,.6), 0 6px 0 rgba(0,0,0,.25), 0 12px 20px -6px rgba(0,0,0,.35)`).
-- **Gloss:** top-half radial white 12–20% overlay on every orb/button.
-- **Press:** `active:translate-y-[3px]` + shadow collapse, 120ms ease.
-- **Motion:** idle bob (2–3px, 3s), sheen sweep on hover, pop-in on mount via existing `popIn` keyframe.
-- **Palette:** keep current candy tokens (`candyBlue/Purple/Yellow/Pink/Green`) — no new colors, works with all seasonal themes.
-- **A11y:** all effects respect existing `prefers-reduced-motion` block; focus-visible ring preserved.
+Changes:
+- **`GameScreen.jsx`**
+  - Replace inner `overflow-auto` with `overflow-hidden` and let the mode manage its own compact scroll only if truly needed (rare).
+  - Tighten HUD padding (`py-1.5`), reduce chip font-size on mobile.
+  - Tighten power-up dock: `p-1.5`, smaller orbs on mobile (`w-[20%]`, icon `text-sm`, remove label on very narrow screens), reduce top/bottom shadow bleed.
+  - Ensure power-up dock is `sticky`/`flex-shrink-0` (already) and that game content uses `min-h-0` so flex children shrink properly.
 
-## File-by-file changes
+- **`WordFillMode.jsx`, `TriviaMode.jsx`**
+  - Change wrapper to `h-full flex flex-col justify-center` with `overflow-hidden`.
+  - Card uses `w-full max-w-md` (was `xl`), tighter padding `p-2.5`, question `text-xs sm:text-base`, options `py-2` on mobile with `text-[13px]`, submit `py-2`.
+  - Reduce vertical rhythm: `space-y-1.5`, `mb-2`.
 
-**`src/index.css`** — add reusable primitives:
-- `.btn-orb-{color}` (blue/purple/yellow/pink/green) with layered shadows + gloss pseudo-element.
-- `.card-3d` (raised panel with inner highlight + soft outer shadow).
-- `.chip-3d` (small pill for level/score/heart badges).
-- `.coin-3d` (circular star/coin with rim highlight).
-- Keyframes: `bob`, `sheen`, `pressDown`, plus utility `.tilt-hover` (rotateX/Y on hover via transform-style: preserve-3d).
+- **`FourPicsMode.jsx`**
+  - Remove `overflow-auto`; use `h-full flex flex-col` with compact sections.
+  - Image grid uses `h-16 sm:h-24` (was `h-24 sm:h-32`), keeping 2x2.
+  - Letter slots `w-7 h-7 sm:w-9 sm:h-9` and letter orbs a bit smaller with `text-xs sm:text-base`.
+  - Combine Backspace + Submit row into the same flex block without extra margin.
 
-**`tailwind.config.js`** — register `bob`, `sheen` animations. Extend `boxShadow` with `orb`, `orb-pressed`, `card-3d` tokens so components stay declarative.
+- **`ScriptureMatchMode.jsx`**
+  - Convert card to `card-3d` (consistency with other modes) and use compact `p-2.5`, `text-[11px]` on refs/verses, `min-h-[34px]` cells.
+  - Ensure two-column grid stays visible without needing to scroll to Submit — Submit lives inside the flex column so it sits at the bottom.
 
-**`src/components/GameScreen.jsx`** — swap top HUD `<span>`s for `chip-3d` / `coin-3d`; wrap power-up buttons in `.btn-orb-*` classes; keep existing handlers, idle-hint, disabled logic untouched. No JS logic touched beyond className strings.
+- **Mobile layout guard**: verify with browser at 375×667 and 320×568 that HUD + question + options + power-up dock are all visible without scrolling. Content-heavy modes (long trivia questions) may still allow a small inner scroll on the question area only — never on the shell.
 
-**`src/pages/MapAndGame.jsx`** — replace flat level node markup with `.btn-orb` + inner star badge; give phase title banners `.card-3d` treatment with a small ribbon; leave scroll, refs, and unlock logic untouched.
+### B. Map: shrink + Candy-Crush 3D hilly path
 
-**`src/components/MapBackground.jsx`** — deepen gradient stops, add a second parallax hill layer with beveled highlight, keep existing SVG paths.
+- **`src/data/levelData.js`** — reduce spacing so more nodes fit per screen:
+  - `verticalSpacing` from `130` → `92`.
+  - Widen zigzag amplitude for a more visible hill: `xPositions = [78, 55, 22, 55]` remains, but sync with path shape below.
+- **`MapAndGame.jsx`** — level container:
+  - `containerHeight = (levelsPerPhase * 92) + 180` (was `* 130 + 300`).
+  - Level node sizes: `w-11 h-11 sm:w-14 sm:h-14 lg:w-16 lg:h-16` (down from 14/16/20).
+  - Icon/number size tightened accordingly. Stars shrink to `w-3.5 h-3.5`, avatar `text-3xl`.
+  - Phase ribbon: reduce vertical padding on mobile (`py-2 px-4`), title `text-base lg:text-xl`.
+- **Hilly 3D path** — replace flat gradient stroke with a layered "hill road":
+  - Under-shadow path: same bezier stroked with dark brown `#5b3a1a`, `strokeWidth=18`, offset y+4, opacity 0.5 (ground shadow).
+  - Base road: golden gradient stroke `strokeWidth=14`, rounded.
+  - Top highlight: lighter gold `#FFF3B0`, `strokeWidth=5`, offset y-2, opacity 0.9 (rim light).
+  - Curve type: use a smooth cubic `C` (S-curve) between nodes with two control points to create an over-hill arc: `M x1 y1 C x1 midY-14, x2 midY+14, x2 y2` — gives the up-and-over feel per segment.
+  - Add small procedural "hill lumps" behind the path per phase via existing MapBackground (no new assets): faint elliptical radial gradients at each node position in a low-opacity SVG layer (added inside the phase container, below path z-index).
+- **Level node depth (already 3D)**: keep `level-node-3d`, but tighten shadow to match smaller size (`0 4px 0` bevel instead of `0 6px 0`) via a size-scoped variant class `.level-node-3d.sm`.
+- **Mini-map**: shrink `w-14 sm:w-16` to keep proportion with new map density.
 
-**`src/modes/TriviaMode.jsx` / `WordFillMode.jsx` / `FourPicsMode.jsx`** — wrap question in `.card-3d`; convert option buttons to `.btn-orb-*` with `.press-3d`; add `motion.div` `whileTap={{ scale: 0.96 }}` where a button already exists. Correct/incorrect state uses a green/red variant of the same orb class. Keep all answer-handling code identical.
+### C. `index.css` additions
+- `.level-node-3d.sm` variant (smaller bevel shadows).
+- Optional `.hill-shadow` helper class for the SVG under-shadow if needed.
+- No new keyframes; reuse `nodeBob`.
 
-## Technical notes
+---
 
-- All shadow/gloss values live in `index.css` as CSS custom properties so themes (`ThemeContext`) can override per season later without component edits.
-- No new npm packages. Framer Motion and Tailwind already present.
-- Every className swap keeps existing responsive breakpoints (`sm:`, `text-[9px]`, etc.) so mobile no-scroll behavior is preserved.
-- Verification: after edits, load `/` (map), click any unlocked level to enter `GameScreen`, run Playwright screenshot on mobile viewport (390×844) and desktop (1280×800) to confirm nothing overflows and tiles/buttons render with 3D depth.
+## Scope OUT
 
-## Out-of-scope guardrails
+- No gameplay/scoring/lives/power-up logic changes.
+- No backend, RLS, data, or route changes.
+- No Memory / Free Fall / Weekly / Multiplayer / Admin changes.
+- No new image assets (hill effect achieved purely with SVG + CSS).
+- Explainer video, modals, header/footer nav untouched beyond incidental spacing consistent with node shrink.
 
-If while editing I find broken logic, I will NOT fix it in this task — I'll note it and stop. This PR is presentation only.
+---
+
+## Files to modify
+
+- `src/components/GameScreen.jsx`
+- `src/modes/WordFillMode.jsx`
+- `src/modes/TriviaMode.jsx`
+- `src/modes/FourPicsMode.jsx`
+- `src/modes/ScriptureMatchMode.jsx`
+- `src/pages/MapAndGame.jsx`
+- `src/data/levelData.js`
+- `src/index.css`
+
+## Verification
+
+- Playwright at 375×667 and 320×568: enter each of the 4 modes; screenshot confirms HUD + question + options + power-up dock all visible without scrolling.
+- Playwright at 1280×800 and 375×667 on map: screenshot confirms ≥5 level nodes visible per screen and path renders with hill shading (shadow + rim highlight layers).

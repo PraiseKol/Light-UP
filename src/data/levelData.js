@@ -23,8 +23,8 @@ function getCurvedPosition(index, total) {
   const x = xPositions[index % 4];
   
   // REVERSED: Level 1 at BOTTOM (highest y), Level 10 at TOP (lowest y)
-  // 130px vertical spacing between levels
-  const verticalSpacing = 130;
+  // Tighter spacing so more nodes are visible per screen
+  const verticalSpacing = 92;
   const y = verticalSpacing * (total - 1 - index);
 
   return { x, y };

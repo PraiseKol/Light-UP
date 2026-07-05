@@ -794,7 +794,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
       {/* Mini-Map Progress Indicator */}
       {!selectedLevel && (
-        <div className="fixed top-24 right-2 sm:right-4 z-40 bg-white/90 backdrop-blur rounded-xl shadow-xl p-2 sm:p-3 w-16 sm:w-20 border-2 border-blue-200">
+        <div className="fixed top-24 right-2 sm:right-4 z-40 bg-white/90 backdrop-blur rounded-xl shadow-xl p-1.5 sm:p-2 w-14 sm:w-16 border-2 border-blue-200">
           <div className="text-center text-[9px] sm:text-xs font-bold text-gray-700 mb-1">Progress</div>
           <div className="relative h-24 sm:h-32 bg-gray-200 rounded-full overflow-hidden">
             <div 
@@ -836,18 +836,18 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
               const currentPhaseId = getCurrentLevelId(phase);
               const levelsPerPhase = phase.levels.length;
-              const containerHeight = (levelsPerPhase * 130) + 300;
+              const containerHeight = (levelsPerPhase * 92) + 180;
 
               return (
                 <div
                   key={originalIndex}
                   ref={(el) => (phaseRefs.current[originalIndex] = el)}
-                  className="relative mb-20"
+                  className="relative mb-10"
                 >
                   {/* Phase Title Banner */}
-                  <div className="sticky top-20 z-10 mb-8">
-                    <div className="phase-ribbon-3d py-3 px-6 text-center">
-                      <h2 className="text-white font-black text-xl lg:text-2xl drop-shadow-[0_2px_2px_rgba(120,53,15,0.8)]">
+                  <div className="sticky top-20 z-10 mb-5">
+                    <div className="phase-ribbon-3d py-2 px-4 text-center">
+                      <h2 className="text-white font-black text-base lg:text-xl drop-shadow-[0_2px_2px_rgba(120,53,15,0.8)]">
                         📜 {phase.title}
                       </h2>
                     </div>
@@ -856,7 +856,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
                   {/* Map Container */}
                   <div className="relative w-full" style={{ minHeight: `${containerHeight}px` }}>
-                    {/* Golden Path SVG - Using viewBox to allow percentage-based coordinates */}
+                    {/* Hilly 3D Path SVG - layered shadow + gold + rim highlight */}
                     <svg 
                       className="absolute inset-0 w-full h-full pointer-events-none" 
                       viewBox={`0 0 100 ${containerHeight}`}
@@ -870,6 +870,18 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                           <stop offset="100%" stopColor="#FFD93D" />
                         </linearGradient>
                       </defs>
+                      {/* Hill lumps behind path */}
+                      {wrappedLevels.map((level) => (
+                        <ellipse
+                          key={`hill-${level.id}`}
+                          cx={level.position.x}
+                          cy={level.position.y + 10}
+                          rx="18"
+                          ry="22"
+                          fill="#8b5a2b"
+                          opacity="0.15"
+                        />
+                      ))}
                       {wrappedLevels.map((level, idx) => {
                         if (idx === 0) return null;
                         const prevLevel = wrappedLevels[idx - 1];
@@ -878,17 +890,40 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                         const x2 = level.position.x;
                         const y2 = level.position.y;
                         const midY = (y1 + y2) / 2;
-                        
+                        const d = `M ${x1} ${y1} C ${x1} ${midY - 14}, ${x2} ${midY + 14}, ${x2} ${y2}`;
+
                         return (
-                          <path
-                            key={`path-${level.id}`}
-                            d={`M ${x1} ${y1} Q ${x1} ${midY}, ${x2} ${y2}`}
-                            fill="none"
-                            stroke={`url(#goldenPath-${originalIndex})`}
-                            strokeWidth="16"
-                            strokeLinecap="round"
-                            opacity="0.9"
-                          />
+                          <g key={`path-${level.id}`}>
+                            {/* Ground shadow */}
+                            <path
+                              d={d}
+                              fill="none"
+                              stroke="#5b3a1a"
+                              strokeWidth="18"
+                              strokeLinecap="round"
+                              opacity="0.45"
+                              transform="translate(0,4)"
+                            />
+                            {/* Base golden road */}
+                            <path
+                              d={d}
+                              fill="none"
+                              stroke={`url(#goldenPath-${originalIndex})`}
+                              strokeWidth="14"
+                              strokeLinecap="round"
+                              opacity="0.95"
+                            />
+                            {/* Top rim highlight */}
+                            <path
+                              d={d}
+                              fill="none"
+                              stroke="#FFF3B0"
+                              strokeWidth="4"
+                              strokeLinecap="round"
+                              opacity="0.85"
+                              transform="translate(0,-2)"
+                            />
+                          </g>
                         );
                       })}
                     </svg>
@@ -916,11 +951,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                         >
                           {/* Avatar on Current Level */}
                           {isCurrentLevel && (
-                            <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-                              <div className="text-4xl animate-bounce drop-shadow-lg">
+                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
+                              <div className="text-3xl animate-bounce drop-shadow-lg">
                                 {getCurrentAvatar()}
                               </div>
-                              <span className="bg-yellow-400 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-lg">
+                              <span className="bg-yellow-400 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full shadow-lg">
                                 YOU
                               </span>
                             </div>
@@ -944,8 +979,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                             }}
                             disabled={!isLevelUnlocked}
                             className={`
-                              level-node-3d
-                              w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20
+                              level-node-3d sm
+                              w-11 h-11 sm:w-14 sm:h-14 lg:w-16 lg:h-16
                               flex items-center justify-center
                               ${!isLevelUnlocked ? 'is-locked' : ''}
                               ${isCompleted ? 'is-completed' : ''}
@@ -956,29 +991,29 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                             {isLevelUnlocked ? (
                               <div className="relative flex items-center justify-center">
                                 <svg
-                                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-yellow-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]"
+                                  className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-yellow-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]"
                                   viewBox="0 0 24 24"
                                   fill="currentColor"
                                 >
                                   <path d="M12 2C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2 14h-4v-1h4v1zm0-2h-4v-1h4v1zm.85-3.5c-.26.21-.35.28-.85.5v1.5h-4v-1.5c-.5-.22-.59-.29-.85-.5C8.47 10.72 8 9.89 8 9c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .89-.47 1.72-1.15 2.5z"/>
                                 </svg>
-                                <span className="absolute text-[10px] sm:text-xs lg:text-sm font-black text-amber-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
+                                <span className="absolute text-[9px] sm:text-[11px] lg:text-xs font-black text-amber-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
                                   {level.number}
                                 </span>
                               </div>
                             ) : (
-                              <Lock className="text-gray-300 w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)]" />
+                              <Lock className="text-gray-300 w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)]" />
                             )}
                           </button>
 
 
                           {/* Stars Display for Completed Levels */}
                           {isCompleted && (
-                            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-1">
+                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex gap-0.5">
                               {[...Array(3)].map((_, starIdx) => (
                                 <Star
                                   key={starIdx}
-                                  className={`w-5 h-5 ${
+                                  className={`w-3.5 h-3.5 ${
                                     starIdx < stars 
                                       ? 'text-yellow-400 fill-yellow-400' 
                                       : 'text-gray-500 fill-gray-500'

@@ -244,32 +244,32 @@ export default function ScriptureMatchMode({
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
   return (
-    <div className="h-full p-2 sm:p-4 overflow-auto">
-      <div className="w-full max-w-4xl mx-auto">
-        <div className="p-3 sm:p-4 rounded-2xl bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(255,255,255,0.2),0_0_80px_rgba(236,72,153,0.15)] border-2 border-pink-300/50 space-y-3">
-          <div className="space-y-2">
+    <div className="h-full p-1.5 sm:p-3 overflow-hidden flex flex-col">
+      <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col min-h-0">
+        <div className="card-3d p-2 sm:p-4 space-y-2 flex-1 flex flex-col min-h-0">
+          <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-              <div className="text-[10px] sm:text-xs text-gray-600 font-medium">
-                Phase {level?.phaseNumber} • Level {level?.number} • Scripture Match
+              <div className="text-[10px] sm:text-xs text-gray-600 font-medium truncate">
+                P{level?.phaseNumber} • L{level?.number} • Scripture Match
               </div>
-              <div className="text-xs sm:text-sm text-gray-500 font-semibold">
-                {timeLeft}s
+              <div className="chip-3d chip-3d-star text-[10px] sm:text-sm !py-0.5 !px-2">
+                ⏱️ {timeLeft}s
               </div>
             </div>
             <ProgressBar value={timeLeft} max={30} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 flex-1 min-h-0 overflow-auto">
             {/* References */}
             <div>
-              <h3 className="font-semibold mb-2 text-xs sm:text-sm">📖 References</h3>
+              <h3 className="font-semibold mb-1.5 text-[11px] sm:text-sm">📖 References</h3>
               {pairs.map(({ reference }) => (
                 <div
                   key={reference}
                   onClick={() => handleReferenceClick(reference)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => handleDrop(reference)}
-                  className={`border p-2 min-h-[40px] sm:min-h-[50px] mb-2 flex items-center justify-between cursor-pointer rounded text-xs sm:text-sm ${
+                  className={`border p-1.5 min-h-[34px] sm:min-h-[44px] mb-1.5 flex items-center justify-between cursor-pointer rounded text-[11px] sm:text-sm ${
                     selectedReference === reference
                       ? "bg-blue-100"
                       : "bg-gray-50"
@@ -277,8 +277,8 @@ export default function ScriptureMatchMode({
                 >
                   <span className="font-medium">{reference}</span>
                   {matches[reference] && (
-                    <span className="ml-2 text-[10px] sm:text-xs text-blue-700 flex items-center gap-1">
-                      {matches[reference].substring(0, 20)}...
+                    <span className="ml-1 text-[10px] sm:text-xs text-blue-700 flex items-center gap-1">
+                      {matches[reference].substring(0, 14)}...
                       {!hintedRefs.has(reference) && (
                         <button
                           onClick={(e) => {
@@ -298,14 +298,14 @@ export default function ScriptureMatchMode({
 
             {/* Verses */}
             <div>
-              <h3 className="font-semibold mb-2 text-xs sm:text-sm">📜 Verses</h3>
+              <h3 className="font-semibold mb-1.5 text-[11px] sm:text-sm">📜 Verses</h3>
               {shuffledVerses.map(({ verse }) => (
                 <div
                   key={verse}
                   draggable={!isMatched(verse)}
                   onDragStart={() => setDraggedVerse({ verse })}
                   onClick={() => handleVerseClick(verse)}
-                  className={`cursor-pointer border p-2 rounded-lg mb-2 transition text-xs sm:text-sm ${
+                  className={`cursor-pointer border p-1.5 rounded-lg mb-1.5 transition text-[11px] sm:text-sm ${
                     isMatched(verse)
                       ? "bg-green-200 text-gray-700"
                       : selectedVerse === verse
@@ -320,7 +320,7 @@ export default function ScriptureMatchMode({
           </div>
 
           {/* Submit */}
-          <div className="flex justify-center mt-4">
+          <div className="flex justify-center pt-1">
             <Button
               disabled={
                 hasAnswered.current ||
@@ -330,7 +330,7 @@ export default function ScriptureMatchMode({
                 playSound("submitAnswer", effectsOn);
                 checkAnswer();
               }}
-              className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white font-bold rounded-full shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d] px-6 py-2 text-sm sm:text-base"
+              className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white font-bold rounded-full shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d] px-5 py-1.5 sm:py-2 text-sm sm:text-base"
             >
               ✅ Submit
             </Button>

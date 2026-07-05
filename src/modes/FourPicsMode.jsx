@@ -275,40 +275,40 @@ export default function FourPicsMode({
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
   return (
-    <div className="h-full p-3 sm:p-4 overflow-auto">
-      <div className="card-3d p-3 sm:p-4">
-      <div className="space-y-2 mb-3">
+    <div className="h-full p-1.5 sm:p-3 overflow-hidden flex flex-col">
+      <div className="card-3d p-2 sm:p-4 flex-1 flex flex-col min-h-0">
+      <div className="space-y-1.5 mb-2">
         <div className="flex justify-between items-center">
-          <div className="text-[10px] sm:text-xs text-gray-600 font-bold">
-            Phase {level?.phaseNumber} • Level {level?.number} • Four Pics One Word
+          <div className="text-[10px] sm:text-xs text-gray-600 font-bold truncate">
+            P{level?.phaseNumber} • L{level?.number} • 4 Pics 1 Word
           </div>
-          <span className="chip-3d chip-3d-star text-xs sm:text-sm">
+          <span className="chip-3d chip-3d-star text-[10px] sm:text-sm !py-0.5 !px-2">
             ⏱️ {timeLeft}s
           </span>
         </div>
         <ProgressBar value={timeLeft} max={INITIAL_TIME} />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-3">
+      <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mb-2">
         {images.map((src, idx) => (
           <img
             key={idx}
             src={src}
             alt={`Hint ${idx + 1}`}
-            className="w-full h-24 sm:h-32 object-contain rounded-xl border-2 border-white shadow-[0_4px_10px_rgba(0,0,0,0.15)] bg-white"
+            className="w-full h-14 sm:h-24 object-contain rounded-xl border-2 border-white shadow-[0_4px_10px_rgba(0,0,0,0.15)] bg-white"
           />
         ))}
       </div>
 
-      <div className="flex justify-center gap-1 sm:gap-2 mb-3 text-base sm:text-xl font-black tracking-wide">
+      <div className="flex justify-center gap-1 sm:gap-2 mb-2 text-sm sm:text-xl font-black tracking-wide">
         {input.map((ch, i) => (
-          <div key={i} className="w-8 h-8 sm:w-10 sm:h-10 border-b-4 border-amber-500 text-center flex items-center justify-center bg-white/60 rounded-t-md shadow-inner text-amber-900">
+          <div key={i} className="w-6 h-7 sm:w-10 sm:h-10 border-b-4 border-amber-500 text-center flex items-center justify-center bg-white/60 rounded-t-md shadow-inner text-amber-900">
             {ch || ""}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5 sm:gap-2 max-w-md mx-auto mb-3">
+      <div className="grid grid-cols-6 sm:grid-cols-6 gap-1 sm:gap-2 max-w-md mx-auto mb-2 w-full">
         {shuffledLetters.map((ltr, idx) => (
           <button
             key={idx}
@@ -317,7 +317,7 @@ export default function FourPicsMode({
               handleLetterClick(ltr, idx);
             }}
             disabled={usedIndexes.includes(idx) || hasAnswered.current}
-            className={`btn-orb w-full aspect-square text-sm sm:text-lg font-black !rounded-xl ${
+            className={`btn-orb w-full aspect-square text-xs sm:text-lg font-black !rounded-xl ${
               usedIndexes.includes(idx) ? "btn-orb-white" : "btn-orb-yellow"
             }`}
           >
@@ -326,14 +326,14 @@ export default function FourPicsMode({
         ))}
       </div>
 
-      <div className="flex justify-center gap-2 sm:gap-3">
+      <div className="flex justify-center gap-2 sm:gap-3 mt-auto">
         <button
           onClick={() => {
             playSound("back", effectsOn);
             handleBackspace();
           }}
           disabled={input.every((slot) => slot === "") || hasAnswered.current}
-          className="btn-orb btn-orb-white font-black px-5 py-2 text-sm sm:text-base"
+          className="btn-orb btn-orb-white font-black px-4 py-1.5 sm:py-2 text-sm sm:text-base"
         >
           ⌫
         </button>
@@ -343,7 +343,7 @@ export default function FourPicsMode({
             checkAnswer();
           }}
           disabled={hasAnswered.current || input.includes("")}
-          className="btn-orb btn-orb-pink font-black px-6 py-2 text-sm sm:text-base"
+          className="btn-orb btn-orb-pink font-black px-5 py-1.5 sm:py-2 text-sm sm:text-base"
         >
           ✅ Submit
         </button>
