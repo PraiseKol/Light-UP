@@ -394,17 +394,17 @@ function GameScreenContent({
       ))}
       
       {/* Top HUD */}
-      <div className="flex-shrink-0 flex justify-between items-center px-3 py-2 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md shadow-md text-xs sm:text-sm relative z-10">
-        <span className="chip-3d text-xs sm:text-sm">
-          <span className="text-base sm:text-lg">📜</span>
-          <span>Level {level?.number}</span>
+      <div className="flex-shrink-0 flex justify-between items-center px-2 py-1 bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-md shadow-md text-[11px] sm:text-sm relative z-10">
+        <span className="chip-3d text-[11px] sm:text-sm !py-0.5 !px-2">
+          <span className="text-sm sm:text-lg">📜</span>
+          <span>Lv {level?.number}</span>
         </span>
-        <span className="flex items-center gap-2 sm:gap-3">
-          <span className="chip-3d chip-3d-star text-xs sm:text-sm">
+        <span className="flex items-center gap-1.5 sm:gap-3">
+          <span className="chip-3d chip-3d-star text-[11px] sm:text-sm !py-0.5 !px-2">
             ⭐ <span>{userScore}</span>
           </span>
           <span
-            className={`chip-3d chip-3d-heart text-xs sm:text-sm ${
+            className={`chip-3d chip-3d-heart text-[11px] sm:text-sm !py-0.5 !px-2 ${
               isHolyShieldActive
                 ? "animate-pulse ring-2 ring-yellow-400 shadow-[0_0_10px_rgba(255,223,0,0.8)]"
                 : ""
@@ -417,8 +417,8 @@ function GameScreenContent({
 
 
       {/* Game content - fills remaining space */}
-      <div className="flex-1 overflow-hidden p-2 relative z-10">
-        <div className="h-full overflow-auto">
+      <div className="flex-1 min-h-0 overflow-hidden p-1.5 sm:p-2 relative z-10">
+        <div className="h-full min-h-0">
           {mode === "word-fill" && (
             <WordFillMode
               {...commonProps}
