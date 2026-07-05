@@ -951,11 +951,11 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                         >
                           {/* Avatar on Current Level */}
                           {isCurrentLevel && (
-                            <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-                              <div className="text-4xl animate-bounce drop-shadow-lg">
+                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5">
+                              <div className="text-3xl animate-bounce drop-shadow-lg">
                                 {getCurrentAvatar()}
                               </div>
-                              <span className="bg-yellow-400 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-lg">
+                              <span className="bg-yellow-400 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full shadow-lg">
                                 YOU
                               </span>
                             </div>
