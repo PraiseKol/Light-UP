@@ -170,22 +170,22 @@ export default function WordFillMode({
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
   return (
-    <div className="h-full flex justify-center items-center p-2 sm:p-4">
-      <div className="w-full max-w-xl">
-        <div className="card-3d p-3 sm:p-4">
-          <div className="space-y-2 mb-3">
+    <div className="h-full flex flex-col justify-center items-center p-1.5 sm:p-3 overflow-hidden">
+      <div className="w-full max-w-md">
+        <div className="card-3d p-2.5 sm:p-4">
+          <div className="space-y-1.5 mb-2">
             <div className="flex justify-between items-center">
-              <div className="text-[10px] sm:text-xs text-gray-600 font-bold">
-                Phase {level?.phaseNumber} • Level {level?.number} • Word Fill
+              <div className="text-[10px] sm:text-xs text-gray-600 font-bold truncate">
+                P{level?.phaseNumber} • L{level?.number} • Word Fill
               </div>
-              <div className="chip-3d chip-3d-star text-xs sm:text-sm">
+              <div className="chip-3d chip-3d-star text-[10px] sm:text-sm !py-0.5 !px-2">
                 ⏱️ {timeLeft}s
               </div>
             </div>
             <ProgressBar value={timeLeft} max={30} />
           </div>
 
-          <CardHeader className="text-sm sm:text-lg text-gray-800 leading-snug p-0 mb-3">
+          <CardHeader className="text-xs sm:text-base text-gray-800 leading-snug p-0 mb-2 max-h-[28vh] overflow-auto">
             {question}
           </CardHeader>
 
@@ -219,7 +219,7 @@ export default function WordFillMode({
                   ? "Out of lives. Please wait..."
                   : "Type your answer..."
               }
-              className={`mb-3 text-sm sm:text-base rounded-2xl border-2 shadow-inner ${
+              className={`mb-2 text-sm sm:text-base rounded-2xl border-2 shadow-inner ${
                 status === "wrong"
                   ? "border-red-500"
                   : status === "correct"
@@ -234,7 +234,7 @@ export default function WordFillMode({
                 checkAnswer();
               }}
               disabled={hasAnsweredCorrectly.current || disableIfNoLives}
-              className={`btn-orb w-full py-2.5 sm:py-3 font-black text-sm sm:text-base ${
+              className={`btn-orb w-full py-2 sm:py-3 font-black text-sm sm:text-base ${
                 disableIfNoLives ? "btn-orb-white" : "btn-orb-pink"
               }`}
             >
