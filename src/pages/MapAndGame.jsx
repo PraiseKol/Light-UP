@@ -794,7 +794,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
       {/* Mini-Map Progress Indicator */}
       {!selectedLevel && (
-        <div className="fixed top-24 right-2 sm:right-4 z-40 bg-white/90 backdrop-blur rounded-xl shadow-xl p-2 sm:p-3 w-16 sm:w-20 border-2 border-blue-200">
+        <div className="fixed top-24 right-2 sm:right-4 z-40 bg-white/90 backdrop-blur rounded-xl shadow-xl p-1.5 sm:p-2 w-14 sm:w-16 border-2 border-blue-200">
           <div className="text-center text-[9px] sm:text-xs font-bold text-gray-700 mb-1">Progress</div>
           <div className="relative h-24 sm:h-32 bg-gray-200 rounded-full overflow-hidden">
             <div 
