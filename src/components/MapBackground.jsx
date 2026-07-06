@@ -70,6 +70,18 @@ export default function MapBackground() {
       {/* Dynamic gradient background based on theme */}
       <div className={`absolute inset-0 bg-gradient-to-b ${config.background.gradient}`} />
 
+      {/* Optional themed 3D illustrated background image */}
+      {config.background.image && (
+        <>
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${config.background.image})` }}
+          />
+          <div className={`absolute inset-0 ${config.background.overlay || 'bg-black/25'}`} />
+        </>
+      )}
+
+
       {/* Twinkling stars */}
       <div className="absolute inset-0">
         {stars.map((star) => (
@@ -179,23 +191,23 @@ export default function MapBackground() {
         {config.decorations.secondary[1] || config.decorations.primary[2]}
       </motion.div>
 
-      {/* Rolling hills with theme colors */}
-      <div className="absolute bottom-0 left-0 right-0 h-[25%]">
-        <svg className="absolute bottom-0 w-full h-full" viewBox="0 0 1200 300" preserveAspectRatio="none">
-          {/* Back hill */}
-          <path 
-            d="M0,150 Q200,80 400,120 T800,100 L1200,140 L1200,300 L0,300 Z" 
-            fill={config.hills.back} 
-            opacity="0.6" 
-          />
-          {/* Front hill */}
-          <path 
-            d="M0,180 Q300,120 600,160 T1200,180 L1200,300 L0,300 Z" 
-            fill={config.hills.front} 
-            opacity="0.8" 
-          />
-        </svg>
-      </div>
+      {/* Rolling hills with theme colors — dimmed when background image is set */}
+      {!config.background.image && (
+        <div className="absolute bottom-0 left-0 right-0 h-[25%]">
+          <svg className="absolute bottom-0 w-full h-full" viewBox="0 0 1200 300" preserveAspectRatio="none">
+            <path
+              d="M0,150 Q200,80 400,120 T800,100 L1200,140 L1200,300 L0,300 Z"
+              fill={config.hills.back}
+              opacity="0.6"
+            />
+            <path
+              d="M0,180 Q300,120 600,160 T1200,180 L1200,300 L0,300 Z"
+              fill={config.hills.front}
+              opacity="0.8"
+            />
+          </svg>
+        </div>
+      )}
 
       {/* Subtle pattern overlay for texture */}
       <div
