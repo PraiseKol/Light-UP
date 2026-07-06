@@ -64,12 +64,12 @@ export default function ExplainerVideoModal({ isOpen, onClose, userId }) {
 
         {/* Action Buttons */}
         <div className="flex gap-3 justify-end">
-          <Button
+          <button
             onClick={handleMarkAsSeen}
-            className="candy-gradient text-white font-bold px-8 py-3 rounded-xl shadow-lg hover:scale-105 transition-transform"
+            className="btn-orb btn-orb-purple text-white font-bold px-8 py-3 text-sm sm:text-base"
           >
             Got it! Let's Play 🎮
-          </Button>
+          </button>
         </div>
       </div>
     </Modal>

@@ -44,54 +44,33 @@ export default function LeaderboardModal({
         </div>
         
         {/* Toggle between Overall, Weekly, and Monthly */}
-        <div className="flex gap-1 sm:gap-2 bg-gradient-to-r from-blue-200/30 to-purple-200/30 p-1 rounded-xl mt-4 sm:mt-6">
+        <div className="flex gap-1 sm:gap-2 mt-4 sm:mt-6 justify-center">
           <button
-            onClick={() => {
-              playSound("switch", true);
-              setSelectedTab('overall');
-            }}
-            className={`flex-1 py-2 sm:py-3 px-1 sm:px-3 rounded-lg font-bold transition-all text-[10px] sm:text-sm ${
-              selectedTab === 'overall'
-                ? "candy-gradient text-white shadow-lg"
-                : "text-gray-600 hover:bg-white"
-            }`}
+            onClick={() => { playSound("switch", true); setSelectedTab('overall'); }}
+            className={`tab-3d flex-1 ${selectedTab === 'overall' ? 'active' : ''}`}
           >
             <span className="hidden sm:inline">Overall Top 10</span>
             <span className="sm:hidden">Overall</span>
           </button>
           <button
-            onClick={() => {
-              playSound("switch", true);
-              setSelectedTab('weekly');
-            }}
-            className={`flex-1 py-2 sm:py-3 px-1 sm:px-3 rounded-lg font-bold transition-all text-[10px] sm:text-sm ${
-              selectedTab === 'weekly'
-                ? "candy-gradient text-white shadow-lg"
-                : "text-gray-600 hover:bg-white"
-            }`}
+            onClick={() => { playSound("switch", true); setSelectedTab('weekly'); }}
+            className={`tab-3d flex-1 flex-col !gap-0 ${selectedTab === 'weekly' ? 'active' : ''}`}
           >
-            <div><span className="hidden sm:inline">Weekly Top 10</span><span className="sm:hidden">Weekly</span></div>
+            <span><span className="hidden sm:inline">Weekly Top 10</span><span className="sm:hidden">Weekly</span></span>
             {weeklyLeaderboard && weeklyLeaderboard.length > 0 && (
-              <div className="text-[8px] sm:text-xs mt-0.5 sm:mt-1 opacity-80">
+              <span className="text-[8px] sm:text-[10px] opacity-80">
                 {weeklyLeaderboard[0]?.is_active ? "🔴 Live" : "📅 Last"}
-              </div>
+              </span>
             )}
           </button>
           <button
-            onClick={() => {
-              playSound("switch", true);
-              setSelectedTab('monthly');
-            }}
-            className={`flex-1 py-2 sm:py-3 px-1 sm:px-3 rounded-lg font-bold transition-all text-[10px] sm:text-sm ${
-              selectedTab === 'monthly'
-                ? "candy-gradient text-white shadow-lg"
-                : "text-gray-600 hover:bg-white"
-            }`}
+            onClick={() => { playSound("switch", true); setSelectedTab('monthly'); }}
+            className={`tab-3d flex-1 flex-col !gap-0 ${selectedTab === 'monthly' ? 'active' : ''}`}
           >
-            <div><span className="hidden sm:inline">📅 This Month</span><span className="sm:hidden">Monthly</span></div>
-            <div className="text-[8px] sm:text-xs mt-0.5 sm:mt-1 opacity-80">
+            <span><span className="hidden sm:inline">📅 This Month</span><span className="sm:hidden">Monthly</span></span>
+            <span className="text-[8px] sm:text-[10px] opacity-80">
               {new Date().toLocaleString('default', { month: 'short' })}
-            </div>
+            </span>
           </button>
         </div>
 
@@ -103,42 +82,25 @@ export default function LeaderboardModal({
               const isCurrentUser = entry.user_id === currentUserId;
               const rank = index + 1;
               
-              // Medal colors for top 3
-              const medalColor = 
-                rank === 1 ? "text-amber-500" :
-                rank === 2 ? "text-gray-300" :
-                rank === 3 ? "text-amber-600" :
-                "text-gray-500";
-              
-              // Christmas crown for #1
+              const tierClass = rank === 1 ? "row-3d gold" : rank === 2 ? "row-3d silver" : rank === 3 ? "row-3d bronze" : "row-3d";
               const showCrown = rank === 1;
 
               return (
                 <div
                   key={entry.user_id || index}
-                  className={`flex items-center gap-2 sm:gap-4 p-2 sm:p-4 rounded-xl transition-all ${
-                    isCurrentUser
-                      ? "bg-gradient-to-r from-candyBlue/20 to-candyPurple/20 ring-2 ring-candyBlue shadow-lg"
-                      : "bg-white hover:shadow-md"
-                  }`}
+                  className={`${tierClass} ${isCurrentUser ? "ring-2 ring-purple-500" : ""}`}
                 >
-                  {/* Rank with Christmas styling */}
-                  <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-sm sm:text-lg relative ${
-                    rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-500 text-white" :
-                    rank === 2 ? "bg-gradient-to-br from-gray-300 to-gray-400 text-white" :
-                    rank === 3 ? "bg-gradient-to-br from-amber-500 to-amber-700 text-white" :
-                    "bg-gray-200 text-gray-600"
+                  {/* Rank orb */}
+                  <div className={`relative flex-shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-sm sm:text-base ${
+                    rank === 1 ? "bg-gradient-to-b from-yellow-200 to-amber-500 text-amber-900 shadow-[inset_0_2px_0_rgba(255,255,255,0.7),0_3px_0_rgba(146,64,14,0.5)]" :
+                    rank === 2 ? "bg-gradient-to-b from-white to-slate-400 text-slate-800 shadow-[inset_0_2px_0_rgba(255,255,255,0.7),0_3px_0_rgba(71,85,105,0.5)]" :
+                    rank === 3 ? "bg-gradient-to-b from-orange-200 to-orange-600 text-orange-900 shadow-[inset_0_2px_0_rgba(255,255,255,0.7),0_3px_0_rgba(154,52,18,0.5)]" :
+                    "bg-gradient-to-b from-white to-purple-200 text-purple-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_2px_0_rgba(76,29,149,0.3)]"
                   }`}>
                     {showCrown && (
-                      <span className="absolute -top-2 sm:-top-3 left-1/2 -translate-x-1/2 text-sm sm:text-lg">👑</span>
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-base sm:text-lg">👑</span>
                     )}
-                    {rank <= 3 ? (
-                      <span className={medalColor}>
-                        {rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉"}
-                      </span>
-                    ) : (
-                      rank
-                    )}
+                    {rank <= 3 ? (rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉") : rank}
                   </div>
 
                   {/* Player info */}
