@@ -43,49 +43,49 @@ export default function ProfileBadgesModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-gradient-to-b from-indigo-900 to-purple-900 rounded-3xl border-2 border-yellow-400/40 shadow-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-gradient-to-r from-indigo-700 to-purple-700 border-b border-white/10">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+      <div className="modal-3d relative w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="modal-3d-header sticky top-0 z-10 flex items-center justify-between p-4 rounded-t-2xl">
+          <h2 className="text-xl font-bold flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-300" />
             Profile & Badges
           </h2>
           <button
             onClick={onClose}
             aria-label="Close profile"
-            className="text-white/70 hover:text-white p-1"
+            className="text-white/80 hover:text-white p-1"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {loading ? (
-          <div className="text-center text-white/60 py-12">Loading…</div>
+          <div className="text-center text-purple-700/70 py-12">Loading…</div>
         ) : (
           <div className="p-4 space-y-4">
             {/* Profile summary */}
             {profile && (
-              <div className="bg-black/30 rounded-xl p-4 border border-white/10 text-center">
-                <p className="text-white font-bold text-lg">{profile.player_name || "Player"}</p>
+              <div className="row-3d flex-col !items-stretch text-center">
+                <p className="text-purple-900 font-extrabold text-lg">{profile.player_name || "Player"}</p>
                 <div className="grid grid-cols-3 gap-2 mt-3">
-                  <div>
-                    <p className="text-yellow-300 text-2xl font-bold">{profile.total_user_score || 0}</p>
-                    <p className="text-white/50 text-xs">Total Score</p>
+                  <div className="chip-3d chip-3d-star flex-col !py-2">
+                    <p className="text-2xl font-black leading-none">{profile.total_user_score || 0}</p>
+                    <p className="text-[10px] font-semibold opacity-80">Score</p>
                   </div>
-                  <div>
-                    <p className="text-pink-300 text-2xl font-bold">{profile.talents || 0}</p>
-                    <p className="text-white/50 text-xs">Talents</p>
+                  <div className="chip-3d flex-col !py-2">
+                    <p className="text-2xl font-black leading-none">{profile.talents || 0}</p>
+                    <p className="text-[10px] font-semibold opacity-80">Talents</p>
                   </div>
-                  <div>
-                    <p className="text-red-300 text-2xl font-bold">{profile.lives || 0}</p>
-                    <p className="text-white/50 text-xs">Lives</p>
+                  <div className="chip-3d chip-3d-heart flex-col !py-2">
+                    <p className="text-2xl font-black leading-none">{profile.lives || 0}</p>
+                    <p className="text-[10px] font-semibold opacity-80">Lives</p>
                   </div>
                 </div>
               </div>
             )}
 
             <div className="flex items-center justify-between px-1">
-              <h3 className="text-white font-semibold">Badges</h3>
-              <span className="text-white/60 text-sm">
+              <h3 className="text-purple-900 font-extrabold">Badges</h3>
+              <span className="text-purple-700/70 text-sm">
                 {unlockedCount}/{catalogue.length} unlocked
               </span>
             </div>
@@ -97,16 +97,16 @@ export default function ProfileBadgesModal({ isOpen, onClose }) {
                   <div
                     key={a.key}
                     title={`${a.title}\n${a.description}`}
-                    className={`relative rounded-xl p-3 text-center border transition-all ${
+                    className={`relative rounded-2xl p-3 text-center border-2 transition-all ${
                       owned
-                        ? `bg-gradient-to-b ${TIER_STYLES[a.tier] || TIER_STYLES.bronze} border-white/30`
-                        : "bg-black/30 border-white/10 opacity-60"
+                        ? `bg-gradient-to-b ${TIER_STYLES[a.tier] || TIER_STYLES.bronze} border-white/70 shadow-[inset_0_2px_0_rgba(255,255,255,0.6),0_4px_0_rgba(0,0,0,0.15),0_8px_14px_-4px_rgba(0,0,0,0.3)]`
+                        : "bg-gradient-to-b from-gray-200 to-gray-400 border-white/50 opacity-70 shadow-[inset_0_2px_0_rgba(255,255,255,0.4),0_3px_0_rgba(0,0,0,0.15)]"
                     }`}
                   >
-                    <div className="text-3xl mb-1">
-                      {owned ? a.icon : <Lock className="w-6 h-6 mx-auto text-white/50" />}
+                    <div className="text-3xl mb-1 drop-shadow-md">
+                      {owned ? a.icon : <Lock className="w-6 h-6 mx-auto text-gray-700" />}
                     </div>
-                    <p className={`text-[10px] font-bold leading-tight ${owned ? "text-black" : "text-white/70"}`}>
+                    <p className={`text-[10px] font-black leading-tight ${owned ? "text-black" : "text-gray-800"}`}>
                       {a.title}
                     </p>
                   </div>
