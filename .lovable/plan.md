@@ -1,90 +1,67 @@
-## Goal
+# Extend 3D Theme Across App + New Map Background
 
-Two focused UI upgrades, no gameplay/logic changes:
+Extend the Candy-Crush-style 3D look (already applied to the game/map) to every remaining page/modal, and add a new Bible-themed 3D illustrated background layer for the map. Theme wiring stays admin-controlled via `ThemeContext` — no hard-coded overrides.
 
-1. **Game modes (WordFill, Trivia, FourPics, ScriptureMatch)** — everything visible in one screen on mobile: HUD, question, options, and power-up dock all fit within `100dvh` with no vertical scroll needed to reach the power-ups.
-2. **Main map** — shrink node/spacing on desktop + mobile so more levels are visible at once, and restyle the path + nodes to feel like a 3D Candy-Crush hill (up-and-over path with depth shading), not a flat bottom-to-top ribbon.
+## A. Generate the new 3D Bible-themed map background image
 
----
+- Use `imagegen` (premium) to create `src/assets/map-bg-3d-bible.jpg` (1024×1920 portrait, tile-friendly top/bottom).
+- Prompt style: soft painterly 3D render, Candy-Crush / Royal Match world map vibe, Bible-story landscape — rolling green hills, small Middle-Eastern stone houses, olive trees, distant ark/temple silhouette, dove, subtle golden light, soft cel-shaded 3D characters (shepherd, sheep), pastel sky with clouds. No text.
+- Add a second horizon-friendly variant later only if the first doesn't tile well.
 
-## Scope IN
+## B. Wire the image into the theme system (still admin-controlled)
 
-### A. Game mode fit-on-screen (no scroll)
+- `src/themes/themeConfig.js`: add `background.image` field per theme (default → new Bible bg; Easter/Christmas keep gradients or optional images later).
+- `src/components/MapBackground.jsx`: render the `config.background.image` as a fixed, `bg-cover` layer above the gradient with a soft dark overlay (`bg-black/25`) so 3D orbs and paths still pop. Keep all existing stars/particles/hills so animation and Christmas snow still work. Fallback to pure gradient when `image` is undefined.
+- No hard-coding: admin `GlobalSettingsManager` continues to switch themes, which flips the whole background including the new image.
 
-Root cause: `GameScreen.jsx` wraps modes in `<div class="h-full overflow-auto">`, and each mode wraps in `h-full flex items-center` / `overflow-auto`. On short mobile viewports the question card grows past the HUD's remaining space, pushing the power-up dock off-screen or forcing scroll before power-ups.
+## C. 3D primitives for modals & pages
 
-Changes:
-- **`GameScreen.jsx`**
-  - Replace inner `overflow-auto` with `overflow-hidden` and let the mode manage its own compact scroll only if truly needed (rare).
-  - Tighten HUD padding (`py-1.5`), reduce chip font-size on mobile.
-  - Tighten power-up dock: `p-1.5`, smaller orbs on mobile (`w-[20%]`, icon `text-sm`, remove label on very narrow screens), reduce top/bottom shadow bleed.
-  - Ensure power-up dock is `sticky`/`flex-shrink-0` (already) and that game content uses `min-h-0` so flex children shrink properly.
+Extend `src/index.css` with reusable classes (no colour tokens hard-coded in components):
 
-- **`WordFillMode.jsx`, `TriviaMode.jsx`**
-  - Change wrapper to `h-full flex flex-col justify-center` with `overflow-hidden`.
-  - Card uses `w-full max-w-md` (was `xl`), tighter padding `p-2.5`, question `text-xs sm:text-base`, options `py-2` on mobile with `text-[13px]`, submit `py-2`.
-  - Reduce vertical rhythm: `space-y-1.5`, `mb-2`.
+- `.modal-3d` — glossy white panel with layered inset highlight, thick soft shadow, 2px white border, rounded-2xl (mirrors `.card-3d` but sized for modals).
+- `.tab-3d` / `.tab-3d.active` — pill tabs with bevel + press depth.
+- `.row-3d` — embossed list row for settings/shop items.
+- `.badge-3d` — small 3D chip variant for prices/counts.
+- `.icon-orb` — circular gradient orb wrapper for leading icons.
 
-- **`FourPicsMode.jsx`**
-  - Remove `overflow-auto`; use `h-full flex flex-col` with compact sections.
-  - Image grid uses `h-16 sm:h-24` (was `h-24 sm:h-32`), keeping 2x2.
-  - Letter slots `w-7 h-7 sm:w-9 sm:h-9` and letter orbs a bit smaller with `text-xs sm:text-base`.
-  - Combine Backspace + Submit row into the same flex block without extra margin.
+## D. Apply 3D styling to remaining surfaces
 
-- **`ScriptureMatchMode.jsx`**
-  - Convert card to `card-3d` (consistency with other modes) and use compact `p-2.5`, `text-[11px]` on refs/verses, `min-h-[34px]` cells.
-  - Ensure two-column grid stays visible without needing to scroll to Submit — Submit lives inside the flex column so it sits at the bottom.
+Convert flat cards/buttons to the primitives above, keep all logic intact:
 
-- **Mobile layout guard**: verify with browser at 375×667 and 320×568 that HUD + question + options + power-up dock are all visible without scrolling. Content-heavy modes (long trivia questions) may still allow a small inner scroll on the question area only — never on the shell.
+1. `src/components/SettingsModal.jsx` — wrap in `.modal-3d`, section headers as `phase-ribbon-3d` mini, toggles wrapped in `.row-3d`, action buttons use `.btn-orb-*`.
+2. `src/components/PowerUpStore.jsx` — items become `.row-3d` with `.icon-orb` (yellow/purple/blue variants) + `.btn-orb-green` "Buy" and `.badge-3d` prices.
+3. `src/components/TalentStore.jsx` — same treatment; tabs → `.tab-3d`.
+4. `src/components/HolyShieldButton.jsx` modal — `.modal-3d`, `.btn-orb-amber` confirm.
+5. `src/components/LeaderboardModal.jsx` + `PopGameLeaderboardModal.jsx` — `.modal-3d`, top-3 rows use gold/silver/bronze `.row-3d` variants, tabs → `.tab-3d`.
+6. `src/components/DailyQuestsModal.jsx` — `.modal-3d`, quest rows as `.row-3d`, progress bar embossed, claim → `.btn-orb-green`.
+7. `src/components/ProfileBadgesModal.jsx` — badges become circular `.level-node-3d` variants (gold/locked grey).
+8. `src/components/ScriptureModal.jsx` + `ExplainerVideoModal.jsx` + `PWAInstallPrompt.jsx` + `PWAUpdatePrompt.jsx` — `.modal-3d` shell, `.btn-orb-*` actions.
+9. `src/components/BonusesTab.jsx` — reward rows as `.row-3d`.
+10. `src/components/LivesDisplay.jsx` — hearts as `.chip-3d-heart` (already partially done in HUD; unify).
+11. `src/pages/WeeklyChallengeScreen.jsx` header + start button → 3D primitives.
+12. `src/components/NoQuizPage.jsx` + `OfflinePage.jsx` — `.card-3d` container + `.btn-orb-blue` retry.
 
-### B. Map: shrink + Candy-Crush 3D hilly path
+Multiplayer, Admin, and Auth pages are out of scope for this pass to keep scope tight.
 
-- **`src/data/levelData.js`** — reduce spacing so more nodes fit per screen:
-  - `verticalSpacing` from `130` → `92`.
-  - Widen zigzag amplitude for a more visible hill: `xPositions = [78, 55, 22, 55]` remains, but sync with path shape below.
-- **`MapAndGame.jsx`** — level container:
-  - `containerHeight = (levelsPerPhase * 92) + 180` (was `* 130 + 300`).
-  - Level node sizes: `w-11 h-11 sm:w-14 sm:h-14 lg:w-16 lg:h-16` (down from 14/16/20).
-  - Icon/number size tightened accordingly. Stars shrink to `w-3.5 h-3.5`, avatar `text-3xl`.
-  - Phase ribbon: reduce vertical padding on mobile (`py-2 px-4`), title `text-base lg:text-xl`.
-- **Hilly 3D path** — replace flat gradient stroke with a layered "hill road":
-  - Under-shadow path: same bezier stroked with dark brown `#5b3a1a`, `strokeWidth=18`, offset y+4, opacity 0.5 (ground shadow).
-  - Base road: golden gradient stroke `strokeWidth=14`, rounded.
-  - Top highlight: lighter gold `#FFF3B0`, `strokeWidth=5`, offset y-2, opacity 0.9 (rim light).
-  - Curve type: use a smooth cubic `C` (S-curve) between nodes with two control points to create an over-hill arc: `M x1 y1 C x1 midY-14, x2 midY+14, x2 y2` — gives the up-and-over feel per segment.
-  - Add small procedural "hill lumps" behind the path per phase via existing MapBackground (no new assets): faint elliptical radial gradients at each node position in a low-opacity SVG layer (added inside the phase container, below path z-index).
-- **Level node depth (already 3D)**: keep `level-node-3d`, but tighten shadow to match smaller size (`0 4px 0` bevel instead of `0 6px 0`) via a size-scoped variant class `.level-node-3d.sm`.
-- **Mini-map**: shrink `w-14 sm:w-16` to keep proportion with new map density.
+## E. Map background integration polish
 
-### C. `index.css` additions
-- `.level-node-3d.sm` variant (smaller bevel shadows).
-- Optional `.hill-shadow` helper class for the SVG under-shadow if needed.
-- No new keyframes; reuse `nodeBob`.
+- `src/pages/MapAndGame.jsx`: no structural change; verify path & nodes remain legible over the new image (adjust overlay opacity if needed after Playwright check).
+- `src/components/MapBackground.jsx`: dim hills opacity slightly when `config.background.image` is set so painted hills in the image show through.
 
----
+## Out of scope
 
-## Scope OUT
+- Gameplay, scoring, lives regen, RLS/data, edge functions.
+- Free Fall / Memory mini-game internals (already themed).
+- Admin dashboard UI (kept utilitarian on purpose).
+- Auth pages redesign.
+- New DB fields — theme image ships in `themeConfig.js`, still admin-toggled via existing theme selector.
 
-- No gameplay/scoring/lives/power-up logic changes.
-- No backend, RLS, data, or route changes.
-- No Memory / Free Fall / Weekly / Multiplayer / Admin changes.
-- No new image assets (hill effect achieved purely with SVG + CSS).
-- Explainer video, modals, header/footer nav untouched beyond incidental spacing consistent with node shrink.
+## Files to modify / add
 
----
-
-## Files to modify
-
-- `src/components/GameScreen.jsx`
-- `src/modes/WordFillMode.jsx`
-- `src/modes/TriviaMode.jsx`
-- `src/modes/FourPicsMode.jsx`
-- `src/modes/ScriptureMatchMode.jsx`
-- `src/pages/MapAndGame.jsx`
-- `src/data/levelData.js`
-- `src/index.css`
+- **Add**: `src/assets/map-bg-3d-bible.jpg`
+- **Edit**: `src/themes/themeConfig.js`, `src/components/MapBackground.jsx`, `src/index.css`, and the modal/component files listed in section D.
 
 ## Verification
 
-- Playwright at 375×667 and 320×568: enter each of the 4 modes; screenshot confirms HUD + question + options + power-up dock all visible without scrolling.
-- Playwright at 1280×800 and 375×667 on map: screenshot confirms ≥5 level nodes visible per screen and path renders with hill shading (shadow + rim highlight layers).
+- Playwright at 375×667 and 1280×800: open map (image loads, nodes readable), open Settings / Power-Up Store / Talent Store / Daily Quests / Leaderboard / Profile Badges → screenshot each, confirm 3D bevel + no overflow.
+- Build passes; no changes to Supabase or business logic.
