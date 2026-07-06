@@ -114,8 +114,9 @@ export default function SettingsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="relative bg-white p-4 sm:p-6 rounded-2xl shadow-xl w-full max-w-md border border-gray-200 overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="modal-3d relative p-4 sm:p-6 w-full max-w-md overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col">
+
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4 text-center">
           ⚙️ Player Settings
         </h2>
@@ -301,16 +302,16 @@ export default function SettingsModal({
             Cancel
           </Button>
 
-          <Button
+          <button
             onClick={() => {
               playSound("select", effectsOn);
               handleSave();
             }}
             disabled={loading}
-            className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 hover:scale-105 text-white px-3 sm:px-4 py-2 rounded-full shadow-[0_4px_0_#be185d] active:translate-y-1 active:shadow-[0_2px_0_#be185d] font-bold text-xs sm:text-sm"
+            className="btn-orb btn-orb-pink px-4 py-2 font-bold text-xs sm:text-sm"
           >
             {loading ? "Saving..." : "Save"}
-          </Button>
+          </button>
         </div>
       </div>
     </div>
