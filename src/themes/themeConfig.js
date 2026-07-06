@@ -1,4 +1,6 @@
 // Theme configuration for seasonal themes
+import mapBg3dBible from "@/assets/map-bg-3d-bible.jpg";
+
 export const THEMES = {
   default: {
     name: 'Default',
@@ -7,6 +9,8 @@ export const THEMES = {
     background: {
       gradient: 'from-indigo-900 via-purple-900 to-blue-900',
       particleColor: 'bg-candyYellow/30',
+      image: mapBg3dBible,
+      overlay: 'bg-gradient-to-b from-indigo-950/50 via-purple-900/20 to-indigo-950/60',
     },
     decorations: {
       primary: ['🕊️', '✝️', '👼'],
