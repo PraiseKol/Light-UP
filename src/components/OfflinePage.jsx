@@ -21,7 +21,8 @@ export default function OfflinePage() {
       ))}
 
       {/* Offline card */}
-      <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 max-w-md w-full text-center relative z-10 border-2 border-pink-200">
+      <div className="modal-3d p-8 max-w-md w-full text-center relative z-10">
+
         {/* Signal icon */}
         <div className="text-6xl mb-4">📡</div>
         
