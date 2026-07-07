@@ -1,67 +1,110 @@
-# Extend 3D Theme Across App + New Map Background
 
-Extend the Candy-Crush-style 3D look (already applied to the game/map) to every remaining page/modal, and add a new Bible-themed 3D illustrated background layer for the map. Theme wiring stays admin-controlled via `ThemeContext` — no hard-coded overrides.
+# Full Sound & Music Upgrade
 
-## A. Generate the new 3D Bible-themed map background image
+Complete overhaul of the app's audio: replace every existing sound effect with a fresh, action-fitted set, add looping background music across map/game/menus, and give players separate control over music vs SFX.
 
-- Use `imagegen` (premium) to create `src/assets/map-bg-3d-bible.jpg` (1024×1920 portrait, tile-friendly top/bottom).
-- Prompt style: soft painterly 3D render, Candy-Crush / Royal Match world map vibe, Bible-story landscape — rolling green hills, small Middle-Eastern stone houses, olive trees, distant ark/temple silhouette, dove, subtle golden light, soft cel-shaded 3D characters (shepherd, sheep), pastel sky with clouds. No text.
-- Add a second horizon-friendly variant later only if the first doesn't tile well.
+## 1. New SFX Library (ElevenLabs — Hybrid approach)
 
-## B. Wire the image into the theme system (still admin-controlled)
+Delete all files in `/public/sounds/` and regenerate a full set via ElevenLabs Sound Effects API (through a Supabase edge function using the ElevenLabs connector). Each SFX tuned to its action, saved as MP3 to `/public/sounds/` and referenced from `src/utils/sound.js`.
 
-- `src/themes/themeConfig.js`: add `background.image` field per theme (default → new Bible bg; Easter/Christmas keep gradients or optional images later).
-- `src/components/MapBackground.jsx`: render the `config.background.image` as a fixed, `bg-cover` layer above the gradient with a soft dark overlay (`bg-black/25`) so 3D orbs and paths still pop. Keep all existing stars/particles/hills so animation and Christmas snow still work. Fallback to pure gradient when `image` is undefined.
-- No hard-coding: admin `GlobalSettingsManager` continues to switch themes, which flips the whole background including the new image.
+**UI cues (short, crisp, <1s):**
+- `tap` — soft bubble pop (replaces `click`)
+- `select` — light glassy chime
+- `back` — gentle whoosh-down
+- `switch` — subtle tick
+- `modalOpen` — airy swell-in
+- `modalClose` — soft swoosh
+- `toggle` — playful click-clack
 
-## C. 3D primitives for modals & pages
+**Game feedback:**
+- `correct` — bright ascending harp glissando + sparkle
+- `wrong` — soft comedic "aww" descending tones (not harsh)
+- `timeUp` — dramatic bell knell
+- `optionSelect` — candy tap
+- `submitAnswer` — confident whoosh
+- `countdown` — ticking clock with tension
+- `lifeLost` — heart-crack thud
+- `levelUp` — triumphant fanfare with sparkle
+- `starEarned` — magical shimmer (per star, stackable)
+- `perfectStreak` — angelic choir stinger
+- `phaseUnlock` — grand gate-opening chord
 
-Extend `src/index.css` with reusable classes (no colour tokens hard-coded in components):
+**Power-ups (distinct signatures):**
+- `divineHint` — mystical whoosh + reveal chime
+- `gracePeriod` — clock rewind with soft harp
+- `holyShield` — shimmering barrier hum
+- `heavenlyMatch` — dove-wing flutter + glow
+- `powerUpPurchase` — coin cash-register with sparkle
+- `purchase` — satisfying coin drop
+- `bonusAwarded` — celebratory ta-da
 
-- `.modal-3d` — glossy white panel with layered inset highlight, thick soft shadow, 2px white border, rounded-2xl (mirrors `.card-3d` but sized for modals).
-- `.tab-3d` / `.tab-3d.active` — pill tabs with bevel + press depth.
-- `.row-3d` — embossed list row for settings/shop items.
-- `.badge-3d` — small 3D chip variant for prices/counts.
-- `.icon-orb` — circular gradient orb wrapper for leading icons.
+**Mini-games / social:**
+- `bombTap` — muffled explosion (Free Fall)
+- `cardFlip` — paper flip (Memory)
+- `matchFound` — happy chime pair
+- `notification` — soft ping (chat/quests)
+- `questComplete` — scroll-unfurl chime
+- `gameOver` — solemn organ resolve
 
-## D. Apply 3D styling to remaining surfaces
+## 2. Background Music (Curated, royalty-free MP3s)
 
-Convert flat cards/buttons to the primitives above, keep all logic intact:
+Add 5 looping tracks to `/public/music/`. Sourced from royalty-free libraries (Pixabay Music / Free Music Archive — CC0/CC-BY) matching **Uplifting Orchestral + Playful Cartoon** blend:
 
-1. `src/components/SettingsModal.jsx` — wrap in `.modal-3d`, section headers as `phase-ribbon-3d` mini, toggles wrapped in `.row-3d`, action buttons use `.btn-orb-*`.
-2. `src/components/PowerUpStore.jsx` — items become `.row-3d` with `.icon-orb` (yellow/purple/blue variants) + `.btn-orb-green` "Buy" and `.badge-3d` prices.
-3. `src/components/TalentStore.jsx` — same treatment; tabs → `.tab-3d`.
-4. `src/components/HolyShieldButton.jsx` modal — `.modal-3d`, `.btn-orb-amber` confirm.
-5. `src/components/LeaderboardModal.jsx` + `PopGameLeaderboardModal.jsx` — `.modal-3d`, top-3 rows use gold/silver/bronze `.row-3d` variants, tabs → `.tab-3d`.
-6. `src/components/DailyQuestsModal.jsx` — `.modal-3d`, quest rows as `.row-3d`, progress bar embossed, claim → `.btn-orb-green`.
-7. `src/components/ProfileBadgesModal.jsx` — badges become circular `.level-node-3d` variants (gold/locked grey).
-8. `src/components/ScriptureModal.jsx` + `ExplainerVideoModal.jsx` + `PWAInstallPrompt.jsx` + `PWAUpdatePrompt.jsx` — `.modal-3d` shell, `.btn-orb-*` actions.
-9. `src/components/BonusesTab.jsx` — reward rows as `.row-3d`.
-10. `src/components/LivesDisplay.jsx` — hearts as `.chip-3d-heart` (already partially done in HUD; unify).
-11. `src/pages/WeeklyChallengeScreen.jsx` header + start button → 3D primitives.
-12. `src/components/NoQuizPage.jsx` + `OfflinePage.jsx` — `.card-3d` container + `.btn-orb-blue` retry.
+- `map-theme.mp3` — bouncy marimba + light strings (map screen)
+- `gameplay-theme.mp3` — subtle orchestral pulse, low-distraction (all game modes)
+- `menu-theme.mp3` — soft cartoon-hymnal loop (shop/settings/leaderboards/modals)
+- `victory-cue.mp3` — 6s orchestral stinger (level complete/phase unlock)
+- `defeat-cue.mp3` — 4s gentle minor cue (game over / no lives)
 
-Multiplayer, Admin, and Auth pages are out of scope for this pass to keep scope tight.
+Cross-fade between tracks (1s fade) when route changes. Pause on tab blur; resume on focus.
 
-## E. Map background integration polish
+## 3. Audio Engine Refactor (`src/utils/sound.js` + new `music.js`)
 
-- `src/pages/MapAndGame.jsx`: no structural change; verify path & nodes remain legible over the new image (adjust overlay opacity if needed after Playwright check).
-- `src/components/MapBackground.jsx`: dim hills opacity slightly when `config.background.image` is set so painted hills in the image show through.
+- Rewrite `sound.js` with the full new key map, preserve `playSound(name, effectsOn)` signature so no call sites break.
+- New `src/utils/music.js`: `playMusic(track)`, `stopMusic()`, `setMusicVolume(n)`, singleton `<audio>` with loop+fade.
+- New `src/context/AudioContext.jsx`: exposes `{ sfxOn, sfxVolume, musicOn, musicVolume, setters }`, persists to `localStorage`, wraps App.
+- `BackgroundMusic.jsx` retired in favor of `music.js` driven by route via a small `useRouteMusic()` hook in `App.jsx`.
 
-## Out of scope
+## 4. Settings Modal — Separate Controls
 
-- Gameplay, scoring, lives regen, RLS/data, edge functions.
-- Free Fall / Memory mini-game internals (already themed).
-- Admin dashboard UI (kept utilitarian on purpose).
-- Auth pages redesign.
-- New DB fields — theme image ships in `themeConfig.js`, still admin-toggled via existing theme selector.
+Update `SettingsModal.jsx`:
+- 🔊 **Sound Effects**: on/off toggle + volume slider (0–100)
+- 🎵 **Music**: on/off toggle + volume slider (0–100)
+- Preview button next to each (plays sample `tap` / 2s of `menu-theme`).
+- Uses existing 3D primitives (`.row-3d`, `.tab-3d`).
 
-## Files to modify / add
+## 5. Wire Up New Cues Across App
 
-- **Add**: `src/assets/map-bg-3d-bible.jpg`
-- **Edit**: `src/themes/themeConfig.js`, `src/components/MapBackground.jsx`, `src/index.css`, and the modal/component files listed in section D.
+Add missing `playSound()` calls at action points that currently have none:
+- Star reveals in `RightAnswerModal` → `starEarned`
+- Level unlock animation in `MapAndGame` → `phaseUnlock`
+- Purchases in `PowerUpStore` / `TalentStore` → `powerUpPurchase`
+- Modal opens/closes → `modalOpen` / `modalClose`
+- Free Fall bomb tap → `bombTap`; Memory flip/match → `cardFlip` / `matchFound`
+- Quest completion toast → `questComplete`
 
-## Verification
+## 6. Cleanup
 
-- Playwright at 375×667 and 1280×800: open map (image loads, nodes readable), open Settings / Power-Up Store / Talent Store / Daily Quests / Leaderboard / Profile Badges → screenshot each, confirm 3D bevel + no overflow.
-- Build passes; no changes to Supabase or business logic.
+- `rm` every legacy file in `/public/sounds/` before writing new ones.
+- Remove old `BackgroundMusic.jsx` `soundMap` (shifts/peace/juba) — replaced by route-driven music.
+- Update `mem://audio/sound-effects-system-upgrade` memory with the new key map + music system.
+
+## Technical Details
+
+- **ElevenLabs**: connector already recommended; if not linked I'll link the ElevenLabs standard connector first. SFX generated via a temporary edge function (`generate-sfx`) that batches all keys, returns MP3 blobs; I'll run it once during implementation to populate `/public/sounds/`, then remove the function (assets are static after generation).
+- **Music files**: downloaded via `curl` from Pixabay CDN (CC0), placed directly in `/public/music/`.
+- **No DB/RLS changes.** All prefs stored in `localStorage` (`sfxOn`, `sfxVolume`, `musicOn`, `musicVolume`).
+- **File count**: ~35 SFX MP3s + 5 music MP3s (~2–3 MB total, streamed on demand).
+
+## Out of Scope
+
+- Voice-overs / narration
+- Per-level custom music
+- Server-persisted audio prefs
+- Gameplay logic, scoring, RLS
+
+## Files Touched
+
+- **Delete**: everything in `public/sounds/`, `src/components/BackgroundMusic.jsx`
+- **Add**: `public/sounds/*.mp3` (new set), `public/music/*.mp3` (5 tracks), `src/utils/music.js`, `src/context/AudioContext.jsx`, `src/hooks/useRouteMusic.js`
+- **Edit**: `src/utils/sound.js`, `src/components/SettingsModal.jsx`, `src/App.jsx`, `src/components/GameScreen.jsx`, `src/pages/MapAndGame.jsx`, `src/components/PowerUpStore.jsx`, `src/components/TalentStore.jsx`, `src/components/ui/RightAnswerModal.jsx`, `src/components/DailyQuestsModal.jsx`, `src/components/memory/*`, `src/components/PopGameItem.jsx`
