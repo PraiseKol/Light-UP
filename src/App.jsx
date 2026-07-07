@@ -10,7 +10,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { AuthProvider, useAuth } from "@/auth/AuthProvider";
 
-import BackgroundMusic from "@/components/BackgroundMusic";
+import useRouteMusic from "@/hooks/useRouteMusic";
 import OfflineWrapper from "@/components/OfflineWrapper";
 
 import LoginPage from "@/pages/LoginPage";
@@ -127,9 +127,9 @@ function AppContent() {
 
   return (
     <ThemeProvider initialTheme={selectedTheme}>
+      <RouteMusic />
       <PWAInstallPrompt />
       <PWAUpdatePrompt />
-      <BackgroundMusic sound={sound} />
       <Suspense fallback={<RouteFallback />}>
       <Routes>
         {/* Auth */}
