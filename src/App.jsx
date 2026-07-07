@@ -273,6 +273,11 @@ function AppContent() {
   );
 }
 
+function RouteMusic() {
+  useRouteMusic();
+  return null;
+}
+
 export default function App() {
   return (
     <SessionContextProvider supabaseClient={supabase}>
