@@ -141,63 +141,99 @@ export default function SettingsModal({
             />
           </div>
 
-          {/* Effects Toggle */}
-          <div className="flex items-center justify-between border-t border-gray-200 pt-3 sm:pt-4">
-            <span className="text-xs sm:text-sm font-medium text-gray-800">✨ Effects</span>
-            <button
-              onClick={() => {
-                const newEffects = !effectsOn;
-                setEffectsOn(newEffects);
-                playSound("switch", newEffects);
-              }}
-              className={`px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm rounded-full font-semibold shadow-sm transition-all ${
-                effectsOn
-                  ? "bg-green-500 text-white hover:bg-green-600"
-                  : "bg-red-500 text-white hover:bg-red-600"
-              }`}
-            >
-              {effectsOn ? "On" : "Off"}
-            </button>
-          </div>
-
-          {/* Volume Control */}
-          <div className="flex flex-col border-t border-gray-200 pt-3 sm:pt-4">
+          {/* Sound Effects */}
+          <div className="border-t border-gray-200 pt-3 sm:pt-4">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs sm:text-sm font-medium text-gray-800 flex items-center gap-2">
-                <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" /> Volume
-              </label>
-              <span className="text-xs sm:text-sm text-gray-600 font-semibold">{Math.round(volume)}%</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-800 flex items-center gap-2">
+                <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" /> Sound Effects
+              </span>
+              <button
+                onClick={() => {
+                  const next = !effectsOn;
+                  setEffectsOn(next);
+                  setSfxEnabled(next);
+                  if (next) playSound("select", true);
+                }}
+                className={`px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm rounded-full font-semibold shadow-sm transition-all ${
+                  effectsOn
+                    ? "bg-green-500 text-white hover:bg-green-600"
+                    : "bg-gray-400 text-white hover:bg-gray-500"
+                }`}
+              >
+                {effectsOn ? "On" : "Off"}
+              </button>
             </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={volume}
-              onChange={(e) => {
-                const newVolume = parseInt(e.target.value);
-                setVolumeState(newVolume);
-                setVolume(newVolume / 100);
-                playSound("click", effectsOn);
-              }}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
-            />
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-1">Adjust game sound effects volume</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={sfxVol}
+                disabled={!effectsOn}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value);
+                  setSfxVol(v);
+                  setVolume(v / 100);
+                }}
+                onMouseUp={() => playSound("tap", effectsOn)}
+                onTouchEnd={() => playSound("tap", effectsOn)}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500 disabled:opacity-40"
+              />
+              <span className="text-xs text-gray-600 font-semibold w-9 text-right">{Math.round(sfxVol)}%</span>
+              <button
+                onClick={() => playSound("correct", effectsOn)}
+                disabled={!effectsOn}
+                className="text-[10px] sm:text-xs px-2 py-1 rounded-md bg-pink-100 text-pink-700 font-bold hover:bg-pink-200 disabled:opacity-40"
+              >
+                Test
+              </button>
+            </div>
           </div>
 
-          {/* Sound Picker */}
-          <div className="flex flex-col border-t border-gray-200 pt-3 sm:pt-4">
-            <label className="text-xs sm:text-sm font-medium mb-1 text-gray-800">
-              🎵 Background Music
-            </label>
-            <select
-              className="border border-blue-300 px-3 py-2 rounded-lg text-xs sm:text-sm shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-              value={sound}
-              onChange={(e) => setSound(e.target.value)}
-            >
-              <option value="default">Coming Soon</option>
-            </select>
+          {/* Background Music */}
+          <div className="border-t border-gray-200 pt-3 sm:pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs sm:text-sm font-medium text-gray-800 flex items-center gap-2">
+                <Music2 className="w-3 h-3 sm:w-4 sm:h-4" /> Background Music
+              </span>
+              <button
+                onClick={() => {
+                  const next = !musicOn;
+                  setMusicOnState(next);
+                  setMusicEnabled(next);
+                  if (next) playMusic("menu");
+                }}
+                className={`px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm rounded-full font-semibold shadow-sm transition-all ${
+                  musicOn
+                    ? "bg-indigo-500 text-white hover:bg-indigo-600"
+                    : "bg-gray-400 text-white hover:bg-gray-500"
+                }`}
+              >
+                {musicOn ? "On" : "Off"}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={musicVol}
+                disabled={!musicOn}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value);
+                  setMusicVol(v);
+                  setMusicVolume(v / 100);
+                }}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500 disabled:opacity-40"
+              />
+              <span className="text-xs text-gray-600 font-semibold w-9 text-right">{Math.round(musicVol)}%</span>
+            </div>
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+              Uplifting orchestral loops on map, gameplay & menus
+            </p>
             <audio ref={audioRef} style={{ display: "none" }} />
           </div>
+
 
           {/* Avatar Selection */}
           <div className="border-t border-gray-200 pt-3 sm:pt-4">
