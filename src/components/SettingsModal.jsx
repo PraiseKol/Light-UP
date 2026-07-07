@@ -2,13 +2,20 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { playSound, getVolume, setVolume } from "@/utils/sound";
-import { Lock, Volume2 } from "lucide-react";
+import { playSound, getVolume, setVolume, setSfxEnabled, isSfxEnabled } from "@/utils/sound";
+import {
+  getMusicVolume,
+  setMusicVolume,
+  setMusicEnabled,
+  isMusicEnabled,
+  playMusic,
+} from "@/utils/music";
+import { Lock, Volume2, Music2 } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
-import { 
-  subscribeToPushNotifications, 
+import {
+  subscribeToPushNotifications,
   requestNotificationPermission,
-  areNotificationsEnabled 
+  areNotificationsEnabled
 } from "@/utils/pushNotifications";
 
 // Avatar configuration with unlock requirements
@@ -20,13 +27,6 @@ const AVATARS = [
   { id: 'avatar5', name: 'Crown', emoji: '👑', unlockPhase: 20 },
 ];
 
-// const soundMap = {
-//   default: null,
-//   shifts: "/sounds/shifts.m4a",
-//   peace: "/sounds/peace.m4a",
-//   juba: "/sounds/juba.mp3",
-// };
-
 export default function SettingsModal({
   isOpen,
   onClose,
@@ -34,13 +34,17 @@ export default function SettingsModal({
   onSave,
   sound,
   setSound,
-  highestCompletedPhase = 0, // Pass from parent
+  highestCompletedPhase = 0,
 }) {
   const [name, setName] = useState(gameUser?.player_name || "");
   const [loading, setLoading] = useState(false);
-  const [effectsOn, setEffectsOn] = useState(gameUser?.effects_on ?? true);
+  const [effectsOn, setEffectsOn] = useState(
+    gameUser?.effects_on ?? isSfxEnabled()
+  );
   const [selectedAvatar, setSelectedAvatar] = useState(gameUser?.selected_avatar || 'avatar1');
-  const [volume, setVolumeState] = useState(getVolume() * 100); // 0-100 for slider
+  const [sfxVol, setSfxVol] = useState(getVolume() * 100);
+  const [musicOn, setMusicOnState] = useState(isMusicEnabled());
+  const [musicVol, setMusicVol] = useState(getMusicVolume() * 100);
 
   const audioRef = useRef(null);
   const navigate = useNavigate();
