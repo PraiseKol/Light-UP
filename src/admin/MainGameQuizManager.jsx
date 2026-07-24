@@ -82,6 +82,20 @@ export default function MainGameQuizManager() {
         );
       }
 
+      if (
+        key === "level_number" &&
+        !editingId &&
+        Number(value) % 10 === 0 &&
+        updated.mode !== "trivia"
+      ) {
+        // Boss level convention: the last level of every phase is trivia.
+        updated.mode = "trivia";
+        updated.options = ["Option 1", "Option 2", "Option 3", "Option 4"];
+        updated.answer = "Type correct answer here";
+        updated.image_urls = "";
+        updated.letters = "";
+      }
+
       if (key === "mode") {
         if (value === "trivia") {
           updated.options = ["Option 1", "Option 2", "Option 3", "Option 4"];
@@ -345,6 +359,11 @@ export default function MainGameQuizManager() {
             <option value="scripture-match">Scripture Match</option>
             <option value="four-pics">Four Pics</option>
           </select>
+          {!editingId && Number(form.level_number) % 10 === 0 && (
+            <p className="text-xs text-purple-600 -mt-2">
+              🏆 Level {form.level_number} is a boss level — defaults to Trivia
+            </p>
+          )}
 
           {form.mode === "trivia" && (
             <>

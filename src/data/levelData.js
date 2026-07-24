@@ -1,6 +1,21 @@
 // src/data/levelData.js
 const gameModes = ['word-fill', 'scripture-match', 'four-pics', 'trivia'];
 
+// Designed mode sequence for levels 1-9 of a phase (level 10 is always the
+// trivia "boss level" — see getModeForLevel below). Rotated per phase so
+// consecutive phases don't feel identical, while staying deterministic
+// (unlike the old Math.random() version, this never changes between loads).
+const MODE_PATTERN = ['word-fill', 'scripture-match', 'four-pics', 'trivia', 'word-fill', 'four-pics', 'scripture-match', 'trivia', 'four-pics'];
+
+function getModeForLevel(phaseNumber, levelIndex, levelsPerPhase) {
+  // Boss level: always trivia
+  if (levelIndex === levelsPerPhase - 1) return 'trivia';
+
+  const rotation = (phaseNumber - 1) % MODE_PATTERN.length;
+  const patternIndex = (levelIndex + rotation) % MODE_PATTERN.length;
+  return MODE_PATTERN[patternIndex];
+}
+
 const defaultPhaseTitles = [
   'The Birth and Early Life of Jesus', 'Jesus Baptism and Temptation', 'Jesus Miracles and Healings', 'The Parables of Jesus',
   'The Sermon on the Mount', 'Calling of the Disciples', 'Key Teachings of Jesus', 'The Last Supper and Betrayal',
@@ -48,7 +63,7 @@ function generateLevels(phaseCount = 8, levelsPerPhase = 10) {
       phase.levels.push({
         id: `P${p}-L${i + 1}`,
         number: i + 1,
-        mode: gameModes[Math.floor(Math.random() * gameModes.length)],
+        mode: getModeForLevel(p, i, levelsPerPhase),
         completed: false,
         position: pos,
       });

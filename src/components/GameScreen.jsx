@@ -412,6 +412,18 @@ function GameScreenContent({
           >
             ❤️ <span>{gameUser?.lives ?? "?"}</span>
           </span>
+          {gameUser?.consecutive_perfects > 0 && (
+            <span
+              className={`chip-3d text-[11px] sm:text-sm !py-0.5 !px-2 ${
+                gameUser.consecutive_perfects % 5 === 0
+                  ? "animate-pulse ring-2 ring-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.8)]"
+                  : ""
+              }`}
+              title={`${gameUser.consecutive_perfects} perfect scores in a row`}
+            >
+              🔥 <span>{gameUser.consecutive_perfects}</span>
+            </span>
+          )}
         </span>
       </div>
 
@@ -466,8 +478,10 @@ function GameScreenContent({
         </div>
       </div>
 
-      {/* Idle hint caption */}
-      {idleHint && gameUser?.powerups_inventory && (
+      {/* Idle hint caption — only nudge players who actually own a power-up to use */}
+      {idleHint &&
+        gameUser?.powerups_inventory &&
+        Object.values(gameUser.powerups_inventory).some((count) => count > 0) && (
         <div className="pointer-events-none absolute bottom-14 sm:bottom-20 left-1/2 -translate-x-1/2 z-20 animate-fade-in">
           <div className="px-3 py-1 rounded-full bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 text-purple-900 text-[10px] sm:text-xs font-extrabold shadow-[0_4px_12px_rgba(168,85,247,0.45)] border border-white/60 backdrop-blur-sm whitespace-nowrap">
             💡 Need help? Try a power-up
