@@ -21,9 +21,7 @@ import MultiplayerLobby from "@/components/MultiplayerLobby";
 import JoinMultiplayerGame from "@/components/JoinMultiplayerGame";
 import MultiplayerGame from "@/components/MultiplayerGame";
 
-import CreateAdmin from "@/CreateAdmin";
 import AdminRoute from "@/components/AdminRoute";
-import AdminLogin from "@/pages/AdminLogin";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import { lazy, Suspense } from "react";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -245,8 +243,7 @@ function AppContent() {
           }
         />
 
-        {/* Admin */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        {/* Admin — access is gated by AdminRoute (real Supabase Auth + game_users.role), no separate login */}
         <Route
           path="/admin/dashboard"
           element={
@@ -260,7 +257,6 @@ function AppContent() {
             </AdminRoute>
           }
         />
-        <Route path="/create-admin" element={<CreateAdmin />} />
 
         {/* Default */}
         <Route path="*" element={<Navigate to="/map" replace />} />

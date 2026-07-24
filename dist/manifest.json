@@ -1,0 +1,22 @@
+{
+  "name": "Light UP Interactive Bible Game App",
+  "short_name": "Light UP",
+  "description": "A Bible Immersive and Educative Game",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/logo192.jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

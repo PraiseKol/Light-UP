@@ -78,10 +78,7 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
       const result = await res.json();
       if (!result.success) throw new Error("Failed to deduct talents");
 
-      await supabase
-        .from("game_users")
-        .update({ lives, updated_at: new Date().toISOString() })
-        .eq("user_id", gameUser.user_id);
+      await supabase.rpc("refill_lives", { p_user_id: gameUser.user_id });
 
       alert(`You bought ${lives} lives successfully!`);
       onPurchase?.();

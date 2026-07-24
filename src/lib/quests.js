@@ -157,9 +157,11 @@ export async function claimQuest(userId, questKey) {
       .single();
     const patch = {};
     if (def.reward.talents) patch.talents = (gu?.talents || 0) + def.reward.talents;
-    if (def.reward.lives) patch.lives = Math.min(5, (gu?.lives || 0) + def.reward.lives);
     if (Object.keys(patch).length > 0) {
       await supabase.from("game_users").update(patch).eq("user_id", userId);
+    }
+    if (def.reward.lives) {
+      await supabase.rpc("add_lives", { p_user_id: userId, p_amount: def.reward.lives });
     }
   }
 

@@ -112,7 +112,7 @@ export default function SettingsModal({
 
   const handleAdminLogin = () => {
     onClose();
-    navigate("/admin/login");
+    navigate("/admin/dashboard");
   };
 
   if (!isOpen) return null;

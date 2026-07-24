@@ -1,7 +1,6 @@
 // hooks/useGameUser.js 
 import { useEffect, useState, useCallback, useRef } from 'react'; 
 import { supabase } from '@/lib/supabaseClient'; 
-import { calculateUpdatedLives } from '@/utils/lifeUtils'; 
 export function useGameUser(userId) { 
   const [gameUser, setGameUser] = useState(null); 
   const [loading, setLoading] = useState(true); 
@@ -51,29 +50,23 @@ export function useGameUser(userId) {
         return; 
       } 
       
-      // 🧠 Recalculate lives using time logic 
-      const { lives, last_life_lost_at } = userData; 
-      const { lives: newLives, newLastLostAt } = 
-      calculateUpdatedLives(lives, last_life_lost_at); 
-      
-      // 🛠️ Update lives only if changed 
-      if (newLives !== lives) { 
-        const updates = { 
-          lives: newLives, 
-          last_life_lost_at: newLastLostAt, 
-          updated_at: new Date().toISOString(), 
-        }; 
-        
-        const { error: updateError } = await supabase 
-        .from('game_users') 
-        .update(updates) 
-        .eq('user_id', userId); 
-        
-        if (!updateError) { 
-          userData.lives = newLives; 
-          userData.last_life_lost_at = newLastLostAt; 
-        } 
-      } 
+      // 🧠 Recalculate lives server-side — the DB is the source of truth,
+      // not the client's clock. See public.regen_lives() in Supabase.
+      const { data: regenData, error: regenError } = await supabase.rpc(
+        'regen_lives',
+        { p_user_id: userId }
+      );
+
+      if (!regenError) {
+        const regenRow = Array.isArray(regenData) ? regenData[0] : regenData;
+        if (regenRow) {
+          userData.lives = regenRow.lives;
+          userData.last_life_lost_at = regenRow.last_life_lost_at;
+        }
+      } else {
+        console.error("❌ Failed to regen lives:", regenError);
+      }
+
       setGameUser(userData); 
     } catch (err) { 
       console.error("‼️ Unexpected error in useGameUser:", err); 
