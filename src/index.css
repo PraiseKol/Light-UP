@@ -468,10 +468,14 @@ a:focus-visible,
     perspective: 1600px;
     perspective-origin: 50% 4%;
   }
+  /* NOTE: rotateX/rotateZ are no longer set here — they're now driven
+     live by scroll position (see worldRotateX/worldRotateZ + the
+     motion.div in MapAndGame.jsx), so the tilt continuously rolls as
+     you scroll instead of holding one static angle. transform-style
+     still needs to live in CSS since framer-motion's inline transform
+     shorthand doesn't include it. */
   .path-world-3d {
-    transform: rotateX(13deg);
     transform-style: preserve-3d;
-    transition: transform 0.4s ease;
   }
 
   /* Per-phase "world" background — reads CSS vars set inline per phase,

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useTransform } from "framer-motion";
 import { useTheme } from "@/context/ThemeContext";
 import { useMemo } from "react";
 
@@ -41,9 +41,35 @@ function SnowfallEffect() {
   );
 }
 
-export default function MapBackground() {
+/**
+ * MapBackground
+ *
+ * `scrollY` is an optional framer-motion MotionValue<number> — the raw
+ * scroll offset (in px) of the map's scroll container, produced by
+ * `useScroll({ container: mainRef })` in MapAndGame.jsx. When provided,
+ * the background is no longer visually "fixed": its layers translate at
+ * different fractions of that scroll speed (parallax), so scrolling the
+ * path feels like you're moving over one continuous curved world instead
+ * of a static backdrop with a path sliding on top of it. If `scrollY` is
+ * omitted (e.g. rendered somewhere without a scroll container), the
+ * layers simply sit at offset 0 — no crash, just no parallax.
+ */
+export default function MapBackground({ scrollY }) {
   const { config, theme } = useTheme();
-  
+
+  // Parallax offsets: far layer (sky/hills gradient) moves slowest,
+  // the themed illustration layer moves a bit faster — that speed
+  // difference between layers is what sells depth/curvature while
+  // scrolling, rather than a single flat image scrolling 1:1 or not
+  // scrolling at all.
+  const farY = useTransform(scrollY ?? 0, (v) => (typeof v === "number" ? v * -0.06 : 0));
+  const nearY = useTransform(scrollY ?? 0, (v) => (typeof v === "number" ? v * -0.16 : 0));
+  // Slight continuous scale "breathing" tied to scroll, reinforcing the
+  // sense that the surface is rolling rather than static.
+  const nearScale = useTransform(scrollY ?? 0, (v) =>
+    typeof v === "number" ? 1 + Math.min(0.06, Math.abs(Math.sin(v / 1400)) * 0.06) : 1
+  );
+
   // Memoize stars and particles to prevent re-renders
   const stars = useMemo(() => 
     [...Array(60)].map((_, i) => ({
@@ -67,28 +93,35 @@ export default function MapBackground() {
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Dynamic gradient background based on theme */}
-      <div className={`absolute inset-0 bg-gradient-to-b ${config.background.gradient}`} />
+      {/* Far layer: base gradient — slowest parallax speed */}
+      <motion.div
+        className={`absolute inset-x-0 bg-gradient-to-b ${config.background.gradient}`}
+        style={{ y: farY, top: "-10%", bottom: "-10%" }}
+      />
 
-      {/* Optional themed 3D illustrated background image */}
+      {/* Near layer: themed illustration — moves faster than the gradient
+          behind it, and breathes slightly in scale, so the two layers
+          visibly separate as you scroll instead of moving as one flat
+          static image. Both layers are oversized (-10%/-15%) so the
+          parallax travel never exposes an edge. */}
       {config.background.image && (
-        <>
+        <motion.div
+          className="absolute inset-x-0"
+          style={{ y: nearY, scale: nearScale, top: "-15%", bottom: "-15%" }}
+        >
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${config.background.image})` }}
           />
           <div className={`absolute inset-0 ${config.background.overlay || 'bg-black/25'}`} />
-        </>
+        </motion.div>
       )}
 
       {/* Global "planet curvature" shading — ONE fixed layer covering the
-          whole viewport, not repeated per phase. This is what actually sells
-          "looking at a globe": a soft light highlight near the top (like a
-          sun grazing the surface) fading into a dark curved edge vignette
-          all the way around. Lives here so it never seams or boxes when the
-          map scrolls through multiple phases — combine with the per-node
-          rotateY/scale/brightness falloff in MapAndGame.jsx for the full
-          effect. */}
+          whole viewport (deliberately NOT parallaxed, so the vignette
+          always frames the current viewport edge-to-edge regardless of
+          scroll position). Soft light highlight near the top (like a sun
+          grazing the surface) fading into a dark curved edge vignette. */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{

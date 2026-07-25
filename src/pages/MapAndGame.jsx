@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { levelPhases } from "@/data/levelData";
 import { getWorldTheme } from "@/data/worldThemes";
 import { useAuth } from "@/auth/AuthProvider";
@@ -174,6 +175,19 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const phaseRefs = useRef([]);
   const levelRefs = useRef({});
   const [showNextLevelModal, setShowNextLevelModal] = useState(false);
+
+  // 🌐 Scroll-linked "globe" motion — the whole point is that background
+  // and path move TOGETHER as one curved surface instead of a static
+  // backdrop with a path sliding on top of it. mainScrollRef is attached
+  // to the actual scrollable <main> below; useScroll reads its raw pixel
+  // offset (scrollY), which drives:
+  //   - parallax speed differences in MapBackground's layers
+  //   - a continuous gentle rotateX/rotateZ "roll" on each phase's
+  //     path-world-3d stage, replacing the old static CSS tilt
+  const mainScrollRef = useRef(null);
+  const { scrollY: mapScrollY } = useScroll({ container: mainScrollRef });
+  const worldRotateX = useTransform(mapScrollY, (v) => 13 + Math.sin(v / 900) * 5);
+  const worldRotateZ = useTransform(mapScrollY, (v) => Math.sin(v / 1400) * 2.5);
 
   useEffect(() => {
     let leaderboardTimeout;
@@ -660,7 +674,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   return (
     <div className="relative w-full h-screen flex flex-col overflow-hidden">
       <PWAInstallPrompt />
-      <MapBackground />
+      <MapBackground scrollY={mapScrollY} />
 
       {/* Pop Game Red Orb - Admin Controlled Visibility (positioned above Memory Challenge) */}
       {popGameActive && !selectedLevel && (
@@ -824,7 +838,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       )}
 
       {/* Scrollable Center (ONLY level maps scroll) */}
-      <main className="pt-20 pb-28 flex-1 overflow-y-auto">
+      <main ref={mainScrollRef} className="pt-20 pb-28 flex-1 overflow-y-auto">
         {!selectedLevel ? (
           <div className="max-w-4xl mx-auto px-4 py-8">
             {[...levelPhases].reverse().map((phase, reversedIndex) => {
@@ -867,7 +881,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                       curvature shading now lives once, full-viewport, in
                       MapBackground.jsx instead, so it never seams. */}
                   <div className="path-stage-3d relative">
-                  <div className="relative w-full path-world-3d" style={{ minHeight: `${containerHeight}px` }}>
+                  <motion.div
+                    className="relative w-full path-world-3d"
+                    style={{
+                      minHeight: `${containerHeight}px`,
+                      rotateX: worldRotateX,
+                      rotateZ: worldRotateZ,
+                    }}
+                  >
                     {/* Hilly 3D Path SVG - layered shadow + gold + rim highlight */}
                     <svg 
                       className="absolute inset-0 w-full h-full pointer-events-none" 
@@ -1049,7 +1070,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                         </div>
                       );
                     })}
-                  </div>
+                  </motion.div>
                   </div>
                 </div>
               );
