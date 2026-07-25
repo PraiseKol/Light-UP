@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { levelPhases } from "@/data/levelData";
 import { getWorldTheme } from "@/data/worldThemes";
-import { generateScenery, MountainSilhouette, CloudPuff, SunGlow, Rainbow } from "@/components/MapScenery";
 import { useAuth } from "@/auth/AuthProvider";
 import { fetchProgress } from "@/lib/fetchProgress";
 import { saveProgress } from "@/lib/saveProgress";
@@ -843,31 +842,13 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               const levelsPerPhase = phase.levels.length;
               const containerHeight = (levelsPerPhase * 92) + 180;
               const worldTheme = getWorldTheme(originalIndex + 1);
-              const scenery = generateScenery(originalIndex + 1, 6);
 
               return (
                 <div
                   key={originalIndex}
                   ref={(el) => (phaseRefs.current[originalIndex] = el)}
-                  className="relative mb-10 world-backdrop rounded-3xl"
-                  style={{
-                    '--world-sky-top': worldTheme.skyTop,
-                    '--world-sky-bottom': worldTheme.skyBottom,
-                  }}
+                  className="relative mb-10"
                 >
-                  {/* Atmosphere: sun glow + rainbow flourish (alternates by phase), drifting clouds, distant mountains */}
-                  <SunGlow size={110} style={{ position: 'absolute', top: -20, right: '8%', zIndex: 0, pointerEvents: 'none' }} />
-                  {(originalIndex % 3 === 0) && (
-                    <Rainbow width={160} style={{ position: 'absolute', top: -10, left: '5%', zIndex: 0, pointerEvents: 'none', opacity: 0.7 }} />
-                  )}
-                  <CloudPuff width={130} style={{ position: 'absolute', top: 30, left: '-5%', zIndex: 0, pointerEvents: 'none', opacity: 0.85, animation: 'cloudDrift 40s linear infinite' }} />
-                  <CloudPuff width={90} style={{ position: 'absolute', top: 90, right: '2%', zIndex: 0, pointerEvents: 'none', opacity: 0.7, animation: 'cloudDrift 55s linear infinite reverse' }} />
-                  <MountainSilhouette
-                    width={800}
-                    color={worldTheme.hill}
-                    style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 'auto', zIndex: 0, pointerEvents: 'none', opacity: 0.25 }}
-                  />
-
                   {/* Phase Title Banner */}
                   <div className="sticky top-20 z-10 mb-5">
                     <div className="phase-ribbon-3d py-2 px-4 text-center">
@@ -879,7 +860,15 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
 
                   {/* Map Container — tilted into a mild forced-perspective "3D world" */}
-                  <div className="path-stage-3d">
+                  <div className="path-stage-3d relative">
+                  {/* Globe-lighting vignette: dark at edges, clear at center — sells
+                      curvature without covering the real background art behind it */}
+                  <div
+                    className="absolute inset-0 pointer-events-none z-[1] rounded-3xl"
+                    style={{
+                      background: 'radial-gradient(ellipse 70% 60% at 50% 40%, transparent 40%, rgba(0,0,0,0.28) 100%)',
+                    }}
+                  />
                   <div className="relative w-full path-world-3d" style={{ minHeight: `${containerHeight}px` }}>
                     {/* Hilly 3D Path SVG - layered shadow + gold + rim highlight */}
                     <svg 
@@ -953,24 +942,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                       })}
                     </svg>
 
-                    {/* Scattered biblical scenery — tents, palm trees, ark, doves */}
-                    {scenery.map((item, i) => (
-                      <item.Kind
-                        key={i}
-                        size={item.size}
-                        width={item.size}
-                        style={{
-                          position: 'absolute',
-                          left: `${item.left}%`,
-                          top: `${item.top}%`,
-                          transform: `translate(-50%, -50%) ${item.flip ? 'scaleX(-1)' : ''}`,
-                          opacity: item.opacity,
-                          zIndex: 1,
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    ))}
-
                     {/* Level Nodes */}
                     {wrappedLevels.map((level, idx) => {
                       const isCompleted = completedLevels.includes(level.id);
@@ -979,10 +950,15 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                       const isLevelUnlocked = isUnlocked && isPreviousCompleted;
                       const score = levelScores[level.id] || 0;
                       const stars = getStarsFromScore(score);
-                      // Depth cue: nodes further from the path's horizontal
-                      // center read as slightly "further back" in the world.
-                      const depthOffset = Math.min(1, Math.abs(level.position.x - 50) / 50);
-                      const depthScale = 1 - depthOffset * 0.12;
+                      // Globe-wrap illusion: nodes away from horizontal center
+                      // rotate away (rotateY), shrink, and dim slightly — as if
+                      // sitting on the curved surface of a sphere rather than
+                      // a flat plane. Center nodes face the viewer directly.
+                      const signedOffset = (level.position.x - 50) / 50; // -1 (left) .. 1 (right)
+                      const depthOffset = Math.min(1, Math.abs(signedOffset));
+                      const depthScale = 1 - depthOffset * 0.22;
+                      const rotateY = signedOffset * 24;
+                      const brightness = 1 - depthOffset * 0.3;
 
                       return (
                         <div
@@ -992,7 +968,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                           style={{
                             left: `${level.position.x}%`,
                             top: `${level.position.y}px`,
-                            transform: `translate(-50%, -50%) scale(${depthScale})`,
+                            transform: `translate(-50%, -50%) rotateY(${rotateY}deg) scale(${depthScale})`,
+                            filter: `brightness(${brightness})`,
                             zIndex: 10,
                           }}
                         >
