@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { levelPhases } from "@/data/levelData";
 import { getWorldTheme } from "@/data/worldThemes";
+import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/auth/AuthProvider";
 import { fetchProgress } from "@/lib/fetchProgress";
 import { saveProgress } from "@/lib/saveProgress";
@@ -96,6 +97,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
+  const { config: themeConfig } = useTheme();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -674,7 +676,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   return (
     <div className="relative w-full h-screen flex flex-col overflow-hidden">
       <PWAInstallPrompt />
-      <MapBackground scrollY={mapScrollY} />
+      <MapBackground />
 
       {/* Pop Game Red Orb - Admin Controlled Visibility (positioned above Memory Challenge) */}
       {popGameActive && !selectedLevel && (
@@ -889,6 +891,38 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                       rotateZ: worldRotateZ,
                     }}
                   >
+                    {/* Real terrain art — a genuine CHILD of this same
+                        scrolling, tilting stage (not a fixed backdrop),
+                        so it physically scrolls and tilts together with
+                        the path/nodes below instead of sitting behind
+                        them in its own layer. The rounded top/bottom
+                        (border-radius as an ellipse) bends its edges into
+                        an arc, like a porthole onto a curved surface —
+                        combined with the parent's rotateX/rotateZ, this
+                        is what actually reads as "sphere" rather than a
+                        flat rectangle that happens to tilt. */}
+                    {themeConfig?.background?.image && (
+                      <div
+                        className="absolute inset-0 overflow-hidden"
+                        style={{ borderRadius: "50% 50% / 5% 5%", zIndex: 0 }}
+                      >
+                        <div
+                          className="absolute inset-0 bg-cover bg-center"
+                          style={{ backgroundImage: `url(${themeConfig.background.image})` }}
+                        />
+                        {/* Per-world tint so each phase still reads as a
+                            distinct place, even though it shares one base
+                            illustration — matches this phase's path/hill
+                            palette from worldThemes.js. */}
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            background: `linear-gradient(180deg, ${worldTheme.hill}33, transparent 45%, ${worldTheme.path[0]}33)`,
+                          }}
+                        />
+                        <div className={`absolute inset-0 ${themeConfig.background.overlay || "bg-black/20"}`} />
+                      </div>
+                    )}
                     {/* Hilly 3D Path SVG - layered shadow + gold + rim highlight */}
                     <svg 
                       className="absolute inset-0 w-full h-full pointer-events-none" 

@@ -1,4 +1,4 @@
-import { motion, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { useTheme } from "@/context/ThemeContext";
 import { useMemo } from "react";
 
@@ -44,31 +44,21 @@ function SnowfallEffect() {
 /**
  * MapBackground
  *
- * `scrollY` is an optional framer-motion MotionValue<number> — the raw
- * scroll offset (in px) of the map's scroll container, produced by
- * `useScroll({ container: mainRef })` in MapAndGame.jsx. When provided,
- * the background is no longer visually "fixed": its layers translate at
- * different fractions of that scroll speed (parallax), so scrolling the
- * path feels like you're moving over one continuous curved world instead
- * of a static backdrop with a path sliding on top of it. If `scrollY` is
- * omitted (e.g. rendered somewhere without a scroll container), the
- * layers simply sit at offset 0 — no crash, just no parallax.
+ * IMPORTANT: this is now ONLY the deep, never-moving backdrop (gradient
+ * wash + edge vignette + stars/particles) — a neutral "void" that sits
+ * behind everything. The actual terrain illustration used to live here
+ * as a `position: fixed` layer, which was the root of the "background
+ * feels static" problem: a fixed element can never really scroll with
+ * the path, no matter how much its internal offset is animated.
+ *
+ * The real, scrollable terrain art now lives INSIDE each phase's
+ * `.path-world-3d` stage in MapAndGame.jsx, as an actual DOM sibling of
+ * the path/nodes — so it scrolls and tilts with them because it's
+ * genuinely part of that same content, not a trick played on a fixed
+ * layer behind it.
  */
-export default function MapBackground({ scrollY }) {
-  const { config, theme } = useTheme();
-
-  // Parallax offsets: far layer (sky/hills gradient) moves slowest,
-  // the themed illustration layer moves a bit faster — that speed
-  // difference between layers is what sells depth/curvature while
-  // scrolling, rather than a single flat image scrolling 1:1 or not
-  // scrolling at all.
-  const farY = useTransform(scrollY ?? 0, (v) => (typeof v === "number" ? v * -0.06 : 0));
-  const nearY = useTransform(scrollY ?? 0, (v) => (typeof v === "number" ? v * -0.16 : 0));
-  // Slight continuous scale "breathing" tied to scroll, reinforcing the
-  // sense that the surface is rolling rather than static.
-  const nearScale = useTransform(scrollY ?? 0, (v) =>
-    typeof v === "number" ? 1 + Math.min(0.06, Math.abs(Math.sin(v / 1400)) * 0.06) : 1
-  );
+export default function MapBackground() {
+  const { config } = useTheme();
 
   // Memoize stars and particles to prevent re-renders
   const stars = useMemo(() => 
@@ -93,35 +83,15 @@ export default function MapBackground({ scrollY }) {
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Far layer: base gradient — slowest parallax speed */}
-      <motion.div
-        className={`absolute inset-x-0 bg-gradient-to-b ${config.background.gradient}`}
-        style={{ y: farY, top: "-10%", bottom: "-10%" }}
-      />
+      {/* Dynamic gradient wash — deliberately the ONLY background element
+          left fixed. It's an abstract color field, not terrain, so it
+          never needs to "scroll with the path" — it's just the void the
+          scrolling world sits in front of. */}
+      <div className={`absolute inset-0 bg-gradient-to-b ${config.background.gradient}`} />
 
-      {/* Near layer: themed illustration — moves faster than the gradient
-          behind it, and breathes slightly in scale, so the two layers
-          visibly separate as you scroll instead of moving as one flat
-          static image. Both layers are oversized (-10%/-15%) so the
-          parallax travel never exposes an edge. */}
-      {config.background.image && (
-        <motion.div
-          className="absolute inset-x-0"
-          style={{ y: nearY, scale: nearScale, top: "-15%", bottom: "-15%" }}
-        >
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${config.background.image})` }}
-          />
-          <div className={`absolute inset-0 ${config.background.overlay || 'bg-black/25'}`} />
-        </motion.div>
-      )}
-
-      {/* Global "planet curvature" shading — ONE fixed layer covering the
-          whole viewport (deliberately NOT parallaxed, so the vignette
-          always frames the current viewport edge-to-edge regardless of
-          scroll position). Soft light highlight near the top (like a sun
-          grazing the surface) fading into a dark curved edge vignette. */}
+      {/* Global "planet curvature" shading — soft light highlight near
+          the top fading into a dark curved edge vignette, framing
+          whatever part of the scrolling world is currently in view. */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -241,7 +211,8 @@ export default function MapBackground({ scrollY }) {
         {config.decorations.secondary[1] || config.decorations.primary[2]}
       </motion.div>
 
-      {/* Rolling hills with theme colors — dimmed when background image is set */}
+      {/* Rolling hills with theme colors — only shown when there's no
+          per-phase terrain art at all (kept as a graceful fallback) */}
       {!config.background.image && (
         <div className="absolute bottom-0 left-0 right-0 h-[25%]">
           <svg className="absolute bottom-0 w-full h-full" viewBox="0 0 1200 300" preserveAspectRatio="none">
