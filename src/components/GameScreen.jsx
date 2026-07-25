@@ -484,8 +484,6 @@ function GameScreenContent({
         </div>
       </div>
 
-      </div>
-
         {/* Desktop-only sidebar */}
         <aside className="hidden lg:flex flex-col gap-4 w-64 shrink-0 py-2">
           <div className="card-3d p-4 text-center">
@@ -523,7 +521,6 @@ function GameScreenContent({
               }
             </div>
           )}
-        </div>
         </aside>
       </div>
 
