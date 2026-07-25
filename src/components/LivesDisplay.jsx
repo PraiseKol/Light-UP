@@ -27,9 +27,19 @@ export function LivesDisplay({ lives, lastLostAt }) {
   }, [lives, lastLostAt]);
 
   return (
-    <div className="text-black">
-      ❤️ Lives: {lives}/5
-      {nextLifeIn && <div className="text-[6px] md:text-sm">Next life in: {nextLifeIn}</div>}
+    <div className="flex flex-col items-center leading-tight">
+      <div className="heart-meter">
+        {[...Array(5)].map((_, i) => (
+          <span key={i} className={`heart-pip ${i < lives ? '' : 'is-empty'}`}>
+            ❤️
+          </span>
+        ))}
+      </div>
+      {nextLifeIn && (
+        <div className="text-[8px] sm:text-[10px] text-white/90 font-bold mt-0.5">
+          +1 in {nextLifeIn}
+        </div>
+      )}
     </div>
   );
 }

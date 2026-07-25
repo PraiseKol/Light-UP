@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import ProgressBar from "@/components/ui/progress";
 import RightAnswerModal from "@/components/ui/RightAnswerModal";
 import WrongAnswerModal from "@/components/ui/WrongAnswerModal";
 import TimeUpModal from "@/components/ui/TimeUpModal";
-import { Button } from "@/components/ui/button";
 import { useTimer } from "@/hooks/useTimer";
 import { useResetLevel } from "@/hooks/useResetLevel";
 import { supabase } from "@/lib/supabaseClient";
@@ -16,6 +14,15 @@ const getScoreFromTime = (timeLeft) => {
   if (timeLeft > 10) return 75;
   return 50;
 };
+
+const OPTION_STYLES = [
+  "from-blue-400 to-blue-600 shadow-[0_4px_0_#1d4ed8] hover:from-blue-300 hover:to-blue-500",
+  "from-amber-400 to-amber-600 shadow-[0_4px_0_#b45309] hover:from-amber-300 hover:to-amber-500",
+  "from-emerald-400 to-emerald-600 shadow-[0_4px_0_#065f46] hover:from-emerald-300 hover:to-emerald-500",
+  "from-purple-400 to-purple-600 shadow-[0_4px_0_#581c87] hover:from-purple-300 hover:to-purple-500",
+];
+
+const OPTION_LETTERS = ["A", "B", "C", "D"];
 
 export default function TriviaMode({
   level,
@@ -40,15 +47,14 @@ export default function TriviaMode({
   const [showRightModal, setShowRightModal] = useState(false);
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [showTimeUpModal, setShowTimeUpModal] = useState(false);
+  const [revealResult, setRevealResult] = useState(null); // "correct" | "wrong" | null
 
   const hasAnswered = useRef(false);
   const lifeLostRef = useRef(false);
-  const cardContentRef = useRef(null);
 
   const { timeLeft, reset, setIsRunning, setTimeLeft } = useTimer(30, () => {
     setIsRunning(false);
     if (hasAnswered.current) return;
-
     if (selected) {
       checkAnswer();
     } else {
@@ -64,10 +70,6 @@ export default function TriviaMode({
   });
 
   useEffect(() => {
-    cardContentRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
     if (activePowerups?.grace_period) {
       setTimeLeft((prev) => prev + 15);
       activePowerups?.setGraceUsed?.();
@@ -75,31 +77,21 @@ export default function TriviaMode({
   }, [activePowerups, setTimeLeft]);
 
   useEffect(() => {
-    if (
-      activePowerups?.divine_hint &&
-      Array.isArray(options) &&
-      options.length > 2
-    ) {
+    if (activePowerups?.divine_hint && Array.isArray(options) && options.length > 2) {
       const wrongOptions = options.filter(
         (opt) => opt.trim().toLowerCase() !== answer.trim().toLowerCase()
       );
       if (wrongOptions.length >= 2) {
-        const keepWrong =
-          wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
-        const newOptions = [answer, keepWrong].sort(() => Math.random() - 0.5);
-        setDisplayOptions(newOptions);
+        const keepWrong = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+        setDisplayOptions([answer, keepWrong].sort(() => Math.random() - 0.5));
         activePowerups?.setDivineHintUsed?.();
       }
     }
-  }, [activePowerups?.divine_hint, options, answer, activePowerups]);
+  }, [activePowerups?.divine_hint, options, answer]);
 
   const resetLevel = useResetLevel({
-    setModals: {
-      setShowRightModal,
-      setShowWrongModal,
-      setShowTimeUpModal,
-    },
-    setUserInput: () => setSelected(null),
+    setModals: { setShowRightModal, setShowWrongModal, setShowTimeUpModal },
+    setUserInput: () => { setSelected(null); setRevealResult(null); },
     setStatus,
     setTimeLeft: reset,
     setIsRunning,
@@ -111,45 +103,27 @@ export default function TriviaMode({
 
   const saveScore = async (earnedScore) => {
     if (!user || !level) return;
-
     const levelId = `phase-${level.phaseNumber}-level-${level.number}`;
-
     try {
       const { data: existing } = await supabase
-        .from("progress")
-        .select("score")
-        .eq("user_id", user.id)
-        .eq("level_id", levelId)
-        .maybeSingle();
-
-      const oldScore = existing?.score ?? 0;
-
-      if (earnedScore > oldScore) {
+        .from("progress").select("score")
+        .eq("user_id", user.id).eq("level_id", levelId).maybeSingle();
+      if (earnedScore > (existing?.score ?? 0)) {
         await supabase.from("progress").upsert(
-          {
-            user_id: user.id,
-            level_id: levelId,
-            phase: level.phaseNumber,
-            mode: "Trivia",
-            score: earnedScore,
-          },
+          { user_id: user.id, level_id: levelId, phase: level.phaseNumber, mode: "Trivia", score: earnedScore },
           { onConflict: ["user_id", "level_id"] }
         );
       }
-    } catch (err) {
-      console.error("Failed to save Trivia score:", err);
-    }
+    } catch (err) { console.error("Failed to save Trivia score:", err); }
   };
 
   const checkAnswer = () => {
     if (hasAnswered.current) return;
     hasAnswered.current = true;
     setIsRunning(false);
-
-    const isCorrect =
-      selected?.trim().toLowerCase() === answer.trim().toLowerCase();
+    const isCorrect = selected?.trim().toLowerCase() === answer.trim().toLowerCase();
     setStatus(isCorrect ? "correct" : "wrong");
-
+    setRevealResult(isCorrect ? "correct" : "wrong");
     setTimeout(() => {
       if (isCorrect) {
         playSound("success", effectsOn);
@@ -167,98 +141,110 @@ export default function TriviaMode({
         }
         setShowWrongModal(true);
       }
-    }, 200);
+    }, 600);
   };
 
-  // Calculate expected lives after loss (accounting for Holy Shield)
   const isShieldActive = gameUser?.holy_shield_until && new Date(gameUser.holy_shield_until) > new Date();
-  const livesAfterLoss = isShieldActive 
-    ? (gameUser?.lives ?? 0) 
+  const livesAfterLoss = isShieldActive
+    ? (gameUser?.lives ?? 0)
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
+  const timerPct = (timeLeft / 30) * 100;
+  const timerColor = timeLeft > 15 ? "text-emerald-400" : timeLeft > 8 ? "text-amber-400" : "text-red-400";
+
   return (
-    <div className="h-full flex flex-col justify-center items-center p-1.5 sm:p-3 overflow-hidden">
-      <div className="w-full max-w-md">
-        <div className="card-3d p-2.5 sm:p-4">
-          <div className="space-y-1.5 mb-2">
-            <div className="flex justify-between items-center">
-              <div className="text-[10px] sm:text-xs text-pink-700 font-bold truncate">
-                P{level?.phaseNumber} • L{level?.number} • Trivia
-              </div>
-              <div className="chip-3d chip-3d-star text-[10px] sm:text-sm !py-0.5 !px-2">
-                ⏱️ {timeLeft}s
-              </div>
+    <div className="h-full flex flex-col justify-center items-center p-2 sm:p-4 overflow-hidden">
+      <div className="w-full max-w-md lg:max-w-2xl">
+        {/* Card */}
+        <div className="card-3d p-3 sm:p-5 lg:p-7">
+
+          {/* Header row */}
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-[10px] sm:text-xs font-black text-purple-600 tracking-widest uppercase">
+              ⚡ Trivia · Phase {level?.phaseNumber} · Level {level?.number}
+            </span>
+            {/* Circular timer */}
+            <div className={`relative flex items-center justify-center w-11 h-11 ${timerColor}`}>
+              <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 44 44">
+                <circle cx="22" cy="22" r="18" fill="none" stroke="currentColor" strokeOpacity="0.15" strokeWidth="4" />
+                <circle cx="22" cy="22" r="18" fill="none" stroke="currentColor" strokeWidth="4"
+                  strokeDasharray={`${2 * Math.PI * 18}`}
+                  strokeDashoffset={`${2 * Math.PI * 18 * (1 - timerPct / 100)}`}
+                  strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s linear" }} />
+              </svg>
+              <span className="text-sm font-black z-10">{timeLeft}</span>
             </div>
-            <ProgressBar value={timeLeft} max={30} />
           </div>
 
-          <CardHeader className="text-xs sm:text-base font-bold mb-2 leading-snug p-0 max-h-[22vh] overflow-auto">
-            {question}
-          </CardHeader>
+          {/* Progress bar */}
+          <ProgressBar value={timeLeft} max={30} />
 
-          <CardContent className="p-0">
-            <div className="space-y-1.5 mb-2">
-              {displayOptions.map((opt, i) => {
-                const isSelected = selected === opt;
-                const isDisabled = hasAnswered.current;
+          {/* Question */}
+          <div className="my-4 sm:my-5 px-1">
+            <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-800 leading-snug text-center">
+              {question}
+            </p>
+          </div>
 
-                return (
-                  <button
-                    key={i}
-                    disabled={isDisabled}
-                    onClick={() => {
-                      if (!hasAnswered.current) setSelected(opt);
-                      playSound("optionSelect", effectsOn);
-                    }}
-                    className={`btn-orb w-full px-3 py-1.5 sm:py-2.5 !rounded-2xl text-left text-[12px] sm:text-sm font-bold justify-start ${
-                      isSelected ? "btn-orb-pink" : "btn-orb-white"
-                    }`}
-                  >
-                    <span className="w-full">{opt}</span>
-                  </button>
-                );
-              })}
-            </div>
+          {/* Options — 2-column on desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4">
+            {displayOptions.map((opt, i) => {
+              const isSelected = selected === opt;
+              const isCorrectOpt = opt.trim().toLowerCase() === answer.trim().toLowerCase();
+              const showFeedback = revealResult !== null;
 
-            <button
-              onClick={() => {
-                playSound("submitAnswer", effectsOn);
-                checkAnswer();
-              }}
-              disabled={!selected || hasAnswered.current}
-              className="btn-orb btn-orb-green w-full font-black text-sm sm:text-base py-2 sm:py-3 !rounded-2xl"
-            >
-              ✅ Submit Answer
-            </button>
-          </CardContent>
+              let extraClass = "";
+              if (showFeedback) {
+                if (isCorrectOpt) extraClass = "ring-4 ring-green-400 scale-105";
+                else if (isSelected && revealResult === "wrong") extraClass = "ring-4 ring-red-400 opacity-70";
+                else extraClass = "opacity-40";
+              } else if (isSelected) {
+                extraClass = "ring-4 ring-white/80 scale-105";
+              }
+
+              return (
+                <button
+                  key={i}
+                  disabled={hasAnswered.current}
+                  onClick={() => {
+                    if (!hasAnswered.current) setSelected(opt);
+                    playSound("optionSelect", effectsOn);
+                  }}
+                  className={`relative flex items-center gap-3 w-full px-3 py-2.5 sm:py-3 rounded-2xl
+                    bg-gradient-to-b border-2 border-white/60 text-white font-bold text-sm sm:text-base
+                    transition-all duration-150 active:translate-y-1
+                    ${OPTION_STYLES[i % OPTION_STYLES.length]} ${extraClass}`}
+                >
+                  <span className="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center text-xs font-black shrink-0">
+                    {OPTION_LETTERS[i]}
+                  </span>
+                  <span className="text-left leading-tight">{opt}</span>
+                  {showFeedback && isCorrectOpt && (
+                    <span className="ml-auto text-lg">✅</span>
+                  )}
+                  {showFeedback && isSelected && !isCorrectOpt && (
+                    <span className="ml-auto text-lg">❌</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Submit */}
+          <button
+            onClick={() => { playSound("submitAnswer", effectsOn); checkAnswer(); }}
+            disabled={!selected || hasAnswered.current}
+            className="btn-orb btn-orb-green w-full font-black text-sm sm:text-base py-2.5 sm:py-3 !rounded-2xl
+              disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+          >
+            ✅ Submit Answer
+          </button>
         </div>
       </div>
 
-
-      <RightAnswerModal
-        isOpen={showRightModal}
-        onClose={onCorrect}
-        onNext={onCorrect}
-        onBackToMap={onBack}
-        score={score}
-        effectsOn={effectsOn}
-      />
-
-      <WrongAnswerModal
-        isOpen={showWrongModal}
-        onRetry={() => resetLevel({ skipIncorrect: true })}
-        onBack={onBack}
-        effectsOn={effectsOn}
-        currentLives={livesAfterLoss}
-      />
-
-      <TimeUpModal
-        isOpen={showTimeUpModal}
-        onTryAgain={() => resetLevel({ skipIncorrect: true })}
-        onGoToMap={onBack}
-        effectsOn={effectsOn}
-        currentLives={livesAfterLoss}
-      />
+      <RightAnswerModal isOpen={showRightModal} onClose={onCorrect} onNext={onCorrect} onBackToMap={onBack} score={score} effectsOn={effectsOn} />
+      <WrongAnswerModal isOpen={showWrongModal} onRetry={() => resetLevel({ skipIncorrect: true })} onBack={onBack} effectsOn={effectsOn} currentLives={livesAfterLoss} />
+      <TimeUpModal isOpen={showTimeUpModal} onTryAgain={() => resetLevel({ skipIncorrect: true })} onGoToMap={onBack} effectsOn={effectsOn} currentLives={livesAfterLoss} />
     </div>
   );
 }

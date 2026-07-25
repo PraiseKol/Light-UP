@@ -243,97 +243,132 @@ export default function ScriptureMatchMode({
     ? (gameUser?.lives ?? 0) 
     : Math.max(0, (gameUser?.lives ?? 1) - 1);
 
+
+  const timerPct = (timeLeft / 30) * 100;
+  const timerColor = timeLeft > 15 ? "text-emerald-400" : timeLeft > 8 ? "text-amber-400" : "text-red-400";
+  const allMatched = Object.keys(matches).length === pairs.length;
+
   return (
     <div className="h-full p-1.5 sm:p-3 overflow-hidden flex flex-col">
       <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col min-h-0">
-        <div className="card-3d p-2 sm:p-4 space-y-2 flex-1 flex flex-col min-h-0">
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center">
-              <div className="text-[10px] sm:text-xs text-gray-600 font-medium truncate">
-                P{level?.phaseNumber} • L{level?.number} • Scripture Match
-              </div>
-              <div className="chip-3d chip-3d-star text-[10px] sm:text-sm !py-0.5 !px-2">
-                ⏱️ {timeLeft}s
-              </div>
-            </div>
-            <ProgressBar value={timeLeft} max={30} />
-          </div>
+        <div className="card-3d p-2.5 sm:p-4 lg:p-5 flex-1 flex flex-col min-h-0 gap-2 sm:gap-3">
 
-          <div className="grid grid-cols-2 gap-2 sm:gap-4 flex-1 min-h-0 overflow-auto">
-            {/* References */}
-            <div>
-              <h3 className="font-semibold mb-1.5 text-[11px] sm:text-sm">📖 References</h3>
-              {pairs.map(({ reference }) => (
-                <div
-                  key={reference}
-                  onClick={() => handleReferenceClick(reference)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => handleDrop(reference)}
-                  className={`border p-1.5 min-h-[34px] sm:min-h-[44px] mb-1.5 flex items-center justify-between cursor-pointer rounded text-[11px] sm:text-sm ${
-                    selectedReference === reference
-                      ? "bg-blue-100"
-                      : "bg-gray-50"
-                  }`}
-                >
-                  <span className="font-medium">{reference}</span>
-                  {matches[reference] && (
-                    <span className="ml-1 text-[10px] sm:text-xs text-blue-700 flex items-center gap-1">
-                      {matches[reference].substring(0, 14)}...
-                      {!hintedRefs.has(reference) && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUndo(reference);
-                          }}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          ❌
-                        </button>
-                      )}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Verses */}
-            <div>
-              <h3 className="font-semibold mb-1.5 text-[11px] sm:text-sm">📜 Verses</h3>
-              {shuffledVerses.map(({ verse }) => (
-                <div
-                  key={verse}
-                  draggable={!isMatched(verse)}
-                  onDragStart={() => setDraggedVerse({ verse })}
-                  onClick={() => handleVerseClick(verse)}
-                  className={`cursor-pointer border p-1.5 rounded-lg mb-1.5 transition text-[11px] sm:text-sm ${
-                    isMatched(verse)
-                      ? "bg-green-200 text-gray-700"
-                      : selectedVerse === verse
-                      ? "bg-yellow-300"
-                      : "bg-yellow-100 hover:bg-yellow-200 text-black"
-                  }`}
-                >
-                  {verse}
-                </div>
-              ))}
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] sm:text-xs font-black text-purple-600 tracking-widest uppercase">
+              📖 Scripture Match · Phase {level?.phaseNumber} · Level {level?.number}
+            </span>
+            <div className={`relative flex items-center justify-center w-10 h-10 ${timerColor}`}>
+              <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 44 44">
+                <circle cx="22" cy="22" r="18" fill="none" stroke="currentColor" strokeOpacity="0.15" strokeWidth="4" />
+                <circle cx="22" cy="22" r="18" fill="none" stroke="currentColor" strokeWidth="4"
+                  strokeDasharray={`${2 * Math.PI * 18}`}
+                  strokeDashoffset={`${2 * Math.PI * 18 * (1 - timerPct / 100)}`}
+                  strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s linear" }} />
+              </svg>
+              <span className="text-xs font-black z-10">{timeLeft}</span>
             </div>
           </div>
 
-          {/* Submit */}
-          <div className="flex justify-center pt-1">
-            <Button
-              disabled={
-                hasAnswered.current ||
-                Object.keys(matches).length !== pairs.length
-              }
-              onClick={() => {
-                playSound("submitAnswer", effectsOn);
-                checkAnswer();
-              }}
-              className="bg-gradient-to-b from-pink-400 via-pink-500 to-pink-600 text-white font-bold rounded-full shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] hover:scale-105 active:translate-y-1 active:shadow-[0_2px_0_#be185d] px-5 py-1.5 sm:py-2 text-sm sm:text-base"
+          <ProgressBar value={timeLeft} max={30} />
+
+          {/* Match grid */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 flex-1 min-h-0 overflow-auto">
+
+            {/* References column */}
+            <div className="flex flex-col gap-1.5">
+              <h3 className="font-black text-[11px] sm:text-sm text-indigo-700 mb-0.5">📖 References</h3>
+              {pairs.map(({ reference }) => {
+                const isSelected = selectedReference === reference;
+                const isMatched = !!matches[reference];
+                return (
+                  <div
+                    key={reference}
+                    onClick={() => handleReferenceClick(reference)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => handleDrop(reference)}
+                    className={`
+                      min-h-[38px] sm:min-h-[48px] px-2.5 py-1.5 rounded-xl border-2 cursor-pointer
+                      flex items-center justify-between gap-1
+                      text-[11px] sm:text-sm font-semibold transition-all duration-150
+                      ${isMatched
+                        ? "bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-400 text-emerald-800"
+                        : isSelected
+                        ? "bg-indigo-100 border-indigo-400 text-indigo-800 ring-2 ring-indigo-300"
+                        : "bg-white border-gray-200 text-gray-700 hover:border-indigo-300 hover:bg-indigo-50"}
+                    `}
+                  >
+                    <span className="font-bold truncate">{reference}</span>
+                    {isMatched && (
+                      <span className="flex items-center gap-1 shrink-0">
+                        <span className="text-[9px] sm:text-[10px] text-emerald-600 max-w-[60px] truncate">
+                          {matches[reference].substring(0, 12)}…
+                        </span>
+                        {!hintedRefs.has(reference) && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleUndo(reference); }}
+                            className="text-red-400 hover:text-red-600 leading-none text-base"
+                          >✕</button>
+                        )}
+                      </span>
+                    )}
+                    {!isMatched && (
+                      <span className="text-gray-300 text-base">→</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Verses column */}
+            <div className="flex flex-col gap-1.5">
+              <h3 className="font-black text-[11px] sm:text-sm text-amber-700 mb-0.5">📜 Verses</h3>
+              {shuffledVerses.map(({ verse }) => {
+                const matched = isMatched(verse);
+                const isSelected = selectedVerse === verse;
+                return (
+                  <div
+                    key={verse}
+                    draggable={!matched}
+                    onDragStart={() => setDraggedVerse({ verse })}
+                    onClick={() => handleVerseClick(verse)}
+                    className={`
+                      min-h-[38px] sm:min-h-[48px] px-2.5 py-1.5 rounded-xl border-2 cursor-pointer
+                      text-[11px] sm:text-sm leading-snug transition-all duration-150
+                      ${matched
+                        ? "bg-emerald-100 border-emerald-300 text-emerald-700 opacity-60 cursor-default"
+                        : isSelected
+                        ? "bg-amber-100 border-amber-400 text-amber-900 ring-2 ring-amber-300 shadow-md"
+                        : "bg-white border-gray-200 text-gray-700 hover:border-amber-300 hover:bg-amber-50"}
+                    `}
+                  >
+                    {verse}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Progress indicator */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex gap-1">
+              {pairs.map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    i < Object.keys(matches).length ? "bg-emerald-400 scale-125" : "bg-gray-200"
+                  }`}
+                />
+              ))}
+            </div>
+            <button
+              disabled={hasAnswered.current || !allMatched}
+              onClick={() => { playSound("submitAnswer", effectsOn); checkAnswer(); }}
+              className="btn-orb btn-orb-green font-black px-5 py-2 text-sm sm:text-base
+                disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              ✅ Submit
-            </Button>
+              {allMatched ? "✅ Submit" : `Match ${Object.keys(matches).length}/${pairs.length}`}
+            </button>
           </div>
         </div>
       </div>
@@ -345,7 +380,6 @@ export default function ScriptureMatchMode({
         onClose={onCorrect}
         onNext={onCorrect}
         onBackToMap={() => {
-          // ✅ Ensure no life loss when navigating back after correct answer
           hasAnswered.current = true;
           lifeLostRef.current = true;
           setIsRunning(false);

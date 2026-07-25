@@ -432,9 +432,11 @@ function GameScreenContent({
       </div>
 
 
-      {/* Game content - fills remaining space */}
-      <div className="flex-1 min-h-0 overflow-hidden p-1.5 sm:p-2 relative z-10">
-        <div className="h-full min-h-0">
+      {/* Desktop: two-column. Mobile: single column, nothing changes */}
+      <div className="flex-1 min-h-0 overflow-hidden flex lg:gap-4 lg:px-6 lg:py-4 relative z-10">
+        {/* Game content */}
+        <div className="flex-1 min-h-0 overflow-hidden p-1.5 sm:p-2 lg:p-0 lg:max-w-lg lg:mx-auto flex flex-col">
+          <div className="flex-1 min-h-0">
           {mode === "word-fill" && (
             <WordFillMode
               {...commonProps}
@@ -482,58 +484,87 @@ function GameScreenContent({
         </div>
       </div>
 
-      {/* Idle hint caption — nudge toward an owned power-up, or the shop if they have none */}
-      {idleHint && gameUser?.powerups_inventory && (
-        Object.values(gameUser.powerups_inventory).some((count) => count > 0) ? (
-          <div className="pointer-events-none absolute bottom-14 sm:bottom-20 left-1/2 -translate-x-1/2 z-20 animate-fade-in">
-            <div className="px-3 py-1 rounded-full bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 text-purple-900 text-[10px] sm:text-xs font-extrabold shadow-[0_4px_12px_rgba(168,85,247,0.45)] border border-white/60 backdrop-blur-sm whitespace-nowrap">
-              💡 Need help? Try a power-up
+      </div>
+
+        {/* Desktop-only sidebar */}
+        <aside className="hidden lg:flex flex-col gap-4 w-64 shrink-0 py-2">
+          <div className="card-3d p-4 text-center">
+            <div className="text-xs font-black text-purple-500 uppercase tracking-widest mb-1">
+              {mode === "trivia" ? "⚡ Trivia" : mode === "word-fill" ? "✍️ Word Fill" : mode === "four-pics" ? "🖼️ Four Pics" : "📖 Scripture Match"}
             </div>
+            <div className="text-3xl font-black text-gray-800">Phase {level?.phaseNumber}</div>
+            <div className="text-sm text-gray-500 font-bold">Level {level?.number}</div>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={onOpenStore}
-            className="absolute bottom-14 sm:bottom-20 left-1/2 -translate-x-1/2 z-20 animate-fade-in cursor-pointer"
-          >
-            <div className="px-3 py-1 rounded-full bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 text-purple-900 text-[10px] sm:text-xs font-extrabold shadow-[0_4px_12px_rgba(168,85,247,0.45)] border border-white/60 backdrop-blur-sm whitespace-nowrap animate-pulse">
-              🛒 Out of power-ups — tap to top up
+          <div className="card-3d p-4 text-center">
+            <div className="text-xs font-black text-rose-500 uppercase tracking-widest mb-2">Lives</div>
+            <div className="flex justify-center gap-1 text-2xl mb-1">
+              {[...Array(5)].map((_, i) => (
+                <span key={i} style={{ opacity: i < (gameUser?.lives ?? 0) ? 1 : 0.2 }}>❤️</span>
+              ))}
             </div>
-          </button>
-        )
+            {isHolyShieldActive && <div className="text-xs font-bold text-amber-600 animate-pulse">🛡️ Shield Active</div>}
+          </div>
+          {(gameUser?.consecutive_perfects ?? 0) > 0 && (
+            <div className="card-3d p-4 text-center">
+              <div className="text-xs font-black text-orange-500 uppercase tracking-widest mb-1">Streak</div>
+              <div className="text-4xl font-black text-orange-500">🔥 {gameUser.consecutive_perfects}</div>
+              <div className="text-[10px] text-gray-400 mt-1">{5 - (gameUser.consecutive_perfects % 5)} more for a bonus</div>
+            </div>
+          )}
+          <div className="card-3d p-4 text-center">
+            <div className="text-xs font-black text-amber-500 uppercase tracking-widest mb-1">Score</div>
+            <div className="text-3xl font-black text-amber-600">⭐ {userScore}</div>
+          </div>
+          {idleHint && gameUser?.powerups_inventory && (
+            <div className="card-3d p-3 text-center">
+              {Object.values(gameUser.powerups_inventory).some((c) => c > 0)
+                ? <p className="text-xs font-bold text-purple-700">💡 You have power-ups!</p>
+                : <button onClick={onOpenStore} className="btn-orb btn-orb-pink w-full text-xs py-2 font-black">🛒 Top up power-ups</button>
+              }
+            </div>
+          )}
+        </div>
+        </aside>
+      </div>
+
+      {/* Mobile idle hint — only on non-desktop */}
+      {idleHint && gameUser?.powerups_inventory && (
+        <div className="lg:hidden">
+          {Object.values(gameUser.powerups_inventory).some((count) => count > 0) ? (
+            <div className="pointer-events-none absolute bottom-14 sm:bottom-20 left-1/2 -translate-x-1/2 z-20 animate-fade-in">
+              <div className="px-3 py-1 rounded-full bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 text-purple-900 text-[10px] sm:text-xs font-extrabold shadow-[0_4px_12px_rgba(168,85,247,0.45)] border border-white/60 backdrop-blur-sm whitespace-nowrap">
+                💡 Need help? Try a power-up
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={onOpenStore} className="absolute bottom-14 sm:bottom-20 left-1/2 -translate-x-1/2 z-20 animate-fade-in cursor-pointer">
+              <div className="px-3 py-1 rounded-full bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 text-purple-900 text-[10px] sm:text-xs font-extrabold shadow-[0_4px_12px_rgba(168,85,247,0.45)] border border-white/60 backdrop-blur-sm whitespace-nowrap animate-pulse">
+                🛒 Out of power-ups — tap to top up
+              </div>
+            </button>
+          )}
+        </div>
       )}
 
-      {/* Power-Up Bar */}
+      {/* Power-Up Bar — mobile only; desktop bar is inside game column */}
       {gameUser?.powerups_inventory && (
-        <div className="flex-shrink-0 bg-gradient-to-r from-pink-200 via-purple-200 to-blue-200 backdrop-blur-lg border-t-2 border-pink-300 p-1 sm:p-2 flex justify-around items-center gap-1 shadow-[0_-4px_10px_rgba(190,24,93,0.3)] relative z-10">
-          <button
-            onClick={gameUser.powerups_inventory.divine_hint ? handleDivineHint : onOpenStore}
-            className={`btn-orb btn-orb-blue flex flex-col items-center leading-tight font-semibold w-[22%] px-1 py-1 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.divine_hint ? "animate-powerup-glow" : ""} ${!gameUser.powerups_inventory.divine_hint ? "opacity-60" : ""}`}
-          >
+        <div className="lg:hidden flex-shrink-0 bg-slate-800/90 backdrop-blur-lg border-t border-white/10
+          p-1 sm:p-2 flex justify-around items-center gap-1 shadow-[0_-4px_10px_rgba(0,0,0,0.35)] relative z-10">
+          <button onClick={gameUser.powerups_inventory.divine_hint ? handleDivineHint : onOpenStore}
+            className={`orb-power flex flex-col items-center leading-tight font-semibold text-white w-[22%] px-1 py-1 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.divine_hint ? "animate-powerup-glow" : ""} ${!gameUser.powerups_inventory.divine_hint ? "is-empty" : ""}`}>
             <span className="text-sm sm:text-base">🧩</span>
             <span className="hidden sm:inline">Hint</span>
             <span>{gameUser.powerups_inventory.divine_hint ? `x${gameUser.powerups_inventory.divine_hint}` : "🛒"}</span>
           </button>
-          <button
-            onClick={gameUser.powerups_inventory.grace_period ? handleGracePeriod : onOpenStore}
-            className={`btn-orb btn-orb-purple flex flex-col items-center leading-tight font-semibold w-[22%] px-1 py-1 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.grace_period ? "animate-powerup-glow" : ""} ${!gameUser.powerups_inventory.grace_period ? "opacity-60" : ""}`}
-          >
+          <button onClick={gameUser.powerups_inventory.grace_period ? handleGracePeriod : onOpenStore}
+            className={`orb-power flex flex-col items-center leading-tight font-semibold text-white w-[22%] px-1 py-1 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.grace_period ? "animate-powerup-glow" : ""} ${!gameUser.powerups_inventory.grace_period ? "is-empty" : ""}`}>
             <span className="text-sm sm:text-base">⏳</span>
             <span className="hidden sm:inline">Grace</span>
             <span>{gameUser.powerups_inventory.grace_period ? `x${gameUser.powerups_inventory.grace_period}` : "🛒"}</span>
           </button>
-
-          <HolyShieldButton
-            user={user}
-            gameUser={gameUser}
-            refetch={refetch}
-            effectsOn={effectsOn}
-          />
-
-          <button
-            onClick={gameUser.powerups_inventory.heavenly_match ? handleHeavenlyMatch : onOpenStore}
-            className={`btn-orb btn-orb-yellow flex flex-col items-center leading-tight font-semibold w-[22%] px-1 py-1 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.heavenly_match ? "animate-powerup-glow" : ""} ${!gameUser.powerups_inventory.heavenly_match ? "opacity-60" : ""}`}
-          >
+          <HolyShieldButton user={user} gameUser={gameUser} refetch={refetch} effectsOn={effectsOn} />
+          <button onClick={gameUser.powerups_inventory.heavenly_match ? handleHeavenlyMatch : onOpenStore}
+            className={`orb-power flex flex-col items-center leading-tight font-semibold text-white w-[22%] px-1 py-1 text-[9px] sm:text-xs ${idleHint && gameUser.powerups_inventory.heavenly_match ? "animate-powerup-glow" : ""} ${!gameUser.powerups_inventory.heavenly_match ? "is-empty" : ""}`}>
             <span className="text-sm sm:text-base">👑</span>
             <span className="hidden sm:inline">Match</span>
             <span>{gameUser.powerups_inventory.heavenly_match ? `x${gameUser.powerups_inventory.heavenly_match}` : "🛒"}</span>
