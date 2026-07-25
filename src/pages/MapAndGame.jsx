@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { levelPhases } from "@/data/levelData";
 import { getWorldTheme } from "@/data/worldThemes";
+import { generateScenery, MountainSilhouette, CloudPuff, SunGlow, Rainbow } from "@/components/MapScenery";
 import { useAuth } from "@/auth/AuthProvider";
 import { fetchProgress } from "@/lib/fetchProgress";
 import { saveProgress } from "@/lib/saveProgress";
@@ -842,6 +843,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               const levelsPerPhase = phase.levels.length;
               const containerHeight = (levelsPerPhase * 92) + 180;
               const worldTheme = getWorldTheme(originalIndex + 1);
+              const scenery = generateScenery(originalIndex + 1, 6);
 
               return (
                 <div
@@ -853,6 +855,19 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                     '--world-sky-bottom': worldTheme.skyBottom,
                   }}
                 >
+                  {/* Atmosphere: sun glow + rainbow flourish (alternates by phase), drifting clouds, distant mountains */}
+                  <SunGlow size={110} style={{ position: 'absolute', top: -20, right: '8%', zIndex: 0, pointerEvents: 'none' }} />
+                  {(originalIndex % 3 === 0) && (
+                    <Rainbow width={160} style={{ position: 'absolute', top: -10, left: '5%', zIndex: 0, pointerEvents: 'none', opacity: 0.7 }} />
+                  )}
+                  <CloudPuff width={130} style={{ position: 'absolute', top: 30, left: '-5%', zIndex: 0, pointerEvents: 'none', opacity: 0.85, animation: 'cloudDrift 40s linear infinite' }} />
+                  <CloudPuff width={90} style={{ position: 'absolute', top: 90, right: '2%', zIndex: 0, pointerEvents: 'none', opacity: 0.7, animation: 'cloudDrift 55s linear infinite reverse' }} />
+                  <MountainSilhouette
+                    width={800}
+                    color={worldTheme.hill}
+                    style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 'auto', zIndex: 0, pointerEvents: 'none', opacity: 0.25 }}
+                  />
+
                   {/* Phase Title Banner */}
                   <div className="sticky top-20 z-10 mb-5">
                     <div className="phase-ribbon-3d py-2 px-4 text-center">
@@ -937,6 +952,24 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                         );
                       })}
                     </svg>
+
+                    {/* Scattered biblical scenery — tents, palm trees, ark, doves */}
+                    {scenery.map((item, i) => (
+                      <item.Kind
+                        key={i}
+                        size={item.size}
+                        width={item.size}
+                        style={{
+                          position: 'absolute',
+                          left: `${item.left}%`,
+                          top: `${item.top}%`,
+                          transform: `translate(-50%, -50%) ${item.flip ? 'scaleX(-1)' : ''}`,
+                          opacity: item.opacity,
+                          zIndex: 1,
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    ))}
 
                     {/* Level Nodes */}
                     {wrappedLevels.map((level, idx) => {

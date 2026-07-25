@@ -474,8 +474,13 @@ a:focus-visible,
   /* Per-phase "world" background — reads CSS vars set inline per phase,
      see worldThemes.js. Crossfades on scroll between phases. */
   .world-backdrop {
-    background: radial-gradient(ellipse at 50% -10%, var(--world-sky-top), var(--world-sky-bottom) 65%);
+    background:
+      radial-gradient(ellipse 120% 60% at 50% -10%, var(--world-sky-top), transparent 70%),
+      linear-gradient(180deg, transparent 0%, var(--world-sky-bottom) 55%, var(--world-sky-bottom) 100%);
+    background-color: var(--world-sky-top);
     transition: background 0.6s ease;
+    overflow: hidden;
+    padding-top: 8px;
   }
 
   /* A short "entering a new world" flash used on phase-transition scroll */
@@ -559,5 +564,12 @@ a:focus-visible,
       0 3px 0 rgba(107,33,168,0.4),
       0 6px 10px -4px rgba(107,33,168,0.4);
     color: #581c87;
+  }
+}
+
+@layer components {
+  @keyframes cloudDrift {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(40px); }
   }
 }
