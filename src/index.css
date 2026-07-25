@@ -460,13 +460,16 @@ a:focus-visible,
    ============================================================ */
 @layer components {
   /* Perspective stage: wraps ONLY the path+nodes visual layer (never a
-     sticky-positioned ancestor — CSS transforms break position:sticky). */
+     sticky-positioned ancestor — CSS transforms break position:sticky).
+     Steepened (was 1400px / 50% 10%) and the vanishing point pulled up
+     toward the top of the viewport so the path arcs away more like a
+     horizon curving over a globe, rather than a mild table-top tilt. */
   .path-stage-3d {
-    perspective: 1400px;
-    perspective-origin: 50% 10%;
+    perspective: 1600px;
+    perspective-origin: 50% 4%;
   }
   .path-world-3d {
-    transform: rotateX(9deg);
+    transform: rotateX(13deg);
     transform-style: preserve-3d;
     transition: transform 0.4s ease;
   }

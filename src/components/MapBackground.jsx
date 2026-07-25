@@ -81,6 +81,23 @@ export default function MapBackground() {
         </>
       )}
 
+      {/* Global "planet curvature" shading — ONE fixed layer covering the
+          whole viewport, not repeated per phase. This is what actually sells
+          "looking at a globe": a soft light highlight near the top (like a
+          sun grazing the surface) fading into a dark curved edge vignette
+          all the way around. Lives here so it never seams or boxes when the
+          map scrolls through multiple phases — combine with the per-node
+          rotateY/scale/brightness falloff in MapAndGame.jsx for the full
+          effect. */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse 55% 40% at 50% 6%, rgba(255,255,255,0.12), transparent 60%),
+            radial-gradient(ellipse 140% 95% at 50% 50%, transparent 50%, rgba(0,0,0,0.5) 100%)
+          `,
+        }}
+      />
 
       {/* Twinkling stars */}
       <div className="absolute inset-0">

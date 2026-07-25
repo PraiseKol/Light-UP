@@ -859,16 +859,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                   </div>
 
 
-                  {/* Map Container — tilted into a mild forced-perspective "3D world" */}
+                  {/* Map Container — tilted into a mild forced-perspective "3D world".
+                      NOTE: the old per-phase darkened vignette box that used to live
+                      right here has been removed — it was sized to this max-w-4xl
+                      column, so on wide screens it rendered as a floating dark
+                      rectangle with visible edges/seams between phases. The globe
+                      curvature shading now lives once, full-viewport, in
+                      MapBackground.jsx instead, so it never seams. */}
                   <div className="path-stage-3d relative">
-                  {/* Globe-lighting vignette: dark at edges, clear at center — sells
-                      curvature without covering the real background art behind it */}
-                  <div
-                    className="absolute inset-0 pointer-events-none z-[1] rounded-3xl"
-                    style={{
-                      background: 'radial-gradient(ellipse 70% 60% at 50% 40%, transparent 40%, rgba(0,0,0,0.28) 100%)',
-                    }}
-                  />
                   <div className="relative w-full path-world-3d" style={{ minHeight: `${containerHeight}px` }}>
                     {/* Hilly 3D Path SVG - layered shadow + gold + rim highlight */}
                     <svg 
@@ -954,11 +952,13 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                       // rotate away (rotateY), shrink, and dim slightly — as if
                       // sitting on the curved surface of a sphere rather than
                       // a flat plane. Center nodes face the viewer directly.
+                      // Falloff strengthened (was 24/0.22/0.3) to read more like
+                      // an actual globe rather than a mild tilt.
                       const signedOffset = (level.position.x - 50) / 50; // -1 (left) .. 1 (right)
                       const depthOffset = Math.min(1, Math.abs(signedOffset));
-                      const depthScale = 1 - depthOffset * 0.22;
-                      const rotateY = signedOffset * 24;
-                      const brightness = 1 - depthOffset * 0.3;
+                      const depthScale = 1 - depthOffset * 0.3;
+                      const rotateY = signedOffset * 34;
+                      const brightness = 1 - depthOffset * 0.35;
 
                       return (
                         <div
