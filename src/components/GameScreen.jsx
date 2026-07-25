@@ -197,7 +197,7 @@ function GameScreenContent({
 
   const onPowerupUsed = async (key) => {
     if (!gameUser?.powerups_inventory?.[key]) return;
-    await supabase
+    const { error } = await supabase
       .from("game_users")
       .update({
         powerups_inventory: {
@@ -206,6 +206,9 @@ function GameScreenContent({
         },
       })
       .eq("user_id", user.id);
+    if (error) {
+      console.error("❌ Failed to deduct power-up:", key, error);
+    }
     await refetch();
     setActivePowerups((prev) => ({ ...prev, [key]: false }));
   };
