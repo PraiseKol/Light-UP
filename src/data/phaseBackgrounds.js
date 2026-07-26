@@ -14,8 +14,8 @@
 // in gradually, phase by phase, with zero risk to the phases not done yet.
 
 export const PHASE_BACKGROUNDS = {
-  1: '/phase-backgrounds/phase-1.png',  // The Birth and Early Life of Jesus
-  // 2: '/phase-backgrounds/phase-2.jpg',  // Jesus Baptism and Temptation
+   1: '/phase-backgrounds/phase-1.png',  // The Birth and Early Life of Jesus
+   2: '/phase-backgrounds/phase-2.jpg',  // Jesus Baptism and Temptation
   // ...add more as real art is generated
 };
 
