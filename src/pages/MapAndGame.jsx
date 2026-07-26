@@ -1,11 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
 import { levelPhases } from "@/data/levelData";
-import { getWorldTheme } from "@/data/worldThemes";
-import { getPhaseBackgroundImage } from "@/data/phaseBackgrounds";
-import ProceduralTerrain from "@/components/ProceduralTerrain";
-import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/auth/AuthProvider";
 import { fetchProgress } from "@/lib/fetchProgress";
 import { saveProgress } from "@/lib/saveProgress";
@@ -92,14 +87,12 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
     toPosition: null,
   });
   const [popGameActive, setPopGameActive] = useState(false);
-  const [worldTransitionFlash, setWorldTransitionFlash] = useState(false);
   const [scriptureMatchActive, setScriptureMatchActive] = useState(false);
   const [showQuestsModal, setShowQuestsModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   const { user } = useAuth();
   const { gameUser, loading: gameUserLoading, refetch } = useGameUser(user?.id);
-  const { config: themeConfig } = useTheme();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -179,19 +172,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
   const phaseRefs = useRef([]);
   const levelRefs = useRef({});
   const [showNextLevelModal, setShowNextLevelModal] = useState(false);
-
-  // 🌐 Scroll-linked "globe" motion — the whole point is that background
-  // and path move TOGETHER as one curved surface instead of a static
-  // backdrop with a path sliding on top of it. mainScrollRef is attached
-  // to the actual scrollable <main> below; useScroll reads its raw pixel
-  // offset (scrollY), which drives:
-  //   - parallax speed differences in MapBackground's layers
-  //   - a continuous gentle rotateX/rotateZ "roll" on each phase's
-  //     path-world-3d stage, replacing the old static CSS tilt
-  const mainScrollRef = useRef(null);
-  const { scrollY: mapScrollY } = useScroll({ container: mainScrollRef });
-  const worldRotateX = useTransform(mapScrollY, (v) => 13 + Math.sin(v / 900) * 5);
-  const worldRotateZ = useTransform(mapScrollY, (v) => Math.sin(v / 1400) * 2.5);
 
   useEffect(() => {
     let leaderboardTimeout;
@@ -613,8 +593,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           behavior: "smooth",
           block: "start",
         });
-        setWorldTransitionFlash(true);
-        setTimeout(() => setWorldTransitionFlash(false), 700);
       }, 300);
     }
   };
@@ -718,10 +696,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         </button>
       )}
 
-      {/* Fixed Top Header — only for the MAP view. GameScreen owns the
-          whole viewport itself (its own header, h-[100dvh]) once a level
-          is open, so this is hidden rather than stacked on top of it. */}
-      {!selectedLevel && (
+      {/* Fixed Top Header */}
       <header className="fixed top-0 left-0 right-0 z-50 candy-gradient py-2 lg:py-3 px-3 lg:px-4 shadow-[0_4px_20px_rgba(79,156,249,0.5)] border-b-4 border-white/30">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           {/* Left: Player Name & Avatar - Clickable to Settings */}
@@ -774,7 +749,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                   playSound("select", effectsOn);
                   setShowStore(true);
                 }}
-                className="gem-pill hover:scale-105 transition-transform active:scale-95"
+                className="bg-white/20 backdrop-blur px-2 lg:px-4 py-1.5 lg:py-2 rounded-full border-2 border-white/30 font-black text-white text-xs lg:text-sm cursor-pointer hover:scale-105 transition-transform active:scale-95"
               >
                 💎 {gameUser.talents ?? 0}
               </button>
@@ -816,7 +791,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </div>
         </div>
       </header>
-      )}
 
       {/* Mini-Map Progress Indicator */}
       {!selectedLevel && (
@@ -846,14 +820,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       )}
 
       {/* Scrollable Center (ONLY level maps scroll) */}
-      <main
-        ref={mainScrollRef}
-        className={
-          selectedLevel
-            ? "flex-1 min-h-0 overflow-hidden"
-            : "pt-20 pb-28 flex-1 overflow-y-auto overflow-x-hidden"
-        }
-      >
+      <main className="pt-20 pb-28 flex-1 overflow-y-auto">
         {!selectedLevel ? (
           <div className="max-w-4xl mx-auto px-4 py-8">
             {[...levelPhases].reverse().map((phase, reversedIndex) => {
@@ -870,8 +837,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               const currentPhaseId = getCurrentLevelId(phase);
               const levelsPerPhase = phase.levels.length;
               const containerHeight = (levelsPerPhase * 92) + 180;
-              const worldTheme = getWorldTheme(originalIndex + 1);
-              const phaseImage = getPhaseBackgroundImage(originalIndex + 1);
 
               return (
                 <div
@@ -889,72 +854,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                   </div>
 
 
-                  {/* Map Container — tilted into a mild forced-perspective "3D world".
-                      NOTE: the old per-phase darkened vignette box that used to live
-                      right here has been removed — it was sized to this max-w-4xl
-                      column, so on wide screens it rendered as a floating dark
-                      rectangle with visible edges/seams between phases. The globe
-                      curvature shading now lives once, full-viewport, in
-                      MapBackground.jsx instead, so it never seams. */}
-                  <div className="path-stage-3d relative">
-                  {/* Terrain background — deliberately OUTSIDE path-world-3d and
-                      NOT part of its rotateX/rotateZ tilt, for two reasons:
-                      1) a tilted full-bleed image at wide viewports would distort
-                         oddly near the edges: 2) this lets it break out of the
-                         max-w-4xl column below and span the full viewport width
-                         on desktop, while the path/nodes stay in the narrower
-                         centered column for readability. */}
-                  <div
-                    className="absolute top-0 overflow-hidden"
-                    style={{
-                      height: `${containerHeight}px`,
-                      left: "50%",
-                      right: "50%",
-                      marginLeft: "-50vw",
-                      marginRight: "-50vw",
-                      width: "100vw",
-                      borderRadius: "50% 50% / 5% 5%",
-                      zIndex: 0,
-                    }}
-                  >
-                    {(phaseImage || themeConfig?.background?.image) ? (
-                      <>
-                        <div
-                          className="absolute inset-0 bg-cover bg-center"
-                          style={{ backgroundImage: `url(${phaseImage || themeConfig.background.image})` }}
-                        />
-                        {/* Per-world tint so each phase still reads as a
-                            distinct place, even when it shares the old
-                            fallback illustration — matches this phase's
-                            path/hill palette from worldThemes.js. Skipped
-                            entirely once a real per-phase image exists,
-                            since that image is already phase-specific. */}
-                        {!phaseImage && (
-                          <div
-                            className="absolute inset-0"
-                            style={{
-                              background: `linear-gradient(180deg, ${worldTheme.hill}33, transparent 45%, ${worldTheme.path[0]}33)`,
-                            }}
-                          />
-                        )}
-                        <div className={`absolute inset-0 ${themeConfig.background.overlay || "bg-black/20"}`} />
-                      </>
-                    ) : (
-                      <>
-                        <ProceduralTerrain phaseNumber={originalIndex + 1} worldTheme={worldTheme} />
-                        <div className={`absolute inset-0 ${themeConfig?.background?.overlay || "bg-black/10"}`} />
-                      </>
-                    )}
-                  </div>
-
-                  <motion.div
-                    className="relative w-full path-world-3d"
-                    style={{
-                      minHeight: `${containerHeight}px`,
-                      rotateX: worldRotateX,
-                      rotateZ: worldRotateZ,
-                    }}
-                  >
+                  {/* Map Container */}
+                  <div className="relative w-full" style={{ minHeight: `${containerHeight}px` }}>
                     {/* Hilly 3D Path SVG - layered shadow + gold + rim highlight */}
                     <svg 
                       className="absolute inset-0 w-full h-full pointer-events-none" 
@@ -964,9 +865,9 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                     >
                       <defs>
                         <linearGradient id={`goldenPath-${originalIndex}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor={worldTheme.path[0]} />
-                          <stop offset="50%" stopColor={worldTheme.path[1]} />
-                          <stop offset="100%" stopColor={worldTheme.path[2]} />
+                          <stop offset="0%" stopColor="#FFD93D" />
+                          <stop offset="50%" stopColor="#FFC107" />
+                          <stop offset="100%" stopColor="#FFD93D" />
                         </linearGradient>
                       </defs>
                       {/* Hill lumps behind path */}
@@ -977,8 +878,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                           cy={level.position.y + 10}
                           rx="18"
                           ry="22"
-                          fill={worldTheme.hill}
-                          opacity="0.18"
+                          fill="#8b5a2b"
+                          opacity="0.15"
                         />
                       ))}
                       {wrappedLevels.map((level, idx) => {
@@ -1035,17 +936,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                       const isLevelUnlocked = isUnlocked && isPreviousCompleted;
                       const score = levelScores[level.id] || 0;
                       const stars = getStarsFromScore(score);
-                      // Globe-wrap illusion: nodes away from horizontal center
-                      // rotate away (rotateY), shrink, and dim slightly — as if
-                      // sitting on the curved surface of a sphere rather than
-                      // a flat plane. Center nodes face the viewer directly.
-                      // Falloff strengthened (was 24/0.22/0.3) to read more like
-                      // an actual globe rather than a mild tilt.
-                      const signedOffset = (level.position.x - 50) / 50; // -1 (left) .. 1 (right)
-                      const depthOffset = Math.min(1, Math.abs(signedOffset));
-                      const depthScale = 1 - depthOffset * 0.3;
-                      const rotateY = signedOffset * 34;
-                      const brightness = 1 - depthOffset * 0.35;
 
                       return (
                         <div
@@ -1055,8 +945,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                           style={{
                             left: `${level.position.x}%`,
                             top: `${level.position.y}px`,
-                            transform: `translate(-50%, -50%) rotateY(${rotateY}deg) scale(${depthScale})`,
-                            filter: `brightness(${brightness})`,
+                            transform: 'translate(-50%, -50%)',
                             zIndex: 10,
                           }}
                         >
@@ -1136,7 +1025,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                         </div>
                       );
                     })}
-                  </motion.div>
                   </div>
                 </div>
               );
@@ -1161,9 +1049,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         )}
       </main>
 
-      {/* Fixed Bottom Navigation - Desktop - Single Row (map view only) */}
-      {!selectedLevel && (
-      <footer className="hidden lg:block fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-t-4 border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.45)]">
+      {/* Fixed Bottom Navigation - Desktop - Single Row */}
+      <footer className="hidden lg:block fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-pink-200 via-pink-300 to-pink-400 border-t-4 border-pink-500 shadow-[0_-4px_20px_rgba(236,72,153,0.4)]">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-center gap-3">
             {/* Settings */}
@@ -1175,10 +1062,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-14 h-14 rounded-full orb-glass flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-blue-300 via-blue-400 to-blue-600 shadow-[0_4px_0_#1e40af,0_6px_10px_rgba(30,64,175,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#1e40af] transition-all hover:scale-105">
                   <span className="text-2xl">⚙️</span>
                 </div>
-                <span className="text-[10px] font-bold text-white/90 mt-0.5 block text-center">Settings</span>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Settings</span>
               </button>
             </Tooltip>
 
@@ -1191,10 +1078,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-14 h-14 rounded-full orb-glass flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-green-300 via-green-400 to-green-600 shadow-[0_4px_0_#166534,0_6px_10px_rgba(22,101,52,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#166534] transition-all hover:scale-105">
                   <span className="text-2xl">🎁</span>
                 </div>
-                <span className="text-[10px] font-bold text-white/90 mt-0.5 block text-center">Shop</span>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Shop</span>
               </button>
             </Tooltip>
 
@@ -1207,10 +1094,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-14 h-14 rounded-full orb-glass flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-purple-300 via-purple-400 to-purple-600 shadow-[0_4px_0_#6b21a8,0_6px_10px_rgba(107,33,168,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#6b21a8] transition-all hover:scale-105">
                   <span className="text-2xl">🎮</span>
                 </div>
-                <span className="text-[10px] font-bold text-white/90 mt-0.5 block text-center">Multi</span>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Multi</span>
               </button>
             </Tooltip>
 
@@ -1223,10 +1110,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-14 h-14 rounded-full orb-glass flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-red-300 via-red-400 to-red-600 shadow-[0_4px_0_#b91c1c,0_6px_10px_rgba(185,28,28,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#b91c1c] transition-all hover:scale-105">
                   <span className="text-2xl">🏆</span>
                 </div>
-                <span className="text-[10px] font-bold text-white/90 mt-0.5 block text-center">Compete</span>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Compete</span>
               </button>
             </Tooltip>
 
@@ -1240,10 +1127,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 disabled={!challengeAllowed}
                 className="relative"
               >
-                <div className={`w-18 h-18 -mt-1 rounded-full orb-glass-featured flex items-center justify-center transition-all hover:scale-110 ${challengeAllowed && !challengePlayed ? 'ring-4 ring-yellow-200/50 animate-pulse' : ''} ${!challengeAllowed ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <div className={`w-18 h-18 -mt-1 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-600 shadow-[0_5px_0_#b45309,0_6px_12px_rgba(180,83,9,0.5)] border-3 border-white flex items-center justify-center transition-all hover:scale-110 ${challengeAllowed && !challengePlayed ? 'ring-4 ring-yellow-200/50 animate-pulse' : ''} ${!challengeAllowed ? 'opacity-50 cursor-not-allowed' : 'active:translate-y-1 active:shadow-[0_2px_0_#b45309]'}`}>
                   <span className="text-3xl">🥊</span>
                 </div>
-                <span className="text-[10px] font-bold text-white/90 mt-0.5 block text-center">
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">
                   {challengeAllowed && !challengePlayed ? "WEEKEND" : challengePlayed ? "Played" : "Locked"}
                 </span>
               </button>
@@ -1258,10 +1145,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-14 h-14 rounded-full orb-glass flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 shadow-[0_4px_0_#92400e,0_6px_10px_rgba(146,64,14,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#92400e] transition-all hover:scale-105">
                   <span className="text-2xl">🏆</span>
                 </div>
-                <span className="text-[10px] font-bold text-white/90 mt-0.5 block text-center">Ranks</span>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Ranks</span>
               </button>
             </Tooltip>
 
@@ -1274,10 +1161,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-14 h-14 rounded-full orb-glass flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-pink-300 via-pink-400 to-pink-600 shadow-[0_4px_0_#be185d,0_6px_10px_rgba(190,24,93,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#be185d] transition-all hover:scale-105">
                   <span className="text-2xl">💬</span>
                 </div>
-                <span className="text-[10px] font-bold text-white/90 mt-0.5 block text-center">Chat</span>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">Chat</span>
               </button>
             </Tooltip>
 
@@ -1290,20 +1177,18 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                 }}
                 className="relative"
               >
-                <div className="w-14 h-14 rounded-full orb-glass flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 shadow-[0_4px_0_#374151,0_6px_10px_rgba(55,65,81,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#374151] transition-all hover:scale-105">
                   <span className="text-2xl">⋯</span>
                 </div>
-                <span className="text-[10px] font-bold text-white/90 mt-0.5 block text-center">More</span>
+                <span className="text-[10px] font-bold text-pink-900 mt-0.5 block text-center">More</span>
               </button>
             </Tooltip>
           </div>
         </div>
       </footer>
-      )}
 
-      {/* Fixed Bottom Navigation - Mobile (map view only) */}
-      {!selectedLevel && (
-      <footer className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-t-4 border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.45)]">
+      {/* Fixed Bottom Navigation - Mobile */}
+      <footer className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-pink-200 via-pink-300 to-pink-400 border-t-4 border-pink-500 shadow-[0_-4px_20px_rgba(236,72,153,0.4)]">
         <div className="flex items-center justify-around px-2 py-2.5">
           {/* Settings */}
           <Tooltip content="Customize settings">
@@ -1314,10 +1199,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               }}
               className="flex flex-col items-center gap-1"
             >
-              <div className="w-14 h-14 rounded-full orb-glass flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-b from-blue-300 via-blue-400 to-blue-600 shadow-[0_4px_0_#1e40af,0_6px_10px_rgba(30,64,175,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#1e40af] transition-all">
                 <span className="text-2xl">⚙️</span>
               </div>
-              <span className="text-[10px] font-bold text-white/90">Settings</span>
+              <span className="text-[10px] font-bold text-pink-900">Settings</span>
             </button>
           </Tooltip>
 
@@ -1330,10 +1215,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               }}
               className="flex flex-col items-center gap-1"
             >
-              <div className="w-14 h-14 rounded-full orb-glass flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-b from-green-300 via-green-400 to-green-600 shadow-[0_4px_0_#166534,0_6px_10px_rgba(22,101,52,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#166534] transition-all">
                 <span className="text-2xl">🎁</span>
               </div>
-              <span className="text-[10px] font-bold text-white/90">Shop</span>
+              <span className="text-[10px] font-bold text-pink-900">Shop</span>
             </button>
           </Tooltip>
 
@@ -1347,10 +1232,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               disabled={!challengeAllowed}
               className="flex flex-col items-center gap-1"
             >
-              <div className={`w-16 h-16 -mt-3 rounded-full orb-glass-featured flex items-center justify-center transition-all ${challengeAllowed && !challengePlayed ? 'ring-4 ring-yellow-200/50 animate-pulse' : ''} ${!challengeAllowed ? 'opacity-50' : ''}`}>
+              <div className={`w-16 h-16 -mt-3 rounded-full bg-gradient-to-b from-yellow-300 via-yellow-400 to-yellow-600 shadow-[0_4px_0_#b45309,0_6px_10px_rgba(180,83,9,0.4)] border-4 border-white flex items-center justify-center transition-all ${challengeAllowed && !challengePlayed ? 'ring-4 ring-yellow-200/50 animate-pulse' : ''} ${!challengeAllowed ? 'opacity-50' : 'active:translate-y-1 active:shadow-[0_2px_0_#b45309]'}`}>
                 <span className="text-3xl">🥊</span>
               </div>
-              <span className="text-[10px] font-bold text-white/90">WEEKEND</span>
+              <span className="text-[10px] font-bold text-pink-900">WEEKEND</span>
             </button>
           </Tooltip>
 
@@ -1363,10 +1248,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               }}
               className="flex flex-col items-center gap-1"
             >
-              <div className="w-12 h-12 rounded-full orb-glass flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-b from-purple-300 via-purple-400 to-purple-600 shadow-[0_4px_0_#6b21a8,0_6px_10px_rgba(107,33,168,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#6b21a8] transition-all">
                 <span className="text-xl">🎮</span>
               </div>
-              <span className="text-[9px] font-bold text-white/90">Multi</span>
+              <span className="text-[9px] font-bold text-pink-900">Multi</span>
             </button>
           </Tooltip>
 
@@ -1379,10 +1264,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               }}
               className="flex flex-col items-center gap-1"
             >
-              <div className="w-12 h-12 rounded-full orb-glass flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-b from-red-300 via-red-400 to-red-600 shadow-[0_4px_0_#b91c1c,0_6px_10px_rgba(185,28,28,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#b91c1c] transition-all">
                 <span className="text-xl">🏆</span>
               </div>
-              <span className="text-[9px] font-bold text-white/90">Compete</span>
+              <span className="text-[9px] font-bold text-pink-900">Compete</span>
             </button>
           </Tooltip>
 
@@ -1395,15 +1280,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               }}
               className="flex flex-col items-center gap-1"
             >
-              <div className="w-12 h-12 rounded-full orb-glass flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-b from-gray-300 via-gray-400 to-gray-600 shadow-[0_4px_0_#374151,0_6px_10px_rgba(55,65,81,0.4)] border-2 border-white/50 flex items-center justify-center active:translate-y-1 active:shadow-[0_2px_0_#374151] transition-all">
                 <span className="text-xl">⋯</span>
               </div>
-              <span className="text-[9px] font-bold text-white/90">More</span>
+              <span className="text-[9px] font-bold text-pink-900">More</span>
             </button>
           </Tooltip>
         </div>
       </footer>
-      )}
 
       {/* Modals */}
       <ScriptureModal
@@ -1603,11 +1487,6 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </div>
         </div>
       </Modal>
-
-      {/* "Entering a new world" flash — fires when advancing to a new phase */}
-      {worldTransitionFlash && (
-        <div className="fixed inset-0 z-[90] pointer-events-none bg-white world-transition-flash" />
-      )}
 
       {/* Avatar Animation Between Phases */}
       {avatarAnimation.isAnimating && (
