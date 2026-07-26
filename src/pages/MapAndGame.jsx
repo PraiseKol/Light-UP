@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { levelPhases } from "@/data/levelData";
 import { getWorldTheme } from "@/data/worldThemes";
+import { getPhaseBackgroundImage } from "@/data/phaseBackgrounds";
+import ProceduralTerrain from "@/components/ProceduralTerrain";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/auth/AuthProvider";
 import { fetchProgress } from "@/lib/fetchProgress";
@@ -869,6 +871,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               const levelsPerPhase = phase.levels.length;
               const containerHeight = (levelsPerPhase * 92) + 180;
               const worldTheme = getWorldTheme(originalIndex + 1);
+              const phaseImage = getPhaseBackgroundImage(originalIndex + 1);
 
               return (
                 <div
@@ -912,26 +915,38 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                         combined with the parent's rotateX/rotateZ, this
                         is what actually reads as "sphere" rather than a
                         flat rectangle that happens to tilt. */}
-                    {themeConfig?.background?.image && (
+                    {(phaseImage || themeConfig?.background?.image) ? (
                       <div
                         className="absolute inset-0 overflow-hidden"
                         style={{ borderRadius: "50% 50% / 5% 5%", zIndex: 0 }}
                       >
                         <div
                           className="absolute inset-0 bg-cover bg-center"
-                          style={{ backgroundImage: `url(${themeConfig.background.image})` }}
+                          style={{ backgroundImage: `url(${phaseImage || themeConfig.background.image})` }}
                         />
                         {/* Per-world tint so each phase still reads as a
-                            distinct place, even though it shares one base
-                            illustration — matches this phase's path/hill
-                            palette from worldThemes.js. */}
-                        <div
-                          className="absolute inset-0"
-                          style={{
-                            background: `linear-gradient(180deg, ${worldTheme.hill}33, transparent 45%, ${worldTheme.path[0]}33)`,
-                          }}
-                        />
+                            distinct place, even when it shares the old
+                            fallback illustration — matches this phase's
+                            path/hill palette from worldThemes.js. Skipped
+                            entirely once a real per-phase image exists,
+                            since that image is already phase-specific. */}
+                        {!phaseImage && (
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              background: `linear-gradient(180deg, ${worldTheme.hill}33, transparent 45%, ${worldTheme.path[0]}33)`,
+                            }}
+                          />
+                        )}
                         <div className={`absolute inset-0 ${themeConfig.background.overlay || "bg-black/20"}`} />
+                      </div>
+                    ) : (
+                      <div
+                        className="absolute inset-0 overflow-hidden"
+                        style={{ borderRadius: "50% 50% / 5% 5%", zIndex: 0 }}
+                      >
+                        <ProceduralTerrain phaseNumber={originalIndex + 1} worldTheme={worldTheme} />
+                        <div className={`absolute inset-0 ${themeConfig?.background?.overlay || "bg-black/10"}`} />
                       </div>
                     )}
                     {/* Hilly 3D Path SVG - layered shadow + gold + rim highlight */}
