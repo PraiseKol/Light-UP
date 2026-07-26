@@ -716,7 +716,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         </button>
       )}
 
-      {/* Fixed Top Header */}
+      {/* Fixed Top Header — only for the MAP view. GameScreen owns the
+          whole viewport itself (its own header, h-[100dvh]) once a level
+          is open, so this is hidden rather than stacked on top of it. */}
+      {!selectedLevel && (
       <header className="fixed top-0 left-0 right-0 z-50 candy-gradient py-2 lg:py-3 px-3 lg:px-4 shadow-[0_4px_20px_rgba(79,156,249,0.5)] border-b-4 border-white/30">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           {/* Left: Player Name & Avatar - Clickable to Settings */}
@@ -811,6 +814,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </div>
         </div>
       </header>
+      )}
 
       {/* Mini-Map Progress Indicator */}
       {!selectedLevel && (
@@ -840,7 +844,14 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       )}
 
       {/* Scrollable Center (ONLY level maps scroll) */}
-      <main ref={mainScrollRef} className="pt-20 pb-28 flex-1 overflow-y-auto">
+      <main
+        ref={mainScrollRef}
+        className={
+          selectedLevel
+            ? "flex-1 min-h-0 overflow-hidden"
+            : "pt-20 pb-28 flex-1 overflow-y-auto"
+        }
+      >
         {!selectedLevel ? (
           <div className="max-w-4xl mx-auto px-4 py-8">
             {[...levelPhases].reverse().map((phase, reversedIndex) => {
@@ -1129,7 +1140,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         )}
       </main>
 
-      {/* Fixed Bottom Navigation - Desktop - Single Row */}
+      {/* Fixed Bottom Navigation - Desktop - Single Row (map view only) */}
+      {!selectedLevel && (
       <footer className="hidden lg:block fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-t-4 border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.45)]">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-center gap-3">
@@ -1266,8 +1278,10 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </div>
         </div>
       </footer>
+      )}
 
-      {/* Fixed Bottom Navigation - Mobile */}
+      {/* Fixed Bottom Navigation - Mobile (map view only) */}
+      {!selectedLevel && (
       <footer className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 border-t-4 border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.45)]">
         <div className="flex items-center justify-around px-2 py-2.5">
           {/* Settings */}
@@ -1368,6 +1382,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
           </Tooltip>
         </div>
       </footer>
+      )}
 
       {/* Modals */}
       <ScriptureModal

@@ -172,6 +172,23 @@ export default function FourPicsMode({
     }
   };
 
+  // ⌨️ Enter key submits — this mode has no text <input> to attach a
+  // keydown handler to directly (answers are built by clicking letter
+  // tiles), so the listener lives on window instead. It's guarded by
+  // the exact same condition as the Submit button's `disabled` prop
+  // below, so pressing Enter never does anything the button itself
+  // wouldn't already allow.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key !== "Enter") return;
+      if (hasAnswered.current || input.includes("")) return;
+      playSound("submitAnswer", effectsOn);
+      checkAnswer();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [input, effectsOn]);
+
   const resetLevel = useResetLevel({
     setModals: { setShowRightModal, setShowWrongModal, setShowTimeUpModal },
     setUserInput: () => { setInput(Array(question?.answer?.length || 0).fill("")); setUsedIndexes([]); setDivineHintApplied(false); },
