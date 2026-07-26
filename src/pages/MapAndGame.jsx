@@ -851,7 +851,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
         className={
           selectedLevel
             ? "flex-1 min-h-0 overflow-hidden"
-            : "pt-20 pb-28 flex-1 overflow-y-auto"
+            : "pt-20 pb-28 flex-1 overflow-y-auto overflow-x-hidden"
         }
       >
         {!selectedLevel ? (
@@ -897,39 +897,30 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                       curvature shading now lives once, full-viewport, in
                       MapBackground.jsx instead, so it never seams. */}
                   <div className="path-stage-3d relative">
-                  <motion.div
-                    className="relative w-full path-world-3d"
+                  {/* Terrain background — deliberately OUTSIDE path-world-3d and
+                      NOT part of its rotateX/rotateZ tilt: a tilted full-bleed
+                      image at wide viewports would distort near the edges, and
+                      this lets it break out of the centered column below to span
+                      the full viewport width on desktop, while the path/nodes
+                      stay in the narrower centered column for readability. */}
+                  <div
+                    className="absolute top-0 overflow-hidden"
                     style={{
-                      minHeight: `${containerHeight}px`,
-                      rotateX: worldRotateX,
-                      rotateZ: worldRotateZ,
+                      height: `${containerHeight}px`,
+                      left: "50%",
+                      right: "50%",
+                      marginLeft: "-50vw",
+                      marginRight: "-50vw",
+                      width: "100vw",
+                      zIndex: 0,
                     }}
                   >
-                    {/* Real terrain art — a genuine CHILD of this same
-                        scrolling, tilting stage (not a fixed backdrop),
-                        so it physically scrolls and tilts together with
-                        the path/nodes below instead of sitting behind
-                        them in its own layer. The rounded top/bottom
-                        (border-radius as an ellipse) bends its edges into
-                        an arc, like a porthole onto a curved surface —
-                        combined with the parent's rotateX/rotateZ, this
-                        is what actually reads as "sphere" rather than a
-                        flat rectangle that happens to tilt. */}
                     {(phaseImage || themeConfig?.background?.image) ? (
-                      <div
-                        className="absolute inset-0 overflow-hidden"
-                        style={{ borderRadius: "50% 50% / 5% 5%", zIndex: 0 }}
-                      >
+                      <>
                         <div
                           className="absolute inset-0 bg-cover bg-center"
                           style={{ backgroundImage: `url(${phaseImage || themeConfig.background.image})` }}
                         />
-                        {/* Per-world tint so each phase still reads as a
-                            distinct place, even when it shares the old
-                            fallback illustration — matches this phase's
-                            path/hill palette from worldThemes.js. Skipped
-                            entirely once a real per-phase image exists,
-                            since that image is already phase-specific. */}
                         {!phaseImage && (
                           <div
                             className="absolute inset-0"
@@ -939,16 +930,23 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                           />
                         )}
                         <div className={`absolute inset-0 ${themeConfig.background.overlay || "bg-black/20"}`} />
-                      </div>
+                      </>
                     ) : (
-                      <div
-                        className="absolute inset-0 overflow-hidden"
-                        style={{ borderRadius: "50% 50% / 5% 5%", zIndex: 0 }}
-                      >
+                      <>
                         <ProceduralTerrain phaseNumber={originalIndex + 1} worldTheme={worldTheme} />
                         <div className={`absolute inset-0 ${themeConfig?.background?.overlay || "bg-black/10"}`} />
-                      </div>
+                      </>
                     )}
+                  </div>
+
+                  <motion.div
+                    className="relative w-full path-world-3d"
+                    style={{
+                      minHeight: `${containerHeight}px`,
+                      rotateX: worldRotateX,
+                      rotateZ: worldRotateZ,
+                    }}
+                  >
                     {/* Hilly 3D Path SVG - layered shadow + gold + rim highlight */}
                     <svg 
                       className="absolute inset-0 w-full h-full pointer-events-none" 
