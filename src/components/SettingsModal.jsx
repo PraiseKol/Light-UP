@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { playSound, getVolume, setVolume, setSfxEnabled, isSfxEnabled } from "@/utils/sound";
 import {
@@ -10,8 +9,10 @@ import {
   isMusicEnabled,
   playMusic,
 } from "@/utils/music";
-import { Lock, Volume2, Music2 } from "lucide-react";
+import { Lock, Volume2, Music2, User, Bell, Shield, X } from "lucide-react";
+import { toast } from "sonner";
 import { Tooltip } from "@/components/ui/tooltip";
+import Switch from "@/components/ui/Switch";
 import {
   subscribeToPushNotifications,
   requestNotificationPermission,
@@ -54,29 +55,6 @@ export default function SettingsModal({
     return avatar ? highestCompletedPhase >= avatar.unlockPhase : false;
   };
 
-  // Play preview audio when sound prop changes (user selects a new sound)
-  // useEffect(() => {
-  //   if (!audioRef.current) return;
-
-  //   if (soundMap[sound]) {
-  //     audioRef.current.src = soundMap[sound];
-  //     audioRef.current.volume = 0.3;
-  //     audioRef.current.loop = true;
-  //     audioRef.current.play().catch(() => {
-  //       // ignore autoplay errors silently
-  //     });
-  //   } else {
-  //     audioRef.current.pause();
-  //     audioRef.current.currentTime = 0;
-  //     audioRef.current.src = "";
-  //   }
-
-  //   return () => {
-  //     if (audioRef.current) audioRef.current.pause();
-  //   };
-  // }, [sound]);
-
-  // When gameUser changes, sync local inputs
   useEffect(() => {
     setName(gameUser?.player_name || "");
     setEffectsOn(gameUser?.effects_on ?? true);
@@ -98,15 +76,10 @@ export default function SettingsModal({
     setLoading(false);
 
     if (!error) {
-      onSave({
-        name,
-        sound,
-        effectsOn,
-        selectedAvatar,
-      });
+      onSave({ name, sound, effectsOn, selectedAvatar });
       onClose();
     } else {
-      alert("Failed to save settings");
+      toast.error("Failed to save settings");
     }
   };
 
@@ -119,22 +92,36 @@ export default function SettingsModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="modal-3d relative p-4 sm:p-6 w-full max-w-md overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col">
+      <div className="modal-3d relative w-full max-w-md overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col">
 
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4 text-center">
-          ⚙️ Player Settings
-        </h2>
-        <div className="text-center text-[10px] sm:text-xs text-gray-500"><i>Refresh after saving to see changes</i></div>
-        
+        {/* Header — matches the app's standard modal header pattern */}
+        <div className="modal-3d-header sticky top-0 z-10 flex items-center justify-between p-4 rounded-t-2xl flex-shrink-0">
+          <h2 className="text-lg sm:text-xl font-black flex items-center gap-2">
+            <span className="text-xl sm:text-2xl">⚙️</span> Player Settings
+          </h2>
+          <button
+            onClick={() => { playSound("back", effectsOn); onClose(); }}
+            aria-label="Close settings"
+            className="text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 mt-2 pr-1">
+        <div className="flex-1 overflow-y-auto space-y-3 p-4">
+          <p className="text-center text-[10px] sm:text-xs text-purple-700/60 -mt-1">
+            <i>Refresh after saving to see changes</i>
+          </p>
+
           {/* Player Name */}
-          <div>
-            <label className="text-xs sm:text-sm text-gray-700 mb-1 block font-medium">
-              Player Name
-            </label>
+          <div className="row-3d !items-stretch flex-col">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="icon-orb !w-9 !h-9 !text-base"><User className="w-4 h-4" /></span>
+              <label className="text-sm font-bold text-purple-900">Player Name</label>
+            </div>
             <input
-              className="w-full border border-blue-300 rounded-lg px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              className="w-full border-2 border-purple-200 rounded-xl px-3 py-2 text-sm shadow-inner focus:ring-2 focus:ring-purple-400 focus:border-purple-400 focus:outline-none bg-white"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your player name"
@@ -142,26 +129,21 @@ export default function SettingsModal({
           </div>
 
           {/* Sound Effects */}
-          <div className="border-t border-gray-200 pt-3 sm:pt-4">
+          <div className="row-3d !items-stretch flex-col">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs sm:text-sm font-medium text-gray-800 flex items-center gap-2">
-                <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" /> Sound Effects
+              <span className="text-sm font-bold text-purple-900 flex items-center gap-2">
+                <span className="icon-orb !w-9 !h-9 !text-base"><Volume2 className="w-4 h-4" /></span>
+                Sound Effects
               </span>
-              <button
-                onClick={() => {
-                  const next = !effectsOn;
+              <Switch
+                checked={effectsOn}
+                onChange={(next) => {
                   setEffectsOn(next);
                   setSfxEnabled(next);
                   if (next) playSound("select", true);
                 }}
-                className={`px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm rounded-full font-semibold shadow-sm transition-all ${
-                  effectsOn
-                    ? "bg-green-500 text-white hover:bg-green-600"
-                    : "bg-gray-400 text-white hover:bg-gray-500"
-                }`}
-              >
-                {effectsOn ? "On" : "Off"}
-              </button>
+                color="green"
+              />
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -177,13 +159,13 @@ export default function SettingsModal({
                 }}
                 onMouseUp={() => playSound("tap", effectsOn)}
                 onTouchEnd={() => playSound("tap", effectsOn)}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500 disabled:opacity-40"
+                className="flex-1 h-2 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-pink-500 disabled:opacity-40"
               />
-              <span className="text-xs text-gray-600 font-semibold w-9 text-right">{Math.round(sfxVol)}%</span>
+              <span className="text-xs text-purple-700 font-bold w-9 text-right">{Math.round(sfxVol)}%</span>
               <button
                 onClick={() => playSound("correct", effectsOn)}
                 disabled={!effectsOn}
-                className="text-[10px] sm:text-xs px-2 py-1 rounded-md bg-pink-100 text-pink-700 font-bold hover:bg-pink-200 disabled:opacity-40"
+                className="chip-3d text-[10px] sm:text-xs !py-1 !px-2 disabled:opacity-40"
               >
                 Test
               </button>
@@ -191,26 +173,21 @@ export default function SettingsModal({
           </div>
 
           {/* Background Music */}
-          <div className="border-t border-gray-200 pt-3 sm:pt-4">
+          <div className="row-3d !items-stretch flex-col">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs sm:text-sm font-medium text-gray-800 flex items-center gap-2">
-                <Music2 className="w-3 h-3 sm:w-4 sm:h-4" /> Background Music
+              <span className="text-sm font-bold text-purple-900 flex items-center gap-2">
+                <span className="icon-orb pink !w-9 !h-9 !text-base"><Music2 className="w-4 h-4" /></span>
+                Background Music
               </span>
-              <button
-                onClick={() => {
-                  const next = !musicOn;
+              <Switch
+                checked={musicOn}
+                onChange={(next) => {
                   setMusicOnState(next);
                   setMusicEnabled(next);
                   if (next) playMusic("menu");
                 }}
-                className={`px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm rounded-full font-semibold shadow-sm transition-all ${
-                  musicOn
-                    ? "bg-indigo-500 text-white hover:bg-indigo-600"
-                    : "bg-gray-400 text-white hover:bg-gray-500"
-                }`}
-              >
-                {musicOn ? "On" : "Off"}
-              </button>
+                color="purple"
+              />
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -224,27 +201,26 @@ export default function SettingsModal({
                   setMusicVol(v);
                   setMusicVolume(v / 100);
                 }}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500 disabled:opacity-40"
+                className="flex-1 h-2 bg-purple-100 rounded-lg appearance-none cursor-pointer accent-indigo-500 disabled:opacity-40"
               />
-              <span className="text-xs text-gray-600 font-semibold w-9 text-right">{Math.round(musicVol)}%</span>
+              <span className="text-xs text-purple-700 font-bold w-9 text-right">{Math.round(musicVol)}%</span>
             </div>
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+            <p className="text-[10px] sm:text-xs text-purple-700/60 mt-1">
               Uplifting orchestral loops on map, gameplay & menus
             </p>
             <audio ref={audioRef} style={{ display: "none" }} />
           </div>
 
-
           {/* Avatar Selection */}
-          <div className="border-t border-gray-200 pt-3 sm:pt-4">
-            <label className="text-xs sm:text-sm font-medium mb-2 sm:mb-3 block text-gray-800">🎭 Choose Your Avatar</label>
-            <div className="grid grid-cols-6 gap-1 sm:gap-2">
+          <div className="row-3d !items-stretch flex-col">
+            <label className="text-sm font-bold text-purple-900 mb-3 block">🎭 Choose Your Avatar</label>
+            <div className="grid grid-cols-5 gap-2">
               {AVATARS.map(avatar => {
                 const unlocked = isAvatarUnlocked(avatar.id);
                 const isSelected = selectedAvatar === avatar.id;
                 return (
-                  <Tooltip 
-                    key={avatar.id} 
+                  <Tooltip
+                    key={avatar.id}
                     content={unlocked ? avatar.name : `Unlock at Phase ${avatar.unlockPhase}`}
                   >
                     <button
@@ -256,22 +232,22 @@ export default function SettingsModal({
                         }
                       }}
                       disabled={!unlocked}
-                      className={`relative rounded-full border-2 sm:border-3 p-1 sm:p-2 transition-all ${
-                        isSelected 
-                          ? 'border-yellow-400 ring-2 sm:ring-4 ring-yellow-300 scale-110 shadow-lg' 
-                          : unlocked 
-                          ? 'border-blue-300 hover:border-blue-400 hover:scale-105' 
-                          : 'border-gray-300 opacity-40 cursor-not-allowed'
+                      className={`relative rounded-full p-1.5 transition-all ${
+                        isSelected
+                          ? 'bg-gradient-to-b from-yellow-200 to-amber-400 ring-4 ring-yellow-300 scale-110 shadow-[0_3px_0_rgba(180,83,9,0.5)]'
+                          : unlocked
+                          ? 'bg-purple-50 border-2 border-purple-200 hover:border-purple-400 hover:scale-105'
+                          : 'bg-gray-100 border-2 border-gray-200 opacity-50 cursor-not-allowed'
                       }`}
                     >
-                      <div className="text-xl sm:text-3xl">{avatar.emoji}</div>
+                      <div className="text-2xl sm:text-3xl">{avatar.emoji}</div>
                       {!unlocked && (
-                        <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center">
-                          <Lock className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
+                        <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-white" />
                         </div>
                       )}
                       {!unlocked && (
-                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[7px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[8px] px-1.5 py-0.5 rounded-full whitespace-nowrap">
                           P{avatar.unlockPhase}
                         </div>
                       )}
@@ -280,75 +256,64 @@ export default function SettingsModal({
                 );
               })}
             </div>
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-2 text-center">
+            <p className="text-[10px] sm:text-xs text-purple-700/60 mt-3 text-center">
               Complete phases to unlock more avatars!
             </p>
           </div>
 
-
           {/* Notification Settings */}
-          <div className="border-t border-gray-200 pt-3 sm:pt-4">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <span className="text-xs sm:text-sm font-medium text-gray-800">🔔 Notifications</span>
-              <span className="text-[10px] sm:text-xs text-gray-500">PWA Feature</span>
+          <div className="row-3d !items-stretch flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold text-purple-900 flex items-center gap-2">
+                <span className="icon-orb green !w-9 !h-9 !text-base"><Bell className="w-4 h-4" /></span>
+                Notifications
+              </span>
+              <span className="chip-3d text-[9px] sm:text-[10px] !py-1">PWA</span>
             </div>
-            <p className="text-[10px] sm:text-xs text-gray-600 mb-2 sm:mb-3">
+            <p className="text-[10px] sm:text-xs text-purple-700/60 mb-3">
               Enable push notifications to get alerts about weekly challenges, lives, and more!
             </p>
-            <Button
+            <button
               onClick={async () => {
                 const granted = await requestNotificationPermission();
                 if (granted) {
                   await subscribeToPushNotifications(gameUser.user_id);
-                  alert('✅ Notifications enabled!');
+                  toast.success('Notifications enabled!');
                 } else {
-                  alert('❌ Please enable notifications in your browser settings.');
+                  toast.error('Please enable notifications in your browser settings.');
                 }
               }}
-              variant="secondary"
-              className="w-full bg-blue-500 text-white hover:bg-blue-600 rounded-lg shadow-md text-xs sm:text-sm py-2"
+              className="btn-orb w-full font-bold text-xs sm:text-sm py-2"
             >
               {areNotificationsEnabled() ? '✅ Notifications Enabled' : '🔔 Enable Notifications'}
-            </Button>
+            </button>
           </div>
 
           {/* Admin Login */}
           {gameUser?.is_admin && (
-            <div className="border-t border-gray-200 pt-3 sm:pt-4">
-              <Button
-                onClick={() => {
-                  playSound("click", effectsOn);
-                  handleAdminLogin();
-                }}
-                variant="secondary"
-                className="w-full bg-purple-600 text-white hover:bg-purple-500 rounded-lg shadow-md text-xs sm:text-sm"
+            <div className="row-3d !items-stretch flex-col">
+              <button
+                onClick={() => { playSound("click", effectsOn); handleAdminLogin(); }}
+                className="btn-orb btn-orb-purple w-full font-bold text-xs sm:text-sm py-2 flex items-center justify-center gap-2"
               >
-                🛡 Admin Login
-              </Button>
+                <Shield className="w-4 h-4" /> Admin Dashboard
+              </button>
             </div>
           )}
         </div>
 
-        {/* Footer Buttons - Fixed at bottom */}
-        <div className="flex justify-end space-x-2 sm:space-x-3 pt-3 sm:pt-4 border-t border-gray-200 mt-3 sm:mt-4 flex-shrink-0">
-          <Button
-            onClick={() => {
-              playSound("back", effectsOn);
-              onClose();
-            }}
-            variant="ghost"
-            className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm"
+        {/* Footer Buttons */}
+        <div className="flex justify-end gap-2 sm:gap-3 p-4 border-t-2 border-purple-100 flex-shrink-0">
+          <button
+            onClick={() => { playSound("back", effectsOn); onClose(); }}
+            className="chip-3d px-4 py-2 font-bold text-xs sm:text-sm"
           >
             Cancel
-          </Button>
-
+          </button>
           <button
-            onClick={() => {
-              playSound("select", effectsOn);
-              handleSave();
-            }}
+            onClick={() => { playSound("select", effectsOn); handleSave(); }}
             disabled={loading}
-            className="btn-orb btn-orb-pink px-4 py-2 font-bold text-xs sm:text-sm"
+            className="btn-orb btn-orb-pink px-4 py-2 font-bold text-xs sm:text-sm disabled:opacity-60"
           >
             {loading ? "Saving..." : "Save"}
           </button>

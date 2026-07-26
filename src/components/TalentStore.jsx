@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { playSound } from "@/utils/sound";
+import { toast } from "sonner";
 
 export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
   const [loadingButton, setLoadingButton] = useState(null);
@@ -34,20 +35,20 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
 
       if (!res.ok) {
         console.error("Server returned:", res.status, res.statusText);
-        alert("Payment failed. Server error.");
+        toast.error("Payment failed. Server error.");
         return;
       }
 
       const data = await res.json().catch(() => null);
       if (!data?.url) {
-        alert("Payment session failed to start.");
+        toast.error("Payment session failed to start.");
         return;
       }
 
       window.location.href = data.url;
     } catch (err) {
       console.error("Payment start error:", err);
-      alert("Failed to start payment.");
+      toast.error("Failed to start payment.");
     } finally {
       setLoadingButton(null);
     }
@@ -55,7 +56,7 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
 
   const handleBuyLivesWithTalents = async (cost, lives) => {
     if (gameUser.talents < cost) {
-      alert("Not enough talents to buy lives.");
+      toast.error("Not enough talents to buy lives.");
       return;
     }
 
@@ -80,7 +81,7 @@ export default function TalentStore({ gameUser, onPurchase, effectsOn }) {
 
       await supabase.rpc("refill_lives", { p_user_id: gameUser.user_id });
 
-      alert(`You bought ${lives} lives successfully!`);
+      toast.success(`You bought ${lives} lives!`);
       onPurchase?.();
     } catch (err) {
       console.error("Life purchase failed:", err);

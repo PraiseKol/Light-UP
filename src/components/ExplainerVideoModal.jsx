@@ -51,9 +51,9 @@ export default function ExplainerVideoModal({ isOpen, onClose, userId }) {
         </div>
 
         {/* Video Guide Text */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
-          <h3 className="font-bold text-lg mb-2">📖 Quick Start Guide:</h3>
-          <ul className="space-y-1 text-sm text-gray-700">
+        <div className="row-3d !items-stretch flex-col">
+          <h3 className="font-black text-purple-900 text-base mb-2">📖 Quick Start Guide</h3>
+          <ul className="space-y-1.5 text-sm text-purple-800/80">
             <li>✅ Navigate the map by scrolling through phases and levels</li>
             <li>💚 You have 5 lives - they regenerate every 30 minutes</li>
             <li>🎯 Complete levels in different game modes</li>

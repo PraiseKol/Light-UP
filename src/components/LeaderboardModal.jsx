@@ -35,16 +35,9 @@ export default function LeaderboardModal({
       title="🏆 Leaderboards ⭐"
       className="max-w-2xl w-full mx-2 sm:mx-auto"
     >
-      <div className="space-y-3 sm:space-y-4 relative">
-        {/* Sparkle decoration at top */}
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex gap-1 sm:gap-2">
-          <span className="text-base sm:text-xl animate-pulse">✨</span>
-          <span className="text-base sm:text-xl animate-pulse" style={{ animationDelay: '0.3s' }}>⭐</span>
-          <span className="text-base sm:text-xl animate-pulse" style={{ animationDelay: '0.6s' }}>✨</span>
-        </div>
-        
+      <div className="space-y-3 sm:space-y-4">
         {/* Toggle between Overall, Weekly, and Monthly */}
-        <div className="flex gap-1 sm:gap-2 mt-4 sm:mt-6 justify-center">
+        <div className="flex gap-1 sm:gap-2 justify-center">
           <button
             onClick={() => { playSound("switch", true); setSelectedTab('overall'); }}
             className={`tab-3d flex-1 ${selectedTab === 'overall' ? 'active' : ''}`}

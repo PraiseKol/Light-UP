@@ -3,6 +3,7 @@ import { adjustTalents, adjustPowerupInventory } from "@/utils/talentUtils";
 import TalentStore from "@/components/TalentStore";
 import BonusesTab from "@/components/BonusesTab";
 import { playSound } from "@/utils/sound";
+import { toast } from "sonner";
 
 export default function PowerUpStore({
   gameUser,
@@ -63,7 +64,7 @@ export default function PowerUpStore({
     const currentTalents = gameUser?.talents ?? 0;
 
     if (currentTalents < cost) {
-      alert("Not enough talents to purchase this power-up.");
+      toast.error("Not enough talents for this power-up");
       return;
     }
 
@@ -73,7 +74,7 @@ export default function PowerUpStore({
       if (newBalance === null) throw new Error("Failed to adjust talents.");
       await adjustPowerupInventory(gameUser.user_id, powerup.key, quantity);
 
-      alert(`You bought ${quantity}x ${powerup.name}!`);
+      toast.success(`Bought ${quantity}x ${powerup.name}!`);
 
       // update local balance safely
       gameUser.talents = newBalance;
@@ -81,7 +82,7 @@ export default function PowerUpStore({
       onPurchase?.();
     } catch (err) {
       console.error("Purchase failed:", err);
-      alert("Purchase failed. Please try again.");
+      toast.error("Purchase failed. Please try again.");
     } finally {
       setLoading(false);
     }
