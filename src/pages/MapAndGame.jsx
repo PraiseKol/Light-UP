@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { levelPhases } from "@/data/levelData";
+import { getWorldTheme } from "@/data/worldThemes";
+import { getPhaseBackgroundImage } from "@/data/phaseBackgrounds";
+import ProceduralTerrain from "@/components/ProceduralTerrain";
 import { useAuth } from "@/auth/AuthProvider";
 import { fetchProgress } from "@/lib/fetchProgress";
 import { saveProgress } from "@/lib/saveProgress";
@@ -820,7 +823,7 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
       )}
 
       {/* Scrollable Center (ONLY level maps scroll) */}
-      <main className="pt-20 pb-28 flex-1 overflow-y-auto">
+      <main className="pt-20 pb-28 flex-1 overflow-y-auto overflow-x-hidden">
         {!selectedLevel ? (
           <div className="max-w-4xl mx-auto px-4 py-8">
             {[...levelPhases].reverse().map((phase, reversedIndex) => {
@@ -837,6 +840,8 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
               const currentPhaseId = getCurrentLevelId(phase);
               const levelsPerPhase = phase.levels.length;
               const containerHeight = (levelsPerPhase * 92) + 180;
+              const worldTheme = getWorldTheme(originalIndex + 1);
+              const phaseImage = getPhaseBackgroundImage(originalIndex + 1);
 
               return (
                 <div
@@ -853,6 +858,33 @@ export default function MapAndGame({ sound, setSound, effectsOn }) {
                     </div>
                   </div>
 
+
+                  {/* Terrain background — real image if one exists for this phase,
+                      procedural generated terrain otherwise. Full-bleed: breaks out
+                      of the centered column to span the full viewport width on
+                      desktop, while the path/nodes below stay in the narrower
+                      centered column for readability. */}
+                  <div
+                    className="absolute top-0 overflow-hidden"
+                    style={{
+                      height: `${containerHeight}px`,
+                      left: "50%",
+                      right: "50%",
+                      marginLeft: "-50vw",
+                      marginRight: "-50vw",
+                      width: "100vw",
+                      zIndex: 0,
+                    }}
+                  >
+                    {phaseImage ? (
+                      <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${phaseImage})` }}
+                      />
+                    ) : (
+                      <ProceduralTerrain phaseNumber={originalIndex + 1} worldTheme={worldTheme} />
+                    )}
+                  </div>
 
                   {/* Map Container */}
                   <div className="relative w-full" style={{ minHeight: `${containerHeight}px` }}>
