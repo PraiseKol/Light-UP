@@ -376,39 +376,36 @@ function WeeklyChallengeContent({ sound, setSound, effectsOn }) {
   if (previousAttempt) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-yellow-50 to-white p-6">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center space-y-6 animate-fadeIn">
-          <h2 className="text-3xl font-bold text-gray-700">Weekly Challenge</h2>
-          <p className="text-gray-600">You already attempted this week.</p>
+        <div className="modal-3d p-6 sm:p-8 max-w-lg w-full text-center space-y-5 animate-fadeIn">
+          <div className="text-5xl">🏆</div>
+          <h2 className="text-2xl sm:text-3xl font-black text-purple-900">Weekly Challenge</h2>
+          <p className="text-purple-700/70">You already attempted this week.</p>
 
-          <p className="text-xl font-semibold text-gray-800">
-            Score:{" "}
-            <span className="text-blue-600">{previousAttempt.score} pts</span>
-          </p>
+          <div className="chip-3d chip-3d-star inline-flex !text-lg !py-2 !px-5">
+            {previousAttempt.score} pts
+          </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
-            <div className="bg-green-50 p-4 rounded-xl shadow-inner">
-              ✅ <strong>Correct:</strong>
-              <div className="text-lg font-bold">
-                {previousAttempt.correct_answers}
-              </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="row-3d !justify-center flex-col !py-3">
+              <span className="text-2xl">✅</span>
+              <span className="text-xs font-bold text-purple-700/60 mt-1">Correct</span>
+              <span className="text-xl font-black text-emerald-600">{previousAttempt.correct_answers}</span>
             </div>
-            <div className="bg-red-50 p-4 rounded-xl shadow-inner">
-              ❌ <strong>Incorrect:</strong>
-              <div className="text-lg font-bold">
-                {previousAttempt.incorrect_answers}
-              </div>
+            <div className="row-3d !justify-center flex-col !py-3">
+              <span className="text-2xl">❌</span>
+              <span className="text-xs font-bold text-purple-700/60 mt-1">Incorrect</span>
+              <span className="text-xl font-black text-red-500">{previousAttempt.incorrect_answers}</span>
             </div>
-            <div className="col-span-2 bg-indigo-50 p-4 rounded-xl shadow-inner">
-              📋 <strong>Total:</strong>
-              <div className="text-lg font-bold">
-                {previousAttempt.questions_answered}
-              </div>
+            <div className="row-3d !justify-center flex-col !py-3 col-span-2">
+              <span className="text-2xl">📋</span>
+              <span className="text-xs font-bold text-purple-700/60 mt-1">Total Answered</span>
+              <span className="text-xl font-black text-indigo-600">{previousAttempt.questions_answered}</span>
             </div>
           </div>
 
           <button
             onClick={() => navigate("/map")}
-            className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-xl shadow transition-transform transform hover:scale-105"
+            className="btn-orb btn-orb-purple w-full font-black py-3"
           >
             Back to Map
           </button>
@@ -421,34 +418,35 @@ function WeeklyChallengeContent({ sound, setSound, effectsOn }) {
   if (isFinished) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-green-50 to-white p-6">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center space-y-6 animate-fadeIn">
+        <div className="modal-3d p-6 sm:p-8 max-w-lg w-full text-center space-y-5 animate-fadeIn">
           <div className="text-5xl">🎉</div>
-          <h2 className="text-3xl font-bold text-green-700">
-            Challenge Complete!
-          </h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-emerald-700">Challenge Complete!</h2>
 
-          <p className="text-xl font-semibold text-gray-800">
-            You scored <span className="text-blue-600">{score} pts</span>
-          </p>
+          <div className="chip-3d chip-3d-star inline-flex !text-lg !py-2 !px-5">
+            {score} pts
+          </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
-            <div className="bg-green-50 p-4 rounded-xl shadow-inner">
-              ✅ <strong>Correct:</strong>
-              <div className="text-lg font-bold">{correctCount}</div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="row-3d !justify-center flex-col !py-3">
+              <span className="text-2xl">✅</span>
+              <span className="text-xs font-bold text-purple-700/60 mt-1">Correct</span>
+              <span className="text-xl font-black text-emerald-600">{correctCount}</span>
             </div>
-            <div className="bg-red-50 p-4 rounded-xl shadow-inner">
-              ❌ <strong>Incorrect:</strong>
-              <div className="text-lg font-bold">{incorrectCount}</div>
+            <div className="row-3d !justify-center flex-col !py-3">
+              <span className="text-2xl">❌</span>
+              <span className="text-xs font-bold text-purple-700/60 mt-1">Incorrect</span>
+              <span className="text-xl font-black text-red-500">{incorrectCount}</span>
             </div>
-            <div className="col-span-2 bg-indigo-50 p-4 rounded-xl shadow-inner">
-              📋 <strong>Total:</strong>
-              <div className="text-lg font-bold">{questions.length}</div>
+            <div className="row-3d !justify-center flex-col !py-3 col-span-2">
+              <span className="text-2xl">📋</span>
+              <span className="text-xs font-bold text-purple-700/60 mt-1">Total</span>
+              <span className="text-xl font-black text-indigo-600">{questions.length}</span>
             </div>
           </div>
 
           <button
             onClick={() => navigate("/map")}
-            className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-xl shadow transition-transform transform hover:scale-105"
+            className="btn-orb btn-orb-green w-full font-black py-3"
           >
             Back to Map
           </button>

@@ -165,7 +165,7 @@ export default function CompetitionPage() {
         <Trophy className="w-20 h-20 text-christmasGold/50 mb-4" />
         <h1 className="text-2xl font-bold text-white mb-2">No Active Competition</h1>
         <p className="text-white/60 text-center mb-6">Check back later for upcoming competitions!</p>
-        <button onClick={() => navigate('/map')} className="px-6 py-3 bg-gradient-to-r from-christmasGreen to-green-600 text-white rounded-xl font-bold flex items-center gap-2">
+        <button onClick={() => navigate('/map')} className="px-6 py-3 bg-gradient-to-b from-emerald-300 to-emerald-600 text-white rounded-xl font-black flex items-center gap-2 border-2 border-emerald-200 shadow-[0_4px_0_#065f46] active:translate-y-1 active:shadow-[0_1px_0_#065f46] transition-all">
           <ArrowLeft className="w-5 h-5" /> Back to Map
         </button>
       </div>
@@ -179,10 +179,10 @@ export default function CompetitionPage() {
         <h1 className="text-2xl font-bold text-white mb-2">You're Not in This Competition</h1>
         <p className="text-white/60 text-center mb-6">Watch the action instead!</p>
         <div className="flex gap-4">
-          <button onClick={() => navigate('/competition/view')} className="px-6 py-3 bg-gradient-to-r from-christmasGold to-yellow-500 text-black rounded-xl font-bold flex items-center gap-2">
+          <button onClick={() => navigate('/competition/view')} className="px-6 py-3 bg-gradient-to-b from-yellow-300 to-yellow-600 text-yellow-950 rounded-xl font-black flex items-center gap-2 border-2 border-yellow-200 shadow-[0_4px_0_#a16207] active:translate-y-1 active:shadow-[0_1px_0_#a16207] transition-all">
             <Trophy className="w-5 h-5" /> Watch Live
           </button>
-          <button onClick={() => navigate('/map')} className="px-6 py-3 bg-white/10 text-white rounded-xl font-bold border border-white/20">Back to Map</button>
+          <button onClick={() => navigate('/map')} className="px-6 py-3 bg-white/10 text-white rounded-xl font-black border-2 border-white/25 shadow-[0_4px_0_rgba(255,255,255,0.15)] active:translate-y-1 active:shadow-[0_1px_0_rgba(255,255,255,0.15)] transition-all hover:bg-white/15">Back to Map</button>
         </div>
       </div>
     );
@@ -195,10 +195,10 @@ export default function CompetitionPage() {
         <h1 className="text-2xl font-bold text-white mb-2">Eliminated in Round {playerEntry.round_eliminated}</h1>
         <p className="text-white/60 text-center mb-2">Your final score: {playerEntry.total_score}</p>
         <div className="flex gap-4 mt-4">
-          <button onClick={() => navigate('/competition/view')} className="px-6 py-3 bg-gradient-to-r from-christmasGold to-yellow-500 text-black rounded-xl font-bold flex items-center gap-2">
+          <button onClick={() => navigate('/competition/view')} className="px-6 py-3 bg-gradient-to-b from-yellow-300 to-yellow-600 text-yellow-950 rounded-xl font-black flex items-center gap-2 border-2 border-yellow-200 shadow-[0_4px_0_#a16207] active:translate-y-1 active:shadow-[0_1px_0_#a16207] transition-all">
             <Trophy className="w-5 h-5" /> Watch Remaining Rounds
           </button>
-          <button onClick={() => navigate('/map')} className="px-6 py-3 bg-white/10 text-white rounded-xl font-bold border border-white/20">Back to Map</button>
+          <button onClick={() => navigate('/map')} className="px-6 py-3 bg-white/10 text-white rounded-xl font-black border-2 border-white/25 shadow-[0_4px_0_rgba(255,255,255,0.15)] active:translate-y-1 active:shadow-[0_1px_0_rgba(255,255,255,0.15)] transition-all hover:bg-white/15">Back to Map</button>
         </div>
       </div>
     );
@@ -220,7 +220,7 @@ export default function CompetitionPage() {
           </div>
         )}
         <p className="text-white/50 text-sm mb-6">Stay on this screen — the competition begins automatically.</p>
-        <button onClick={() => navigate('/map')} className="px-6 py-3 bg-white/10 text-white rounded-xl font-bold border border-white/20">
+        <button onClick={() => navigate('/map')} className="px-6 py-3 bg-white/10 text-white rounded-xl font-black border-2 border-white/25 shadow-[0_4px_0_rgba(255,255,255,0.15)] active:translate-y-1 active:shadow-[0_1px_0_rgba(255,255,255,0.15)] transition-all hover:bg-white/15">
           Back to Map
         </button>
       </div>
@@ -267,7 +267,7 @@ export default function CompetitionPage() {
         <Crown className="w-20 h-20 text-christmasGold mb-4" />
         <h1 className="text-2xl font-bold text-white mb-2">Competition Complete!</h1>
         <p className="text-white/60 text-center mb-6">Your final score: {playerEntry.total_score}</p>
-        <button onClick={() => navigate('/competition/view')} className="px-6 py-3 bg-gradient-to-r from-christmasGold to-yellow-500 text-black rounded-xl font-bold flex items-center gap-2">
+        <button onClick={() => navigate('/competition/view')} className="px-6 py-3 bg-gradient-to-b from-yellow-300 to-yellow-600 text-yellow-950 rounded-xl font-black flex items-center gap-2 border-2 border-yellow-200 shadow-[0_4px_0_#a16207] active:translate-y-1 active:shadow-[0_1px_0_#a16207] transition-all">
           <Trophy className="w-5 h-5" /> View Results
         </button>
       </div>
@@ -320,7 +320,7 @@ export default function CompetitionPage() {
       <div className="flex-1 p-4 flex flex-col">
         {currentQuestion ? (
           <>
-            <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-4 sm:p-6 shadow-xl border-2 border-pink-300 mb-4">
+            <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-4 sm:p-6 shadow-[0_6px_0_#be185d,0_10px_16px_rgba(190,24,93,0.35)] border-2 border-pink-300 mb-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs text-gray-500">Question {currentQuestionIndex + 1}/{questions.length}</span>
                 <div className="flex items-center gap-1 text-christmasGold">
@@ -342,12 +342,12 @@ export default function CompetitionPage() {
                     key={idx}
                     onClick={() => handleAnswer(option)}
                     disabled={selectedAnswer !== null}
-                    className={`p-4 rounded-xl font-medium text-left transition-all ${
+                    className={`p-4 rounded-xl font-bold text-left transition-all border-2 ${
                       showResult
-                        ? isCorrect ? 'bg-green-500 text-white border-2 border-green-400'
-                          : isSelected ? 'bg-red-500 text-white border-2 border-red-400'
-                            : 'bg-white/80 text-gray-600 border-2 border-gray-200'
-                        : 'bg-white/90 text-gray-800 border-2 border-pink-200 hover:border-pink-400 hover:scale-[1.02] active:scale-[0.98]'
+                        ? isCorrect ? 'bg-gradient-to-b from-emerald-300 to-emerald-500 text-white border-emerald-200 shadow-[0_4px_0_#065f46]'
+                          : isSelected ? 'bg-gradient-to-b from-red-300 to-red-500 text-white border-red-200 shadow-[0_4px_0_#991b1b]'
+                            : 'bg-white/80 text-gray-500 border-gray-200 shadow-[0_3px_0_#d1d5db] opacity-70'
+                        : 'bg-white/90 text-gray-800 border-pink-200 shadow-[0_4px_0_#f472b6] hover:border-pink-400 active:translate-y-1 active:shadow-[0_1px_0_#f472b6]'
                     }`}
                   >
                     <span className="text-sm sm:text-base">{option}</span>

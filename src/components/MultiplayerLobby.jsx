@@ -7,6 +7,7 @@ import Switch from "@/components/ui/Switch";
 import { playSound } from "@/utils/sound";
 import GlobalChat from "@/components/GlobalChat";
 import { ArrowLeft, Copy, Users, Zap, Play, MessageCircle, X, Crown, Lock } from "lucide-react";
+import { toast } from "sonner";
 
 export default function MultiplayerLobby({ effectsOn }) {
   const { gameId } = useParams();
@@ -25,7 +26,7 @@ export default function MultiplayerLobby({ effectsOn }) {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(joinUrl);
     playSound("click", effectsOn);
-    alert("Join link copied!");
+    toast.success("Join link copied!");
   };
 
   const slotCountMap = {
@@ -151,7 +152,7 @@ export default function MultiplayerLobby({ effectsOn }) {
   const handleJoinSlot = async (slot) => {
     if (filledSlots >= totalSlots) {
       playSound("success", effectsOn);
-      alert("Game Full");
+      toast.error("Game is full");
       return;
     }
 

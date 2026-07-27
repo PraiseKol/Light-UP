@@ -72,7 +72,7 @@ export default function CompetitionViewerPage() {
         <p className="text-white/60 text-center mb-6">Check back later!</p>
         <button
           onClick={() => navigate('/map')}
-          className="px-6 py-3 bg-gradient-to-r from-christmasGreen to-green-600 text-white rounded-xl font-bold flex items-center gap-2"
+          className="px-6 py-3 bg-gradient-to-b from-emerald-300 to-emerald-600 text-white rounded-xl font-black flex items-center gap-2 border-2 border-emerald-200 shadow-[0_4px_0_#065f46] active:translate-y-1 active:shadow-[0_1px_0_#065f46] transition-all"
         >
           <ArrowLeft className="w-5 h-5" />
           Back to Map

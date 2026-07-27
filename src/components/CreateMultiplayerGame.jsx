@@ -6,6 +6,7 @@ import { useMultiplayerStore } from "@/store/useMultiplayerStore";
 import { playSound } from "@/utils/sound";
 import MGlobalChat from "@/components/MGlobalChat";
 import { ArrowLeft, Gamepad2, Clock, Sparkles, MessageCircle, X } from "lucide-react";
+import { toast } from "sonner";
 
 export default function CreateMultiplayerGame({ effectsOn }) {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export default function CreateMultiplayerGame({ effectsOn }) {
   const handleCreateGame = async () => {
     if (!user) {
       playSound("error", effectsOn);
-      return alert("Please log in first!");
+      return toast.error("Please log in first!");
     }
 
     setLoading(true);
@@ -79,7 +80,7 @@ export default function CreateMultiplayerGame({ effectsOn }) {
     } catch (err) {
       console.error("❌ Error creating game:", err);
       playSound("error", effectsOn);
-      alert("Error creating game: " + err.message);
+      toast.error("Error creating game: " + err.message);
     } finally {
       setLoading(false);
     }
