@@ -5,7 +5,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useMultiplayerStore } from "@/store/useMultiplayerStore";
 import { playSound } from "@/utils/sound";
 import MGlobalChat from "@/components/MGlobalChat";
-import { ArrowLeft, Gamepad2, Clock, Sparkles, MessageCircle, X } from "lucide-react";
+import { ArrowLeft, Gamepad2, Clock, Sparkles, MessageCircle, X, Ticket } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CreateMultiplayerGame({ effectsOn }) {
@@ -17,6 +17,7 @@ export default function CreateMultiplayerGame({ effectsOn }) {
   const [duration, setDuration] = useState(60);
   const [loading, setLoading] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
 
   const generateToken = () => crypto.randomUUID().split("-")[0];
 
@@ -86,6 +87,16 @@ export default function CreateMultiplayerGame({ effectsOn }) {
     }
   };
 
+  const handleJoinGame = () => {
+    const code = joinCode.trim();
+    if (!code) {
+      playSound("error", effectsOn);
+      return toast.error("Enter a game code first");
+    }
+    playSound("click", effectsOn);
+    navigate(`/multiplayer/join/${code}`);
+  };
+
   // Generate twinkling stars
   const stars = Array.from({ length: 30 }, (_, i) => ({
     id: i,
@@ -152,6 +163,36 @@ export default function CreateMultiplayerGame({ effectsOn }) {
                 Create Multiplayer Game
               </h2>
               <p className="text-sm text-gray-500 mt-1">Challenge your friends!</p>
+            </div>
+
+            {/* Join with Code */}
+            <div className="mb-6">
+              <h3 className="font-bold mb-3 text-gray-700 flex items-center gap-2">
+                <Ticket className="w-4 h-4 text-blue-500" />
+                Have a Game Code?
+              </h3>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === "Enter" && handleJoinGame()}
+                  placeholder="Enter code"
+                  className="flex-1 bg-gray-100 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-mono font-bold text-gray-700 tracking-wider uppercase outline-none focus:border-blue-400 transition-colors"
+                />
+                <button
+                  onClick={handleJoinGame}
+                  className="px-5 py-3 bg-gradient-to-b from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl font-bold shadow-[0_4px_0_#1d4ed8] active:translate-y-1 active:shadow-none transition-all"
+                >
+                  Join
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-xs font-bold text-gray-400 uppercase">or start a new game</span>
+              <div className="flex-1 h-px bg-gray-200" />
             </div>
 
             {/* Mode Selection */}

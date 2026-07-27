@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import html2canvas from "html2canvas";
 import { playSound } from "@/utils/sound";
 import ReactConfetti from "react-confetti";
-import { Trophy, Share2, Home, ChevronDown, ChevronUp, Lightbulb, Crown, Timer, Sparkles } from "lucide-react";
+import { Trophy, Share2, Home, ChevronDown, ChevronUp, Lightbulb, Crown, Timer, Sparkles, Swords } from "lucide-react";
+import { toast } from "sonner";
 
 export default function MultiplayerGame({ effectsOn }) {
   const { gameId } = useParams();
@@ -356,9 +357,11 @@ export default function MultiplayerGame({ effectsOn }) {
         link.href = URL.createObjectURL(blob);
         link.download = "leaderboard.png";
         link.click();
+        toast.success("Results image downloaded!");
       }
     } catch (err) {
       console.error("[DEBUG] Share failed", err);
+      toast.error("Couldn't share results — please try again");
     }
   };
 
@@ -531,111 +534,140 @@ export default function MultiplayerGame({ effectsOn }) {
         </div>
 
         <div className="relative z-10 w-full max-w-md">
-          {/* Trophy */}
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", duration: 1 }}
-            className="flex justify-center mb-4"
-          >
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-[0_0_60px_rgba(251,191,36,0.6)] flex items-center justify-center">
-              <Trophy className="w-12 h-12 text-yellow-800" />
-            </div>
-          </motion.div>
-
-          {/* Winner Announcement */}
-          {winner && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-center mb-4"
-            >
-              <p className="text-pink-300 font-bold text-sm">WINNER</p>
-              <h2 className="text-3xl font-black text-white flex items-center justify-center gap-2">
-                <Crown className="w-8 h-8 text-yellow-400" />
-                {winner.player_name}
-              </h2>
-              <p className="text-yellow-400 font-bold text-xl">{winner.score} pts</p>
-            </motion.div>
-          )}
-
-          {/* Match Info */}
-          <div className="text-center text-white/60 text-xs mb-4">
-            Match Code: {matchCode} • Finished: {finishedAt}
-          </div>
-
-          {/* Leaderboard Card */}
+          {/* Shareable Results Card — everything the player shares lives
+              inside this one element (leaderboardRef). Previously the
+              trophy/winner header sat outside it, so shared screenshots
+              were just a plain list with no context of what app it's from
+              or who won. */}
           <motion.div
             ref={leaderboardRef}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-white/95 backdrop-blur-xl rounded-2xl border-2 border-pink-300 shadow-[0_8px_0_#be185d,0_12px_20px_rgba(190,24,93,0.4)] p-4"
+            transition={{ delay: 0.3 }}
+            className="bg-gradient-to-b from-indigo-950 via-purple-900 to-indigo-950 rounded-3xl border-2 border-yellow-400/40 shadow-[0_10px_0_rgba(0,0,0,0.35),0_20px_40px_rgba(88,28,135,0.5)] p-5 sm:p-6 overflow-hidden relative"
           >
-            <h3 className="text-center font-black text-gray-800 mb-3 flex items-center justify-center gap-2">
-              <Sparkles className="w-5 h-5 text-pink-500" />
-              Final Standings
-            </h3>
-            <AnimatePresence>
-              {leaderboard.map((p, idx) => {
-                const isMe = p.user_id === user.id;
-                const powerups = allPowerupUsage[p.id] || {
-                  divine_hint: 0,
-                  heavenly_match: 0,
-                };
+            {/* Decorative corner glow */}
+            <div className="absolute -top-16 -right-16 w-40 h-40 bg-yellow-400/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
 
-                return (
-                  <motion.div
-                    key={p.id}
-                    layout
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className={`flex justify-between items-center p-3 rounded-xl mb-2 ${
-                      isMe
-                        ? "bg-gradient-to-r from-green-100 to-green-200 border-2 border-green-400"
-                        : idx < 3
-                        ? `bg-gradient-to-r ${getMedalBg(idx)}`
-                        : "bg-gray-100"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{medal(idx) || `${idx + 1}.`}</span>
-                      <div>
-                        <span className="font-bold text-gray-800">{p.player_name}</span>
-                        {isMe && (
-                          <span className="text-xs text-green-600 ml-1">(You)</span>
-                        )}
-                        <div className="text-xs text-gray-500">
-                          💡 {powerups.divine_hint} • 👑 {powerups.heavenly_match}
+            {/* App branding */}
+            <div className="flex items-center justify-center gap-2 mb-3 relative">
+              <img src="/logo512.png" alt="" className="w-6 h-6 rounded-md" />
+              <span className="text-white/70 text-xs font-black tracking-[0.2em] uppercase">Light-UP</span>
+            </div>
+
+            {/* Trophy */}
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", duration: 1 }}
+              className="flex justify-center mb-3 relative"
+            >
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-[0_0_50px_rgba(251,191,36,0.6)] flex items-center justify-center">
+                <Trophy className="w-10 h-10 text-yellow-800" />
+              </div>
+            </motion.div>
+
+            {/* Winner Announcement */}
+            {winner && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-center mb-4 relative"
+              >
+                <p className="text-pink-300 font-bold text-xs tracking-wider">WINNER</p>
+                <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center justify-center gap-2">
+                  <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400" />
+                  {winner.player_name}
+                </h2>
+                <p className="text-yellow-400 font-bold text-lg sm:text-xl">{winner.score} pts</p>
+              </motion.div>
+            )}
+
+            {/* Match Info */}
+            <div className="text-center text-white/50 text-[10px] sm:text-xs mb-4 relative font-mono">
+              Match Code: {matchCode} • {finishedAt}
+            </div>
+
+            {/* Standings */}
+            <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 relative">
+              <h3 className="text-center font-black text-gray-800 mb-3 flex items-center justify-center gap-2 text-sm sm:text-base">
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-pink-500" />
+                Final Standings
+              </h3>
+              <AnimatePresence>
+                {leaderboard.map((p, idx) => {
+                  const isMe = p.user_id === user.id;
+                  const powerups = allPowerupUsage[p.id] || {
+                    divine_hint: 0,
+                    heavenly_match: 0,
+                  };
+
+                  return (
+                    <motion.div
+                      key={p.id}
+                      layout
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className={`flex justify-between items-center p-2.5 sm:p-3 rounded-xl mb-2 ${
+                        isMe
+                          ? "bg-gradient-to-r from-green-100 to-green-200 border-2 border-green-400"
+                          : idx < 3
+                          ? `bg-gradient-to-r ${getMedalBg(idx)}`
+                          : "bg-gray-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <span className="text-xl sm:text-2xl">{medal(idx) || `${idx + 1}.`}</span>
+                        <div>
+                          <span className="font-bold text-gray-800 text-sm sm:text-base">{p.player_name}</span>
+                          {isMe && (
+                            <span className="text-xs text-green-600 ml-1">(You)</span>
+                          )}
+                          <div className="text-[10px] sm:text-xs text-gray-500">
+                            💡 {powerups.divine_hint} • 👑 {powerups.heavenly_match}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-black text-lg text-gray-800">{p.score}</span>
-                      <span className="text-xs text-gray-500 ml-1">pts</span>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                      <div className="text-right">
+                        <span className="font-black text-base sm:text-lg text-gray-800">{p.score}</span>
+                        <span className="text-[10px] sm:text-xs text-gray-500 ml-1">pts</span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+
+            {/* Footer tagline — encourages whoever sees the shared image */}
+            <p className="text-center text-white/40 text-[10px] sm:text-xs mt-4 relative">
+              Play Light-UP — Bible trivia, word games & more 🕊️
+            </p>
           </motion.div>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex gap-3">
+          <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
             <button
               onClick={() => navigate("/map")}
-              className="flex-1 py-3 rounded-xl font-bold bg-gradient-to-b from-green-400 to-green-500 text-white shadow-[0_4px_0_#166534] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+              className="py-3 rounded-xl font-bold bg-gradient-to-b from-green-400 to-green-500 text-white shadow-[0_4px_0_#166534] active:translate-y-1 active:shadow-none transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-base"
             >
-              <Home className="w-5 h-5" />
-              Return
+              <Home className="w-4 h-4 sm:w-5 sm:h-5" />
+              Map
+            </button>
+            <button
+              onClick={() => navigate("/multiplayer/create")}
+              className="py-3 rounded-xl font-bold bg-gradient-to-b from-purple-400 to-purple-500 text-white shadow-[0_4px_0_#6b21a8] active:translate-y-1 active:shadow-none transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-base"
+            >
+              <Swords className="w-4 h-4 sm:w-5 sm:h-5" />
+              New Game
             </button>
             <button
               onClick={handleShare}
-              className="flex-1 py-3 rounded-xl font-bold bg-gradient-to-b from-blue-400 to-blue-500 text-white shadow-[0_4px_0_#1d4ed8] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+              className="py-3 rounded-xl font-bold bg-gradient-to-b from-blue-400 to-blue-500 text-white shadow-[0_4px_0_#1d4ed8] active:translate-y-1 active:shadow-none transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-base"
             >
-              <Share2 className="w-5 h-5" />
+              <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
               Share
             </button>
           </div>
