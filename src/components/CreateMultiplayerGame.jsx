@@ -175,7 +175,7 @@ export default function CreateMultiplayerGame({ effectsOn }) {
                 <input
                   type="text"
                   value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  onChange={(e) => setJoinCode(e.target.value.trim())}
                   onKeyDown={(e) => e.key === "Enter" && handleJoinGame()}
                   placeholder="Enter code"
                   className="flex-1 bg-gray-100 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-mono font-bold text-gray-700 tracking-wider uppercase outline-none focus:border-blue-400 transition-colors"

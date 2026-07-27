@@ -35,7 +35,7 @@ export default function JoinMultiplayerGame() {
         const { data: gameData, error: gameError } = await supabase
           .from("multiplayer_games")
           .select("*")
-          .eq("token", token)
+          .ilike("token", token.trim())
           .single();
 
         if (gameError || !gameData) {
