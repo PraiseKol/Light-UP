@@ -61,7 +61,10 @@ export default function CompetitionPage() {
       // Trigger transition when timer reaches 0
       if (remaining === 0) {
         try {
-          await processPhaseTransition(competition.id);
+          const result = await processPhaseTransition(competition.id);
+          if (result?.status === 'error') {
+            console.error('Phase transition returned an error:', result.message);
+          }
         } catch (error) {
           console.error('Phase transition error:', error);
         }
@@ -83,7 +86,7 @@ export default function CompetitionPage() {
       setPlayerEntry(entry);
 
       if (comp.phase === 'round_active') {
-        const qs = await getCompetitionQuestions(20);
+        const qs = await getCompetitionQuestions(comp.id, 20);
         setQuestions(qs);
         setQuestionStartTime(Date.now());
       }
@@ -97,7 +100,7 @@ export default function CompetitionPage() {
     setCompetition(comp);
 
     if (comp && comp.phase === 'round_active' && questions.length === 0) {
-      const qs = await getCompetitionQuestions(20);
+      const qs = await getCompetitionQuestions(comp.id, 20);
       setQuestions(qs);
       setQuestionStartTime(Date.now());
       setCurrentQuestionIndex(0);
