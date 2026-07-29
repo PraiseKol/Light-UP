@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
-import { getActiveCompetition } from '@/lib/api/competition';
+import { getActiveCompetition, getCompetitionRoundHistory } from '@/lib/api/competition';
+import { useUser } from '@supabase/auth-helpers-react';
 import { Trophy, Clock, Users, Crown, Star, ArrowLeft, Zap, Timer, Award } from 'lucide-react';
 import Confetti from 'react-confetti';
 
@@ -10,7 +11,9 @@ const GROUP_LETTERS_BY_ROUND = { 1: ['A', 'B'], 2: ['C', 'D'], 3: ['E', 'F'], 4:
 
 export default function CompetitionViewerPage() {
   const navigate = useNavigate();
+  const currentUser = useUser();
   const [competition, setCompetition] = useState(null);
+  const [roundHistory, setRoundHistory] = useState([]);
   const [phaseTimeLeft, setPhaseTimeLeft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -24,6 +27,7 @@ export default function CompetitionViewerPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'competition_rounds' }, loadCompetition)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'competition_players' }, loadCompetition)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'competition_answers' }, loadCompetition)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'competition_player_rounds' }, loadCompetition)
       .subscribe();
 
     return () => supabase.removeChannel(channel);
@@ -53,6 +57,10 @@ export default function CompetitionViewerPage() {
   async function loadCompetition() {
     const comp = await getActiveCompetition();
     setCompetition(comp);
+    if (comp && (comp.status === 'completed' || comp.phase === 'completed')) {
+      const history = await getCompetitionRoundHistory(comp.id);
+      setRoundHistory(history);
+    }
     setLoading(false);
   }
 
@@ -108,8 +116,38 @@ export default function CompetitionViewerPage() {
   // Top 3 winners (final round standings)
   const top3Winners = [...qualifiedPlayers].sort((a, b) => (b.current_round_score || 0) - (a.current_round_score || 0)).slice(0, 3);
 
-  // Top 7 overall scores (all players, by total_score)
-  const top7Overall = [...allPlayers].sort((a, b) => (b.total_score || 0) - (a.total_score || 0)).slice(0, 7);
+  // Round-by-round history lookup: historyByPlayer[player_id][round_number] = { group_letter, round_score }
+  const historyByPlayer = {};
+  roundHistory.forEach((h) => {
+    if (!historyByPlayer[h.player_id]) historyByPlayer[h.player_id] = {};
+    historyByPlayer[h.player_id][h.round_number] = { group: h.group_letter, score: h.round_score };
+  });
+
+  // Full roster, ranked for the results board: finalists first (by their
+  // round-4 score — the actual winning metric), then everyone else ranked
+  // by how far they got (later elimination = higher), tiebroken by their
+  // score in the round they were eliminated.
+  const fullResultsRoster = [...allPlayers].sort((a, b) => {
+    if (a.is_qualified && b.is_qualified) {
+      return (b.current_round_score || 0) - (a.current_round_score || 0);
+    }
+    if (a.is_qualified) return -1;
+    if (b.is_qualified) return 1;
+    const roundDiff = (b.round_eliminated || 0) - (a.round_eliminated || 0);
+    if (roundDiff !== 0) return roundDiff;
+    const aLastScore = historyByPlayer[a.id]?.[a.round_eliminated]?.score || 0;
+    const bLastScore = historyByPlayer[b.id]?.[b.round_eliminated]?.score || 0;
+    return bLastScore - aLastScore;
+  });
+
+  const GROUP_COLORS = {
+    A: 'bg-blue-500/30 text-blue-200 border-blue-400/40',
+    C: 'bg-blue-500/30 text-blue-200 border-blue-400/40',
+    E: 'bg-blue-500/30 text-blue-200 border-blue-400/40',
+    B: 'bg-red-500/30 text-red-200 border-red-400/40',
+    D: 'bg-red-500/30 text-red-200 border-red-400/40',
+    F: 'bg-red-500/30 text-red-200 border-red-400/40',
+  };
 
   // Phase display helpers
   const getPhaseLabel = () => {
@@ -395,41 +433,91 @@ export default function CompetitionViewerPage() {
               </div>
             </div>
 
-            {/* Table 2: Top 7 Overall Scores */}
-            <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/10 rounded-xl p-4 border border-purple-500/30">
-              <h2 className="text-lg font-bold text-white text-center mb-4 flex items-center justify-center gap-2">
+            {/* Full Match Recap — every competitor, round by round */}
+            <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/10 rounded-xl p-3 sm:p-4 border border-purple-500/30">
+              <h2 className="text-lg font-bold text-white text-center mb-1 flex items-center justify-center gap-2">
                 <Award className="w-5 h-5 text-purple-400" />
-                Top 7 Overall Scores
+                Full Match Recap
               </h2>
-              
-              <div className="space-y-2">
-                {top7Overall.map((player, idx) => {
+              <p className="text-center text-white/40 text-[11px] mb-4">
+                Every player who competed, round by round
+              </p>
+
+              <div className="space-y-2.5">
+                {fullResultsRoster.map((player, idx) => {
                   const isWinner = top3Winners.some(w => w.id === player.id);
-                  const eliminatedRound = player.round_eliminated;
-                  
+                  const isMe = currentUser && player.user_id === currentUser.id;
+                  const placement = idx + 1;
+
                   return (
                     <div
                       key={player.id}
-                      className={`flex items-center gap-3 p-2 rounded-lg ${
-                        isWinner ? 'bg-christmasGold/20 border border-christmasGold/30' : 'bg-black/20'
+                      className={`rounded-xl p-3 border transition-colors ${
+                        isMe
+                          ? 'bg-emerald-500/15 border-emerald-400/50 ring-1 ring-emerald-400/30'
+                          : isWinner
+                          ? 'bg-christmasGold/10 border-christmasGold/30'
+                          : 'bg-black/20 border-white/10'
                       }`}
                     >
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        idx === 0 ? 'bg-christmasGold text-black' :
-                        idx === 1 ? 'bg-gray-300 text-black' :
-                        idx === 2 ? 'bg-amber-600 text-white' :
-                        'bg-white/20 text-white'
-                      }`}>
-                        {idx + 1}
-                      </span>
-                      <span className="flex-1 text-white font-medium truncate">
-                        {player.player_name}
-                      </span>
-                      <div className="text-right">
-                        <span className="text-christmasGold font-bold">{player.total_score || 0}</span>
-                        <span className="text-white/40 text-xs ml-2">
-                          {isWinner ? '🏆 Final' : eliminatedRound ? `(R${eliminatedRound})` : ''}
+                      {/* Player header row */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                          placement === 1 ? 'bg-christmasGold text-black' :
+                          placement === 2 ? 'bg-gray-300 text-black' :
+                          placement === 3 ? 'bg-amber-600 text-white' :
+                          'bg-white/20 text-white'
+                        }`}>
+                          {placement <= 3 ? (placement === 1 ? '🥇' : placement === 2 ? '🥈' : '🥉') : placement}
                         </span>
+                        <span className="flex-1 text-white font-bold text-sm truncate">
+                          {player.player_name}
+                          {isMe && (
+                            <span className="ml-1.5 text-emerald-300 font-black text-[11px] align-middle">
+                              (You)
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-christmasGold font-black text-sm">
+                          {player.total_score || 0}
+                          <span className="text-white/40 font-normal text-[10px] ml-1">total</span>
+                        </span>
+                      </div>
+
+                      {/* Round-by-round journey strip */}
+                      <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
+                        {[1, 2, 3, 4].map((roundNum) => {
+                          const entry = historyByPlayer[player.id]?.[roundNum];
+                          const played = !!entry;
+                          const eliminatedHere = player.round_eliminated === roundNum;
+
+                          return (
+                            <React.Fragment key={roundNum}>
+                              {roundNum > 1 && (
+                                <div className={`w-3 h-px shrink-0 ${played ? 'bg-white/30' : 'bg-white/10'}`} />
+                              )}
+                              <div
+                                className={`shrink-0 rounded-lg px-2 py-1 text-center min-w-[46px] border ${
+                                  !played
+                                    ? 'bg-white/5 border-white/10 opacity-40'
+                                    : entry.group
+                                    ? GROUP_COLORS[entry.group] || 'bg-white/10 border-white/20 text-white'
+                                    : 'bg-christmasGold/20 border-christmasGold/40 text-christmasGold'
+                                }`}
+                              >
+                                <div className="text-[9px] font-bold uppercase tracking-wide opacity-70">
+                                  R{roundNum}{entry?.group ? ` · ${entry.group}` : roundNum === 4 && played ? ' · F' : ''}
+                                </div>
+                                <div className="text-xs font-black">
+                                  {played ? entry.score : '—'}
+                                </div>
+                                {eliminatedHere && (
+                                  <div className="text-[8px] text-red-300 font-bold">OUT</div>
+                                )}
+                              </div>
+                            </React.Fragment>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -465,8 +553,9 @@ export default function CompetitionViewerPage() {
           </div>
         )}
 
-        {/* Eliminated Players */}
-        {eliminatedPlayers.length > 0 && (
+        {/* Eliminated Players — only during a live competition; once
+            completed, the Full Match Recap above already covers this. */}
+        {!isCompleted && eliminatedPlayers.length > 0 && (
           <div className="mt-6">
             <h3 className="text-sm font-bold text-white/50 mb-3">Eliminated Players ({eliminatedPlayers.length})</h3>
             <div className="flex flex-wrap gap-2">

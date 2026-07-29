@@ -72,7 +72,11 @@ export async function createCompetition(players) {
   return competition;
 }
 
-// Get active competition
+// Get the current/most recent competition — used for both the live
+// player/viewer screens (while active) AND the results board (once
+// completed). Previously this excluded status='completed' entirely,
+// which meant the results screen went blank the instant a competition
+// finished, since this was the only fetch it used.
 export async function getActiveCompetition() {
   const { data, error } = await supabase
     .from('competitions')
@@ -81,7 +85,6 @@ export async function getActiveCompetition() {
       competition_players (*),
       competition_rounds (*)
     `)
-    .neq('status', 'completed')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -90,6 +93,21 @@ export async function getActiveCompetition() {
     console.error('Error fetching competition:', error);
   }
   return data;
+}
+
+// Full per-round history (group + score for every round each player
+// played) — powers the round-by-round results board.
+export async function getCompetitionRoundHistory(competitionId) {
+  const { data, error } = await supabase
+    .from('competition_player_rounds')
+    .select('*')
+    .eq('competition_id', competitionId);
+
+  if (error) {
+    console.error('Error fetching round history:', error);
+    return [];
+  }
+  return data || [];
 }
 
 // Get competition by ID

@@ -162,7 +162,7 @@ export default function CompetitionPage() {
     );
   }
 
-  if (!competition) {
+  if (!competition || (competition.status === 'completed' && !playerEntry)) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0c1445] via-[#1e3a5f] to-[#0d1b2a] flex flex-col items-center justify-center p-4">
         <Trophy className="w-20 h-20 text-christmasGold/50 mb-4" />
