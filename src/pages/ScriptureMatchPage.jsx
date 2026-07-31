@@ -406,16 +406,18 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
             />
 
             {/* Power-up Bar */}
-            <div className="bg-gradient-to-r from-amber-200 via-orange-200 to-yellow-200 border-t-2 border-amber-300 p-2 safe-area-pb shrink-0">
-              <div className="flex justify-around items-center max-w-md mx-auto">
+            <div className="bg-slate-800/90 backdrop-blur-lg border-t border-white/10 p-2 sm:p-2.5 safe-area-pb shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.35)]">
+              <div className="flex justify-around items-center max-w-md mx-auto gap-2">
                 {/* Divine Hint Button */}
                 <button
                   onClick={handleDivineHint}
                   disabled={!gameUser?.powerups_inventory?.divine_hint || isProcessing}
-                  className="flex flex-col items-center px-3 py-1.5 rounded-xl bg-blue-400 disabled:bg-gray-300 text-white font-bold transition-all hover:scale-105 active:scale-95"
+                  className={`orb-power flex flex-col items-center px-3 py-1.5 text-white ${
+                    !gameUser?.powerups_inventory?.divine_hint || isProcessing ? 'is-empty' : ''
+                  }`}
                 >
                   <span className="text-base sm:text-lg">🧩</span>
-                  <span className="text-[9px] sm:text-[10px]">Hint x{gameUser?.powerups_inventory?.divine_hint || 0}</span>
+                  <span className="text-[9px] sm:text-[10px] font-bold">Hint x{gameUser?.powerups_inventory?.divine_hint || 0}</span>
                 </button>
                 
                 {/* Grace Period Button - only on timed levels */}
@@ -423,10 +425,12 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
                   <button
                     onClick={handleGracePeriod}
                     disabled={!gameUser?.powerups_inventory?.grace_period}
-                    className="flex flex-col items-center px-3 py-1.5 rounded-xl bg-purple-400 disabled:bg-gray-300 text-white font-bold transition-all hover:scale-105 active:scale-95"
+                    className={`orb-power flex flex-col items-center px-3 py-1.5 text-white ${
+                      !gameUser?.powerups_inventory?.grace_period ? 'is-empty' : ''
+                    }`}
                   >
                     <span className="text-base sm:text-lg">⏳</span>
-                    <span className="text-[9px] sm:text-[10px]">+15s x{gameUser?.powerups_inventory?.grace_period || 0}</span>
+                    <span className="text-[9px] sm:text-[10px] font-bold">+15s x{gameUser?.powerups_inventory?.grace_period || 0}</span>
                   </button>
                 )}
                 
@@ -446,20 +450,22 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/50 flex items-center justify-center z-40"
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-40 p-4"
                 >
-                  <div className="bg-white rounded-2xl p-6 text-center shadow-xl">
-                    <h2 className="text-2xl font-bold text-amber-800 mb-4">Paused</h2>
-                    <div className="flex gap-4">
+                  <div className="modal-3d max-w-xs w-full">
+                    <div className="modal-3d-header text-center">
+                      <span className="text-lg font-black">⏸️ Paused</span>
+                    </div>
+                    <div className="p-4 flex gap-3">
                       <button
                         onClick={handleBack}
-                        className="px-6 py-2 rounded-xl bg-gray-200 font-bold text-gray-700 hover:bg-gray-300 transition-colors"
+                        className="chip-3d flex-1 !py-3 font-black"
                       >
                         Quit
                       </button>
                       <button
                         onClick={handleResume}
-                        className="px-6 py-2 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors"
+                        className="btn-orb btn-orb-green flex-1 !py-3 font-black"
                       >
                         Resume
                       </button>
@@ -479,48 +485,55 @@ const ScriptureMatchPage = ({ effectsOn = true }) => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-gradient-to-b from-amber-100 to-orange-100 flex items-center justify-center p-4"
           >
-            <div className="bg-white rounded-2xl p-6 text-center shadow-xl max-w-sm w-full">
-              <div className="text-5xl mb-4">⏰</div>
-              <h2 className="text-2xl font-bold text-amber-800 mb-2">Time's Up!</h2>
-              <p className="text-amber-600 mb-4">You ran out of time on Level {currentLevel}</p>
-              
-              {/* Shield protection message */}
-              {shieldWasActive && (
-                <div className="bg-yellow-100 text-yellow-800 rounded-lg px-3 py-2 mb-4 flex items-center justify-center gap-2">
-                  <span>🛡️</span>
-                  <span>Holy Shield protected you from losing a life!</span>
-                </div>
-              )}
-              
-              <div className="bg-amber-50 rounded-xl p-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-amber-700">Matched</span>
-                  <span className="font-bold text-amber-900">{matchedPairs.length}/{totalPairs}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-amber-700">Moves</span>
-                  <span className="font-bold text-amber-900">{moves}</span>
-                </div>
-                <div className="flex justify-between text-sm mt-2 pt-2 border-t border-amber-200">
-                  <span className="text-amber-700">Lives remaining</span>
-                  <span className="font-bold text-red-600">❤️ {gameUser?.lives ?? 0}</span>
-                </div>
+            <div className="modal-3d max-w-sm w-full">
+              <div className="modal-3d-header text-center">
+                <span className="text-3xl inline-block mr-2">⏰</span>
+                <span className="text-lg sm:text-xl font-black">Time's Up!</span>
               </div>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={handleReturnToMenu}
-                  className="flex-1 py-3 rounded-xl bg-gray-200 font-bold text-gray-700 hover:bg-gray-300 transition-colors"
-                >
-                  Menu
-                </button>
-                <button
-                  onClick={() => startGame(currentLevel)}
-                  disabled={gameUser?.lives <= 0}
-                  className="flex-1 py-3 rounded-xl bg-amber-500 text-white font-bold hover:bg-amber-600 transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
-                >
-                  {gameUser?.lives <= 0 ? 'No Lives' : 'Try Again'}
-                </button>
+              <div className="p-4 sm:p-5 text-center">
+                <p className="text-amber-600 text-sm mb-4">You ran out of time on Level {currentLevel}</p>
+                
+                {shieldWasActive && (
+                  <div className="chip-3d !bg-gradient-to-b !from-yellow-200 !to-amber-400 !text-amber-900 inline-flex items-center gap-2 mb-4 !py-2 !px-3">
+                    <span>🛡️</span>
+                    <span className="text-sm">Holy Shield protected you from losing a life!</span>
+                  </div>
+                )}
+                
+                <div className="row-3d !items-stretch flex-col mb-4">
+                  <div className="flex justify-between text-sm py-0.5">
+                    <span className="text-amber-700 font-semibold">Matched</span>
+                    <span className="font-black text-amber-900">{matchedPairs.length}/{totalPairs}</span>
+                  </div>
+                  <div className="flex justify-between text-sm py-0.5">
+                    <span className="text-amber-700 font-semibold">Moves</span>
+                    <span className="font-black text-amber-900">{moves}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm pt-2 mt-1 border-t-2 border-amber-200">
+                    <span className="text-amber-700 font-semibold">Lives remaining</span>
+                    <div className="heart-meter">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className={`heart-pip ${i < (gameUser?.lives ?? 0) ? '' : 'is-empty'}`}>❤️</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleReturnToMenu}
+                    className="chip-3d flex-1 !py-3 font-black"
+                  >
+                    Menu
+                  </button>
+                  <button
+                    onClick={() => startGame(currentLevel)}
+                    disabled={gameUser?.lives <= 0}
+                    className="btn-orb btn-orb-green flex-1 !py-3 font-black disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {gameUser?.lives <= 0 ? 'No Lives' : 'Try Again'}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

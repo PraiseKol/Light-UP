@@ -23,11 +23,8 @@ const LevelCompleteModal = ({
   };
 
   const getStars = () => {
-    // Calculate stars based on moves efficiency
-    // Fewer moves = more stars
-    const baseMoves = level * 4; // Expected minimum moves for level
+    const baseMoves = level * 4;
     const ratio = baseMoves / moves;
-    
     if (ratio >= 0.8) return 3;
     if (ratio >= 0.5) return 2;
     return 1;
@@ -42,102 +39,96 @@ const LevelCompleteModal = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3"
         >
           <motion.div
             initial={{ scale: 0.5, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.5, opacity: 0, y: 50 }}
-            className="bg-gradient-to-b from-amber-50 to-orange-50 rounded-2xl shadow-2xl max-w-md w-full p-6 border-4 border-amber-400"
+            className="modal-3d max-w-md w-full"
           >
-            {/* Header */}
-            <div className="text-center mb-6">
+            <div className="modal-3d-header text-center">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                className="text-5xl mb-3"
+                className="text-3xl inline-block mr-2"
               >
                 🎉
               </motion.div>
-              <h2 className="text-2xl font-bold text-amber-800">Level Complete!</h2>
+              <span className="text-lg sm:text-xl font-black">Level Complete!</span>
+            </div>
+
+            <div className="p-4 sm:p-5">
               {isNewHighScore && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-lg font-bold text-yellow-600 mt-1"
+                  className="text-center text-base font-black text-yellow-600 mb-3"
                 >
                   ⭐ New High Score! ⭐
                 </motion.div>
               )}
-            </div>
 
-            {/* Stars */}
-            <div className="flex justify-center gap-2 mb-6">
-              {[1, 2, 3].map((i) => (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
-                  animate={{ 
-                    opacity: i <= stars ? 1 : 0.3, 
-                    scale: 1, 
-                    rotate: 0 
-                  }}
-                  transition={{ delay: 0.3 + i * 0.15, type: 'spring' }}
-                  className="text-4xl"
+              {/* Stars */}
+              <div className="flex justify-center gap-2 mb-5">
+                {[1, 2, 3].map((i) => (
+                  <motion.span
+                    key={i}
+                    initial={{ opacity: 0, scale: 0, rotate: -180 }}
+                    animate={{ opacity: i <= stars ? 1 : 0.25, scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.3 + i * 0.15, type: 'spring' }}
+                    className="text-4xl drop-shadow-[0_2px_2px_rgba(180,83,9,0.4)]"
+                  >
+                    ⭐
+                  </motion.span>
+                ))}
+              </div>
+
+              {/* Stats */}
+              <div className="row-3d !items-stretch flex-col mb-4">
+                <div className="flex justify-between text-sm py-1">
+                  <span className="text-amber-700 font-semibold">Level</span>
+                  <span className="font-black text-amber-900">{level}</span>
+                </div>
+                <div className="flex justify-between text-sm py-1">
+                  <span className="text-amber-700 font-semibold">Moves</span>
+                  <span className="font-black text-amber-900">{moves}</span>
+                </div>
+                <div className="flex justify-between text-sm py-1">
+                  <span className="text-amber-700 font-semibold">Time</span>
+                  <span className="font-black text-amber-900">{formatTime(timeMs)}</span>
+                </div>
+                <div className="flex justify-between text-base border-t-2 border-amber-200 pt-2 mt-1">
+                  <span className="text-amber-700 font-bold">Score</span>
+                  <span className="font-black text-xl text-amber-900">{score}</span>
+                </div>
+              </div>
+
+              {/* Scripture */}
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-3 mb-4 text-center">
+                <p className="text-amber-800 italic text-sm">"{scripture.text}"</p>
+                <p className="text-amber-600 text-xs mt-1 font-semibold">— {scripture.ref}</p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={onReturnToMenu}
+                  className="chip-3d flex-1 !py-3 font-black"
                 >
-                  ⭐
-                </motion.span>
-              ))}
-            </div>
-
-            {/* Stats */}
-            <div className="bg-white/60 rounded-xl p-4 mb-6 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-amber-700">Level</span>
-                <span className="font-bold text-amber-900">{level}</span>
+                  Menu
+                </button>
+                
+                {hasNextLevel && (
+                  <button
+                    onClick={onNextLevel}
+                    className="btn-orb btn-orb-green flex-1 !py-3 font-black"
+                  >
+                    Next Level →
+                  </button>
+                )}
               </div>
-              <div className="flex justify-between">
-                <span className="text-amber-700">Moves</span>
-                <span className="font-bold text-amber-900">{moves}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-amber-700">Time</span>
-                <span className="font-bold text-amber-900">{formatTime(timeMs)}</span>
-              </div>
-              <div className="flex justify-between border-t border-amber-200 pt-2 mt-2">
-                <span className="text-amber-700">Score</span>
-                <span className="font-bold text-xl text-amber-900">{score}</span>
-              </div>
-            </div>
-
-            {/* Scripture */}
-            <div className="bg-amber-100/50 rounded-xl p-4 mb-6 text-center">
-              <p className="text-amber-800 italic text-sm">"{scripture.text}"</p>
-              <p className="text-amber-600 text-xs mt-1">— {scripture.ref}</p>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex gap-3">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onReturnToMenu}
-                className="flex-1 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-colors"
-              >
-                Menu
-              </motion.button>
-              
-              {hasNextLevel && (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={onNextLevel}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-bold shadow-lg hover:from-amber-600 hover:to-yellow-600 transition-all"
-                >
-                  Next Level →
-                </motion.button>
-              )}
             </div>
           </motion.div>
         </motion.div>

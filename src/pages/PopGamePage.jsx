@@ -472,40 +472,34 @@ const PopGamePage = () => {
         backgroundColor: '#a8b89a',
       }}
     >
-      {/* Decorative clouds */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-10 left-10 text-6xl opacity-60 animate-pulse">☁️</div>
-        <div className="absolute top-20 right-20 text-5xl opacity-50">☁️</div>
-        <div className="absolute top-5 left-1/2 text-7xl opacity-40">☁️</div>
-      </div>
-
-      {/* Light rays */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64 
-        bg-gradient-to-b from-yellow-200/40 to-transparent pointer-events-none" />
-
-      {/* Olive branches */}
-      <div className="absolute bottom-0 left-0 text-4xl opacity-70">🫒</div>
-      <div className="absolute bottom-0 right-0 text-4xl opacity-70 scale-x-[-1]">🫒</div>
+      {/* Atmosphere overlay — subtle vignette for HUD readability, no more scattered emoji clutter */}
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/30 via-transparent to-black/40" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-64
+        bg-gradient-to-b from-yellow-100/30 to-transparent pointer-events-none" />
 
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-4 flex items-center justify-between bg-black/20 backdrop-blur-sm">
-        <button 
-          onClick={() => navigate('/')}
-          className="p-2 rounded-full bg-white/20 text-white"
+      <div className="absolute top-0 left-0 right-0 z-50 p-2.5 sm:p-3 flex items-center justify-between bg-gradient-to-b from-black/50 to-transparent backdrop-blur-sm">
+        <button
+          onClick={() => navigate('/map')}
+          className="orb-glass !w-10 !h-10 sm:!w-11 sm:!h-11 flex items-center justify-center text-white"
         >
-          <ArrowLeft size={24} />
+          <ArrowLeft size={20} />
         </button>
-        
+
         <div className="text-center">
-          <div className="text-white font-bold text-lg">Free Fall Pop</div>
-          <div className="text-white/70 text-sm flex items-center justify-center gap-2">
-            <span>❤️ {gameUser?.lives ?? 0}</span>
+          <div className="text-white font-black text-sm sm:text-lg tracking-wide drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
+            🎮 Free Fall
+          </div>
+          <div className="heart-meter justify-center mt-0.5">
+            {[...Array(5)].map((_, i) => (
+              <span key={i} className={`heart-pip ${i < (gameUser?.lives ?? 0) ? '' : 'is-empty'}`}>❤️</span>
+            ))}
           </div>
         </div>
 
-        <div className="text-right">
+        <div className="w-10 sm:w-11 flex items-center justify-end">
           {gameState === 'playing' && (
-            <div className="text-2xl font-bold text-white">
+            <div className={`chip-3d !py-1 !px-2.5 text-sm sm:text-base font-black ${timeLeft <= 5 ? 'ring-2 ring-red-400 animate-pulse' : ''}`}>
               {timeLeft}s
             </div>
           )}
@@ -514,12 +508,12 @@ const PopGamePage = () => {
 
       {/* Score and Combo display during game */}
       {gameState === 'playing' && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2">
+        <div className="absolute top-16 sm:top-20 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2">
           <motion.div 
             key={score}
             initial={{ scale: 1.2 }}
             animate={{ scale: 1 }}
-            className="text-4xl font-bold text-amber-600 bg-white/80 px-6 py-2 rounded-full shadow-lg"
+            className="chip-3d chip-3d-star !text-2xl sm:!text-3xl !py-2 !px-6 font-black"
           >
             {score}
           </motion.div>
@@ -530,7 +524,7 @@ const PopGamePage = () => {
               key={combo}
               initial={{ scale: 1.3, y: -10 }}
               animate={{ scale: 1, y: 0 }}
-              className={`px-4 py-1 rounded-full font-bold text-white shadow-lg ${
+              className={`px-4 py-1 rounded-full font-black text-white shadow-[0_3px_0_rgba(0,0,0,0.3)] border-2 border-white/40 ${
                 combo >= 25 ? 'bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 text-xl animate-pulse' :
                 combo >= 20 ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-lg' :
                 combo >= 15 ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-lg' :
@@ -555,7 +549,7 @@ const PopGamePage = () => {
 
           {/* Divine Hint indicator */}
           {divineHintActive && (
-            <div className="px-3 py-1 rounded-full bg-yellow-500 text-white text-sm font-bold animate-pulse">
+            <div className="chip-3d !py-1 !px-3 text-xs sm:text-sm font-black text-amber-700 animate-pulse">
               👑 2x Crown Chance Active!
             </div>
           )}
@@ -564,38 +558,31 @@ const PopGamePage = () => {
 
       {/* Power-up bar during gameplay */}
       {gameState === 'playing' && gameUser && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-sm p-3 flex justify-around items-center gap-2">
-          {/* Grace Period */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-800/90 backdrop-blur-lg border-t border-white/10 p-2 sm:p-2.5 flex justify-around items-center gap-2 shadow-[0_-4px_10px_rgba(0,0,0,0.35)]">
           <button
             onClick={handleGracePeriod}
             disabled={!gameUser.powerups_inventory?.grace_period || gracePeriodUsed}
-            className={`flex flex-col items-center px-3 py-2 rounded-xl text-white text-sm transition-all ${
-              gameUser.powerups_inventory?.grace_period && !gracePeriodUsed
-                ? 'bg-purple-500 hover:bg-purple-600 active:scale-95'
-                : 'bg-gray-500/50 opacity-50'
+            className={`orb-power flex flex-col items-center px-3 py-1.5 text-white text-sm ${
+              !gameUser.powerups_inventory?.grace_period || gracePeriodUsed ? 'is-empty' : ''
             }`}
           >
             <Clock className="w-5 h-5" />
-            <span className="text-xs">+5s</span>
-            <span className="text-[10px]">x{gameUser.powerups_inventory?.grace_period || 0}</span>
+            <span className="text-[10px] sm:text-xs font-bold">+5s</span>
+            <span className="text-[9px] sm:text-[10px]">x{gameUser.powerups_inventory?.grace_period || 0}</span>
           </button>
           
-          {/* Divine Hint */}
           <button
             onClick={handleDivineHint}
             disabled={!gameUser.powerups_inventory?.divine_hint || divineHintActive}
-            className={`flex flex-col items-center px-3 py-2 rounded-xl text-white text-sm transition-all ${
-              gameUser.powerups_inventory?.divine_hint && !divineHintActive
-                ? 'bg-yellow-500 hover:bg-yellow-600 active:scale-95'
-                : 'bg-gray-500/50 opacity-50'
+            className={`orb-power flex flex-col items-center px-3 py-1.5 text-white text-sm ${
+              !gameUser.powerups_inventory?.divine_hint || divineHintActive ? 'is-empty' : ''
             }`}
           >
             <Sparkles className="w-5 h-5" />
-            <span className="text-xs">2x👑</span>
-            <span className="text-[10px]">x{gameUser.powerups_inventory?.divine_hint || 0}</span>
+            <span className="text-[10px] sm:text-xs font-bold">2x👑</span>
+            <span className="text-[9px] sm:text-[10px]">x{gameUser.powerups_inventory?.divine_hint || 0}</span>
           </button>
           
-          {/* Holy Shield */}
           <HolyShieldButton gameUser={gameUser} refetch={refetch} effectsOn={effectsOn} />
         </div>
       )}
@@ -612,20 +599,20 @@ const PopGamePage = () => {
             style={{ left: lastPoints.x - 40, top: lastPoints.y - 30 }}
           >
             {lastPoints.isBomb ? (
-              <div className="text-red-500 font-bold text-2xl animate-pulse">
+              <div className="text-red-500 font-bold text-2xl animate-pulse drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
                 💣 BOOM!
                 <div className="text-sm">-25% score!</div>
               </div>
             ) : lastPoints.isTime ? (
-              <div className="text-yellow-400 font-bold text-xl">
+              <div className="text-yellow-300 font-bold text-xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
                 ⏰ +10 SEC!
               </div>
             ) : (
               <>
-                <div className="text-green-500 font-bold text-lg">
+                <div className="text-green-400 font-bold text-lg drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
                   +{lastPoints.points + lastPoints.bonus}
                 </div>
-                <div className="text-amber-500 text-xs font-semibold">
+                <div className="text-amber-300 text-xs font-semibold drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
                   (+{lastPoints.bonus} bonus!)
                 </div>
               </>
@@ -647,183 +634,152 @@ const PopGamePage = () => {
 
       {/* Ready state */}
       {gameState === 'ready' && (
-        <div className="absolute inset-0 flex items-center justify-center z-30">
+        <div className="absolute inset-0 flex items-center justify-center z-30 p-3 overflow-y-auto">
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl text-center max-w-sm mx-4"
+            className="modal-3d max-w-sm w-full my-4"
           >
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">🎮 Ready to Play?</h2>
-            <p className="text-gray-600 mb-4">
-              Tap falling items to collect points!<br/>
-              Chain taps for combo bonuses!
-            </p>
-            
-            <div className="grid grid-cols-7 gap-1 mb-3 text-sm">
-              <div className="text-center">
-                <div className="text-lg">❤️</div>
-                <div className="text-gray-500 text-[10px]">+5</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg">🎅</div>
-                <div className="text-gray-500 text-[10px]">+5</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg">🪔</div>
-                <div className="text-gray-500 text-[10px]">+10</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg">🕊️</div>
-                <div className="text-gray-500 text-[10px]">+15</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg">✝️</div>
-                <div className="text-gray-500 text-[10px]">+20</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg">👑</div>
-                <div className="text-gray-500 text-[10px]">+10s</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg">💣</div>
-                <div className="text-red-500 text-[10px] font-bold">AVOID!</div>
-              </div>
+            <div className="modal-3d-header text-center">
+              <h2 className="text-lg sm:text-xl font-black">🎮 Ready to Play?</h2>
             </div>
-            
-            {/* Bomb warning */}
-            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-xs text-red-700">
-              ⚠️ Avoid 💣 bombs! They cost a life + 25% score
-            </div>
-            
-            <div className="text-xs text-amber-600 mb-3">
-              ⚡ Higher combos = faster spawns & speed!
-            </div>
+            <div className="p-4 sm:p-5">
+              <p className="text-gray-600 text-sm text-center mb-4">
+                Tap falling items to collect points! Chain taps for combo bonuses!
+              </p>
 
-            {/* Best Scores */}
-            {bestScores.length > 0 && (
-              <div className="bg-amber-50 rounded-lg p-3 mb-4">
-                <h3 className="font-bold text-amber-800 mb-2">🏆 Your Top 3</h3>
-                <div className="flex justify-center gap-4">
-                  {bestScores.map((s, i) => (
-                    <div key={i} className="text-center">
-                      <div className="text-lg">{['🥇', '🥈', '🥉'][i]}</div>
-                      <div className="font-bold text-amber-700">{s.score}</div>
-                    </div>
-                  ))}
+              {/* Item legend */}
+              <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 mb-3">
+                {[
+                  { e: '❤️', v: '+5' }, { e: '🎅', v: '+5' }, { e: '🪔', v: '+10' },
+                  { e: '🕊️', v: '+15' }, { e: '✝️', v: '+20' }, { e: '👑', v: '+10s' },
+                  { e: '💣', v: 'AVOID', danger: true },
+                ].map((it, i) => (
+                  <div key={i} className="chip-3d flex-col !py-1.5 !px-1">
+                    <div className="text-base sm:text-lg leading-none">{it.e}</div>
+                    <div className={`text-[9px] font-bold mt-0.5 ${it.danger ? 'text-red-600' : 'text-gray-500'}`}>{it.v}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl px-3 py-2 mb-3 text-xs text-red-700 font-semibold text-center">
+                ⚠️ Avoid 💣 bombs! They cost a life + 25% score
+              </div>
+
+              <div className="text-xs text-amber-600 font-semibold mb-4 text-center">
+                ⚡ Higher combos = faster spawns & speed!
+              </div>
+
+              {/* Best Scores */}
+              {bestScores.length > 0 && (
+                <div className="row-3d !items-stretch flex-col mb-4">
+                  <h3 className="font-black text-amber-800 text-sm mb-2 text-center">🏆 Your Top 3</h3>
+                  <div className="flex justify-center gap-4">
+                    {bestScores.map((s, i) => (
+                      <div key={i} className="text-center">
+                        <div className="text-lg">{['🥇', '🥈', '🥉'][i]}</div>
+                        <div className="font-black text-amber-700">{s.score}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Leaderboard Button */}
-            <button
-              onClick={() => setShowLeaderboard(true)}
-              className="w-full py-3 mb-3 bg-gradient-to-r from-amber-400 to-orange-500 
-                text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform
-                flex items-center justify-center gap-2"
-            >
-              🏆 View Leaderboard
-            </button>
+              <button
+                onClick={() => setShowLeaderboard(true)}
+                className="btn-orb w-full font-black py-2.5 mb-3 flex items-center justify-center gap-2"
+              >
+                🏆 View Leaderboard
+              </button>
 
-            <div className="text-sm text-gray-500 mb-4 flex items-center justify-center gap-2">
-              <span>❤️ {gameUser?.lives ?? 0} lives</span>
+              <button
+                onClick={startGame}
+                disabled={!gameUser || gameUser.lives <= 0}
+                className="btn-orb btn-orb-green w-full py-3.5 text-lg font-black disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {gameUser?.lives > 0 ? 'Start Game!' : 'No Lives Left'}
+              </button>
             </div>
-
-            <button
-              onClick={startGame}
-              disabled={!gameUser || gameUser.lives <= 0}
-              className={`w-full py-4 text-white text-xl font-bold rounded-2xl shadow-lg
-                transition-transform ${
-                  gameUser?.lives > 0 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 active:scale-95'
-                    : 'bg-gray-400 cursor-not-allowed'
-                }`}
-            >
-              {gameUser?.lives > 0 ? 'Start Game!' : 'No Lives Left'}
-            </button>
           </motion.div>
         </div>
       )}
 
       {/* Finished state */}
       {gameState === 'finished' && (
-        <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/30">
+        <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/40 p-3 overflow-y-auto">
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white/95 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl text-center max-w-sm mx-4"
+            className="modal-3d max-w-sm w-full my-4"
           >
-            <div className="text-5xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Time's Up!</h2>
-            
-            <div className="text-5xl font-bold text-amber-500 my-4">
-              {score}
+            <div className="modal-3d-header text-center">
+              <h2 className="text-lg sm:text-xl font-black">🎉 Time's Up!</h2>
             </div>
-            <p className="text-gray-500 mb-2">points earned</p>
-
-            {bestScores.length > 0 && score >= bestScores[0]?.score && (
-              <div className="text-green-600 font-bold mb-4">
-                🏆 New Best Score!
+            <div className="p-4 sm:p-5 text-center">
+              <div className="chip-3d chip-3d-star inline-flex !text-4xl !py-3 !px-8 font-black mb-1">
+                {score}
               </div>
-            )}
+              <p className="text-gray-500 text-sm mb-3">points earned</p>
 
-            {/* Top 3 Best Scores */}
-            {bestScores.length > 0 && (
-              <div className="bg-amber-50 rounded-lg p-3 mb-4">
-                <h3 className="font-bold text-amber-800 mb-2">🏆 Your Top 3</h3>
-                <div className="flex justify-center gap-4">
-                  {bestScores.map((s, i) => (
-                    <div key={i} className="text-center">
-                      <div className="text-lg">{['🥇', '🥈', '🥉'][i]}</div>
-                      <div className={`font-bold ${s.score === score ? 'text-green-600' : 'text-amber-700'}`}>
-                        {s.score}
+              {bestScores.length > 0 && score >= bestScores[0]?.score && (
+                <div className="text-green-600 font-black mb-3">
+                  🏆 New Best Score!
+                </div>
+              )}
+
+              {bestScores.length > 0 && (
+                <div className="row-3d !items-stretch flex-col mb-4">
+                  <h3 className="font-black text-amber-800 text-sm mb-2">🏆 Your Top 3</h3>
+                  <div className="flex justify-center gap-4">
+                    {bestScores.map((s, i) => (
+                      <div key={i} className="text-center">
+                        <div className="text-lg">{['🥇', '🥈', '🥉'][i]}</div>
+                        <div className={`font-black ${s.score === score ? 'text-green-600' : 'text-amber-700'}`}>
+                          {s.score}
+                        </div>
                       </div>
-                    </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {shieldProtected && (
+                <div className="chip-3d !bg-gradient-to-b !from-yellow-200 !to-amber-400 !text-amber-900 inline-flex items-center gap-2 mb-4 !py-2 !px-4">
+                  <Shield className="w-4 h-4" />
+                  Holy Shield protected you!
+                </div>
+              )}
+
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <span className="text-sm text-gray-500">Lives remaining:</span>
+                <div className="heart-meter">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className={`heart-pip ${i < (gameUser?.lives ?? 0) ? '' : 'is-empty'}`}>❤️</span>
                   ))}
                 </div>
               </div>
-            )}
 
-            {/* Shield/Life Status */}
-            {shieldProtected && (
-              <div className="bg-yellow-100 text-yellow-800 rounded-lg px-3 py-2 mb-4 flex items-center justify-center gap-2">
-                <Shield className="w-5 h-5" />
-                Holy Shield protected you!
+              <div className="space-y-2.5">
+                <button
+                  onClick={playAgain}
+                  disabled={!gameUser || gameUser.lives <= 0}
+                  className="btn-orb btn-orb-green w-full py-3 font-black disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {gameUser?.lives > 0 ? 'Play Again' : 'No Lives Left'}
+                </button>
+                <button
+                  onClick={() => setShowLeaderboard(true)}
+                  className="btn-orb w-full py-2.5 font-black flex items-center justify-center gap-2"
+                >
+                  🏆 View Leaderboard
+                </button>
+                <button
+                  onClick={() => navigate('/map')}
+                  className="btn-orb btn-orb-purple w-full py-2.5 font-black"
+                >
+                  Back to Map
+                </button>
               </div>
-            )}
-
-            {/* Lives Remaining */}
-            <div className="flex items-center justify-center gap-2 mb-4 text-gray-600">
-              <span>Lives remaining:</span>
-              <span className="font-bold text-red-500">❤️ {gameUser?.lives ?? 0}</span>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                onClick={playAgain}
-                disabled={!gameUser || gameUser.lives <= 0}
-                className={`w-full py-3 font-bold rounded-xl shadow-lg ${
-                  gameUser?.lives > 0
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
-                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                }`}
-              >
-                {gameUser?.lives > 0 ? 'Play Again' : 'No Lives Left'}
-              </button>
-              <button
-                onClick={() => setShowLeaderboard(true)}
-                className="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 
-                  text-white font-bold rounded-xl shadow-lg active:scale-95 transition-transform
-                  flex items-center justify-center gap-2"
-              >
-                🏆 View Leaderboard
-              </button>
-              <button
-                onClick={() => navigate('/')}
-                className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 
-                  text-white font-bold rounded-xl shadow-lg"
-              >
-                Back to Map
-              </button>
             </div>
           </motion.div>
         </div>
